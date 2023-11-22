@@ -136,7 +136,7 @@ void loop() {
       has_run = 1;
       sendCode(passwords[click_count - 1].password,
                passwords[click_count - 1].flags);
-      dev.sendChar('\n');
+      dev.sendKey(40);
     } else {
       has_run = connect_check_count++ > MAX_CONNECT_RETRY;
       if (!has_run) {
