@@ -2,7 +2,43 @@
  * NOTE: https://usb.org/sites/default/files/hut1_3_0.pdf Page 91 !
  */
 #include "hidkeyboard.h"
+#include <Arduino.h>
+#include <WiFi.h>
+#include <stdio.h>
 
+#define WARMUP_TIME 1000
+#define KEYPRESS_INTERVAL 60
+#define BUTTON 0 // BOOT BUTTON
+
+// forward definition
+void sendCode(const char *, uint8_t);
+
+// Wifi stuff {{{
+bool devicePaired = false;
+#define SSID "KeyPass"
+#define PASSWORD "12345678" // ALL THE SECURITY IS IN THIS PASSWORD - use something longer & more complex !!
+#define MAX_CONNECT_RETRY 15
+
+WiFiServer wifiServer(80);
+WiFiClient wifiClient;
+
+void setupWiFi() {
+  Serial.println("Configuring access point...");
+  WiFi.softAP(SSID, PASSWORD);
+
+  IPAddress ipAddress = WiFi.softAPIP();
+  Serial.print("Access Point IP address: ");
+  Serial.println(ipAddress);
+
+  wifiServer.begin();
+}
+
+void handleWiFi() {
+  wifiClient = wifiServer.available();
+  devicePaired = bool(wifiClient);
+  wifiClient.stop();
+}
+// }}}
 typedef struct {
   unsigned char flags;
   const char *password;
@@ -18,15 +54,11 @@ enum { FLAG_NONE, FLAG_FKEY = 1 };
 // #define NB_PASSWORDS 2
 
 #include "passwords.h"
-
-#define WARMUP_TIME 1000
-#define KEYPRESS_INTERVAL 60
-#define BUTTON 0 // BOOT BUTTON
-
 #if CFG_TUD_HID
 //
 HIDkeyboard dev;
 int has_run = 0;
+int connect_check_count = 0;
 
 double startup_time = 0;
 
@@ -52,13 +84,18 @@ void sendCode(const char *text, uint8_t flags = 0) {
 void start_warmup_timer() { startup_time = millis() + WARMUP_TIME; }
 
 void setup() {
+  // Wifi setup
+  setupWiFi();
+  // USB HID setup
   dev.setBaseEP(2);
   dev.manufacturer("Fab Corp.");
   dev.product("Blue Square Thing");
   dev.deviceID(0xfab, 0xface);
   dev.serial("4321-567890");
   dev.begin();
+  // Button setup
   pinMode(0, INPUT_PULLUP);
+  // state machine setup
   start_warmup_timer();
 }
 
@@ -77,21 +114,31 @@ void loop() {
     return;
   }
   if (has_run) {
+    delay(1000);
     // STOP
     esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
     esp_deep_sleep_start();
   }
 
-  has_run = 1;
-
   if (click_count) {
     if (click_count > NB_PASSWORDS) {
+      has_run = 1;
       sendCode("KO");
       return;
     }
-    sendCode(passwords[click_count - 1].password,
-             passwords[click_count - 1].flags);
-    dev.sendChar('\n');
+    // Check pairing state: refresh it or type password
+    if (devicePaired) {
+      has_run = 1;
+      sendCode(passwords[click_count - 1].password,
+               passwords[click_count - 1].flags);
+      dev.sendChar('\n');
+    } else {
+      has_run = connect_check_count++ > MAX_CONNECT_RETRY;
+      if (!has_run) {
+        handleWiFi();
+        delay(1000);
+      }
+    }
   }
 }
 
