@@ -16,8 +16,11 @@ void sendCode(const char *, uint8_t);
 // Wifi stuff {{{
 bool devicePaired = false;
 #define SSID "KeyPass"
-#define PASSWORD "12345678" // ALL THE SECURITY IS IN THIS PASSWORD - use something longer & more complex !!
-#define MAX_CONNECT_RETRY 15
+ // ALL THE SECURITY IS IN THIS PASSWORD - use something
+ // longer & more complex !!
+#define PASSWORD "AAAAAAAAAAAAAAAA"
+
+#define MAX_CONNECT_RETRY 60
 
 WiFiServer wifiServer(80);
 WiFiClient wifiClient;
@@ -35,8 +38,9 @@ void setupWiFi() {
 
 void handleWiFi() {
   wifiClient = wifiServer.available();
-  devicePaired = bool(wifiClient);
-  wifiClient.stop();
+  if (wifiClient) {
+    devicePaired = true;
+  }
 }
 // }}}
 typedef struct {
@@ -114,6 +118,7 @@ void loop() {
     return;
   }
   if (has_run) {
+    // dev.sendString("sleep\n");
     delay(1000);
     // STOP
     esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
@@ -135,9 +140,10 @@ void loop() {
     } else {
       has_run = connect_check_count++ > MAX_CONNECT_RETRY;
       if (!has_run) {
+        // dev.sendString("ifi\n");
         handleWiFi();
-        delay(1000);
       }
+      delay(1000);
     }
   }
 }
