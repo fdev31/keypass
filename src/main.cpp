@@ -6,7 +6,7 @@
 #include <WiFi.h>
 #include <stdio.h>
 
-#define WARMUP_TIME 1000
+#define WARMUP_TIME 1500
 #define KEYPRESS_INTERVAL 60
 #define BUTTON 0 // BOOT BUTTON
 
@@ -143,7 +143,7 @@ void loop() {
         // dev.sendString("ifi\n");
         handleWiFi();
       }
-      delay(1000);
+      delay(500);
     }
   }
 }
