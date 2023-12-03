@@ -4,7 +4,7 @@
 #include "hidkeyboard.h"
 #include <Arduino.h>
 #include <WiFi.h>
-#include <stdio.h>
+#include "keymap.h"
 
 #define USE_WIFI 0
 #define WARMUP_TIME 1500
@@ -67,8 +67,10 @@ double startup_time = 0;
 // Send some Function key
 void sendFKey(char c) { dev.sendKey(57 + (c == '0' ? 10 : c - '0')); }
 // Send a normal character
-void sendKey(char c) { dev.sendChar(c); }
-
+void sendKey(char c) {
+    dev.sendKey(KBD_MAP[c][0],KBD_MAP[c][0]?2:0);
+    // dev.sendChar(c);
+}
 // Sends a string,
 // optionally using 0-9 digits only and sending them via F keys
 void sendCode(const char *text, uint8_t flags = 0) {
