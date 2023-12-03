@@ -23,9 +23,13 @@ for line in fileinput.input():
         if c in collected:
             if collected[c] != (code, i):
                 if collected[c][1] > i:
-                    sys.stderr.write(f"Replacing {c} using code {(code, code_map[i])} - already defined as {collected[c]} !\n")
+                    sys.stderr.write(
+                        f"Replacing {c} using code {(code, code_map[i])} - already defined as {collected[c]} !\n"
+                    )
                 else:
-                    sys.stderr.write(f"Skipping duplicate for {c} using code {code} - already defined as {collected[c]} !\n")
+                    sys.stderr.write(
+                        f"Skipping duplicate for {c} using code {code} - already defined as {collected[c]} !\n"
+                    )
                     to_skip = True
 
         if not to_skip:
