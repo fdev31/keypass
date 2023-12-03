@@ -19,6 +19,6 @@ for line in fileinput.input():
             else:
                 sys.stderr.write(f"Warning, duplicate entry for {c} using code {code}\n")
     collected[letters[0]] = (code, 0)
-    collected[letters[1]] = (code, 1)
+    collected[letters[1]] = (code, 2)
 
 pprint(collected)
