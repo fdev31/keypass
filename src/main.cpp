@@ -2,9 +2,9 @@
  * NOTE: https://usb.org/sites/default/files/hut1_3_0.pdf Page 91 !
  */
 #include "hidkeyboard.h"
+#include "keymap.h"
 #include <Arduino.h>
 #include <WiFi.h>
-#include "keymap.h"
 
 #define USE_WIFI 0
 #define WARMUP_TIME 1500
@@ -14,8 +14,8 @@
 // Wifi stuff {{{
 bool devicePaired = false;
 #define SSID "KeyPass"
- // ALL THE SECURITY IS IN THIS PASSWORD - use something
- // longer & more complex !!
+// ALL THE SECURITY IS IN THIS PASSWORD - use something
+// longer & more complex !!
 #define PASSWORD "AAAAAAAAAAAAAAAA"
 
 #define MAX_CONNECT_RETRY 60
@@ -68,8 +68,7 @@ double startup_time = 0;
 void sendFKey(char c) { dev.sendKey(57 + (c == '0' ? 10 : c - '0')); }
 // Send a normal character
 void sendKey(char c) {
-    dev.sendKey(KBD_MAP[c][0],KBD_MAP[c][0]?2:0);
-    // dev.sendChar(c);
+  dev.sendKey(KBD_MAP[c][0], KBD_MAP[c][1]);
 }
 // Sends a string,
 // optionally using 0-9 digits only and sending them via F keys

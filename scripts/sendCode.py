@@ -1,5 +1,7 @@
 #!/bin/env python
 # Sends using CH9389
+# Connect to another computer and save the keymap on the other computer using:
+# cat > keymap_name
 
 import sys
 import serial
@@ -33,11 +35,19 @@ def printNumber(num):
         time.sleep(0.02)
 
 
+altgr_keys = {48, 45, 46, 53}
+for n in range(30, 40):
+    altgr_keys.add(n)
+
+
 def typeKey(n):
     genKey(n)
     time.sleep(0.1)
     genKey(n, modifiers=2)
     time.sleep(0.1)
+    if n in altgr_keys:
+        genKey(n, modifiers=0b1000000)
+        time.sleep(0.1)
     genKey(44)
     time.sleep(0.1)
     printNumber(n)

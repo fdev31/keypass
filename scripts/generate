@@ -1,0 +1,3 @@
+#!/bin/sh
+
+./parse_keymap.py "$1" | ./gen_structures.py > ../src/keymap.h
