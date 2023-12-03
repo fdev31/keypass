@@ -6,12 +6,10 @@
 #include <WiFi.h>
 #include <stdio.h>
 
+#define USE_WIFI 0
 #define WARMUP_TIME 1500
 #define KEYPRESS_INTERVAL 60
 #define BUTTON 0 // BOOT BUTTON
-
-// forward definition
-void sendCode(const char *, uint8_t);
 
 // Wifi stuff {{{
 bool devicePaired = false;
@@ -89,7 +87,9 @@ void start_warmup_timer() { startup_time = millis() + WARMUP_TIME; }
 
 void setup() {
   // Wifi setup
+#if USE_WIFI
   setupWiFi();
+#endif
   // USB HID setup
   dev.setBaseEP(2);
   dev.manufacturer("Fab Corp.");
@@ -140,8 +140,11 @@ void loop() {
     } else {
       has_run = connect_check_count++ > MAX_CONNECT_RETRY;
       if (!has_run) {
-        // dev.sendString("ifi\n");
+#if USE_WIFI
         handleWiFi();
+#else
+        devicePaired = true;
+#endif
       }
       delay(500);
     }
