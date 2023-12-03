@@ -16,7 +16,9 @@ common_mapping = {
 
 km = eval(sys.stdin.read())
 
-print("mapping[] = {")
+print("#ifndef __CUSTOM_KEYMAP")
+print("#define __CUSTOM_KEYMAP")
+print("mapping[][2] = {")
 for n in range(0, 255):
     char = chr(n)
     c = km.get(char) or common_mapping.get(char)
@@ -26,3 +28,4 @@ for n in range(0, 255):
         print("    {%s, %s}," % c, end="")
         print(f' // "{char if n != 10 else "ENTER"}"')
 print("};")
+print("#endif")
