@@ -1,5 +1,6 @@
 #ifndef __CUSTOM_KEYMAP
 #define __CUSTOM_KEYMAP
+#include <stdint.h>
 uint8_t KBD_MAP[][2] = {
     {0, 0},
     {0, 0},
