@@ -4,7 +4,7 @@ A password manager in your keychain
 
 - ESP32 S2 mini
 - (optional) 3D printer
-- USB C cable
+- CH9329 device or USB-C cable
 
 # Installation
 
