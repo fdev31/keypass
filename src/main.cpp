@@ -2,7 +2,7 @@
 #include "password.h"
 #include <Arduino.h>
 
-const int baudRate = 9600;
+const int baudRate = 115200;
 
 void setup() {
   Serial.begin(baudRate);
