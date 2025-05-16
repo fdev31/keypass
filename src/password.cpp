@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
 // Function to generate a random character
 char getRandomChar() {
@@ -81,37 +82,31 @@ void setUpKeyboard(AsyncWebServer &server) {
     server.on("/editPass", HTTP_GET, [](AsyncWebServerRequest *request) {
         if (request->hasParam("id")) {
             int id = request->getParam("id")->value().toInt();
-            Serial.println("Editing password with id: " + String(id));
 
             // Retrieve the existing password or create a new one
             Password password;
             memset(&password, 0, sizeof(Password)); // Initialize to zeros
             
             if (id >= 0 && id < MAX_PASSWORDS) {
-                Serial.println("Reading existing password");
                 password = readPassword(id);
             } else {
-                Serial.println("Invalid ID, using empty password");
                 id = 0; // Fallback to first slot if ID is invalid
             }
 
             // Check and update other optional parameters if present
             if (request->hasParam("layout")) {
                 password.layout = request->getParam("layout")->value().toInt();
-                Serial.println("Layout set to: " + String(password.layout));
             }
             if (request->hasParam("name")) {
-                strlcpy(password.name, "foobar", strlen("foobar")+1);
-                Serial.println("Name set to: " + String(password.name));
+                const char *source = request->getParam("name")->value().c_str();
+                strlcpy(password.name, source, MAX_NAME_LEN);
             }
             if (request->hasParam("password")) {
-                strcpy(password.password,"foobar");
-                // strlcpy(password.password, request->getParam("password")->value().c_str(), sizeof(password.password));
-                Serial.println("Password updated");
+                const char *tmp = request->getParam("password")->value().c_str();
+                strlcpy(password.password, tmp, MAX_PASS_LEN);
             }
 
             // Save the updated password
-            // Password papa = { "Githeub", 0, "DefaultPassword" };
             writePassword(id, password);
 
             // Send response if needed
