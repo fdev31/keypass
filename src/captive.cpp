@@ -13,7 +13,7 @@
 
 const char *ssid =
     "KeyPass"; // FYI The SSID can't have a space in it.
-               // const char * password = "12345678"; //Atleast 8 chars
+               // const char * password = "12345678"; //At least 8 chars
 const char *password = NULL; // no password
                              //
 
@@ -138,5 +138,5 @@ void captiveSetup() {
   server.begin();
 }
 void captiveLoop() {
-  dnsServer.processNextRequest(); // I call this atleast every 10ms in my other
+  dnsServer.processNextRequest(); // I call this at least every 10ms in my other
 }
