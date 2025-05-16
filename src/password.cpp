@@ -1,6 +1,8 @@
 #include "password.h"
 #include "EEPROM.h"
 #include "indexPage.h"
+#include <ESPAsyncWebServer.h>
+#include <Arduino.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -21,27 +23,6 @@ void generatePassword(char *password, int length) {
     password[length] = '\0'; // Null-terminate the string
 }
 
-int main() {
-    srand((unsigned int)time(NULL)); // Seed the random number generator
-
-    int passwordLength;
-    printf("Enter the desired password length: ");
-    scanf("%d", &passwordLength);
-
-    if (passwordLength <= 0) {
-        printf("Invalid password length.\n");
-        return 1;
-    }
-
-    char password[passwordLength + 1]; // +1 for null-termination
-
-    generatePassword(password, passwordLength);
-
-    printf("Generated Password: %s\n", password);
-
-    return 0;
-}
-
 // Function to read a password from EEPROM
 Password readPassword(int id) {
     Password password;
@@ -55,7 +36,7 @@ Password readPassword(int id) {
 }
 
 // Function to write a password to EEPROM
-void writePassword(int id, const Password *password) {
+void writePassword(int id, const Password &password) {
     int address = id * sizeof(Password);
     EEPROM.put(address, password);
     EEPROM.commit();
@@ -65,8 +46,8 @@ void setUpKeyboard(AsyncWebServer &server) {
 
     EEPROM.begin(sizeof(Password) * MAX_PASSWORDS);
     // Write a basic password as the first one to ensure valid data
-    Password password = { "Default", 0, "DefaultPassword" };
-    EEPROM.put(0, password);
+    // Password password = { "Default", 0, "DefaultPassword" };
+    // EEPROM.put(0, password);
 
     // Serve Basic HTML Page
     server.on("/", HTTP_ANY, [](AsyncWebServerRequest *request) {
@@ -96,7 +77,7 @@ void setUpKeyboard(AsyncWebServer &server) {
         }
     });
 
-    // Handler for "/editPass"
+
     server.on("/editPass", HTTP_GET, [](AsyncWebServerRequest *request) {
         if (request->hasParam("id")) {
             int id = request->getParam("id")->value().toInt();
@@ -104,27 +85,34 @@ void setUpKeyboard(AsyncWebServer &server) {
 
             // Retrieve the existing password or create a new one
             Password password;
-            if (id >= 0) {
-                Serial.println("Editing password");
+            memset(&password, 0, sizeof(Password)); // Initialize to zeros
+            
+            if (id >= 0 && id < MAX_PASSWORDS) {
+                Serial.println("Reading existing password");
                 password = readPassword(id);
+            } else {
+                Serial.println("Invalid ID, using empty password");
+                id = 0; // Fallback to first slot if ID is invalid
             }
 
             // Check and update other optional parameters if present
             if (request->hasParam("layout")) {
                 password.layout = request->getParam("layout")->value().toInt();
-                Serial.println("Layout set");
+                Serial.println("Layout set to: " + String(password.layout));
             }
             if (request->hasParam("name")) {
-                strlcpy(password.name, request->getParam("name")->value().c_str(), sizeof(password.name));
-                Serial.println("Name set");
+                strlcpy(password.name, "foobar", strlen("foobar")+1);
+                Serial.println("Name set to: " + String(password.name));
             }
             if (request->hasParam("password")) {
-                strlcpy(password.password, request->getParam("password")->value().c_str(), sizeof(password.password));
-                Serial.println("Password set");
+                strcpy(password.password,"foobar");
+                // strlcpy(password.password, request->getParam("password")->value().c_str(), sizeof(password.password));
+                Serial.println("Password updated");
             }
 
             // Save the updated password
-            writePassword(id, &password);
+            // Password papa = { "Githeub", 0, "DefaultPassword" };
+            writePassword(id, password);
 
             // Send response if needed
             request->send(200, "text/plain", "Password edited successfully");
@@ -132,7 +120,6 @@ void setUpKeyboard(AsyncWebServer &server) {
             request->send(400, "text/plain", "Missing 'id' parameter");
         }
     });
-
     // Handler for "/list"
     server.on("/list", HTTP_GET, [](AsyncWebServerRequest *request) {
         // Create a dynamic JSON string to hold the list of passwords
