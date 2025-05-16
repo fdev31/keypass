@@ -18,6 +18,7 @@ km = eval(sys.stdin.read())
 
 print("#ifndef __CUSTOM_KEYMAP")
 print("#define __CUSTOM_KEYMAP")
+print("#include <stdint.h>")
 print("uint8_t KBD_MAP[][2] = {")
 for n in range(0, 255):
     char = chr(n)
