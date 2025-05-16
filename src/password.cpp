@@ -47,6 +47,10 @@ Password readPassword(int id) {
     Password password;
     int address = id * sizeof(Password);
     EEPROM.get(address, password);
+    // Add validation check to ensure data is valid
+    if (password.name[0] == 0xFF) { // EEPROM default state is 0xFF
+        password.name[0] = '\0'; // Mark as empty
+    }
     return password;
 }
 
@@ -59,6 +63,7 @@ void writePassword(int id, const Password *password) {
 
 void setUpKeyboard(AsyncWebServer &server) {
 
+    EEPROM.begin(sizeof(Password) * MAX_PASSWORDS);
     // Write a basic password as the first one to ensure valid data
     Password password = { "Default", 0, "DefaultPassword" };
     EEPROM.put(0, password);
@@ -135,7 +140,7 @@ void setUpKeyboard(AsyncWebServer &server) {
 
         // Loop through password ids and add existing passwords to the JSON
         bool firstItem = true;
-        for (int id = 0; id < 10; id++) { // Assuming max 10 passwords for now
+        for (int id = 0; id < MAX_PASSWORDS; id++) { // Assuming max 10 passwords for now
             Password pwd = readPassword(id);
             // Only include passwords that have been set (non-empty name)
             if (pwd.name[0] != '\0') {

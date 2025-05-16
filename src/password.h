@@ -18,4 +18,6 @@ extern Password readPassword(int id);
 extern void writePassword(int id, const Password* password);
 extern void setUpKeyboard(AsyncWebServer &server);
 
+#define MAX_PASSWORDS  10
+
 #endif
