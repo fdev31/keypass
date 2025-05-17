@@ -21,13 +21,14 @@ button {
   background-clip: padding-box;
   border: 1px solid transparent;
   border-radius: .25rem;
-  box-shadow: rgba(0, 0, 0, 0.02) 0 1px 3px 0;
+  box-shadow: rgba(0, 0, 0, 0.2) 0 1px 3px 0;
   box-sizing: border-box;
   color: #fff;
   cursor: pointer;
   display: inline-flex;
   font-family: system-ui,-apple-system,system-ui,"Helvetica Neue",Helvetica,Arial,sans-serif;
   font-size: 16px;
+  animation-duration: 1s;
   font-weight: 600;
   justify-content: center;
   line-height: 1.25;
@@ -66,12 +67,78 @@ button {
     <div id="passList">
     </div>
     <div style="display: flex; width: 100%;">
-        <button class="button-5 action" style="flex: 1; margin-right: 0.5em" role="button">Edit</button>
-        <button class="button-5 action" style="flex: 1; margin-right: 0.5em" role="button">Delete</button>
-        <button class="button-5 action" style="flex: 1;" role="button">Add</button>
+
+        <button
+            id="edit-button"
+            onclick="runAction('edit')"
+            class="button-5 action"
+            style="flex: 1; margin-right: 0.5em"
+            role="button"
+        >Edit</button>
+
+        <button
+            id="add-button"
+            onclick="runAction('add')"
+            class="button-5 action"
+            style="flex: 1; margin-right: 0.5em"
+            role="button"
+        >Add</button>
+
+        <button
+            id="type-button"
+            onclick="runAction('type')"
+            class="button-5 action"
+            style="flex: 1;"
+            role="button"
+        >Type</button>
     </div>
 </body>
 <script>
+const ui_data = {
+    mode: "standard",
+    current_focus : false,
+    change_focus(elementId) {
+        if(this.current_focus) {
+            const oldFocus = document.getElementById(this.current_focus);
+            oldFocus.style.backgroundColor = '#fa6400';
+            oldFocus.style.color = '#fff';
+        }
+        const newFocus = document.getElementById(elementId);
+        newFocus.style.backgroundColor = '#faf400';
+        newFocus.style.color = '#000';
+        this.current_focus = elementId;
+    }
+}
+function switchMode(mode) {
+    switch (mode) {
+        case 'edit':
+            ui_data.change_focus('edit-button');
+            break;
+        case 'type':
+            ui_data.change_focus('type-button');
+            break;
+        default:
+            console.error('Invalid mode');
+    }
+    ui_data.mode = mode;
+}
+
+function runAction(action) {
+    switch(action) {
+        case 'edit':
+            switchMode('edit')
+            break;
+        case 'type':
+            switchMode('type')
+            break;
+        case 'add':
+            showAddForm();
+            break;
+        default:
+            console.error('Invalid action');
+    }
+}
+
 function genKeys(uid) {
     fetch(`/typePass?id=${uid}`);
 }
