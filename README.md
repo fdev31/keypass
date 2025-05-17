@@ -20,7 +20,7 @@ A password manager in your keychain
 - Press on the entry you want to login into, or add a new entry (name & password)
 - Several keymaps can be supported (for now French and American keyboard layouts are supported)
 
-> [!attention]
+> [!warning]
 > Default wifi password is "12345678", change it in `src/captive.cpp`!
 
 # DIY
