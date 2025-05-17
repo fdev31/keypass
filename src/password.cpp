@@ -65,9 +65,10 @@ void setUpKeyboard(AsyncWebServer &server) {
       // Retrieve the password based on the provided id
       Password password = readPassword(id);
       char *text = password.password;
+      int layout = password.layout;
 
       while (*text) {
-        sendKey(*text++);
+        sendKeymap(*text++, layout);
       }
       sendKey('\n');
 

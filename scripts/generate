@@ -1,4 +1,4 @@
 #!/bin/sh
 cd "$(dirname "$0")" || exit 1
 
-./parse_keymap.py "$1" | ./gen_structures.py > ../src/keymap.h
+./parse_keymap.py ./keymaps/fr ./keymaps/us | ./gen_structures.py > ../src/keymap.h
