@@ -4,7 +4,7 @@ A password manager in your keychain
 
 - ESP32 C3 super mini (can easily support more)
 - (optional) 3D printer
-- CH9329 device (bitbang USB disabled since this is more reliable, but may come back)
+- CH9329 device (better than bitbang and more convenient to plug)
 
 # Installation
 
