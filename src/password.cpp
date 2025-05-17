@@ -131,7 +131,7 @@ void setUpKeyboard(AsyncWebServer &server) {
           json += ",";
         }
         json += "{\"name\":\"" + String(pwd.name) + "\",\"uid\":" + String(id) +
-                "\",\"layout\":" + String(pwd.layout) + "}";
+                ",\"layout\":" + String(pwd.layout) + "}";
         firstItem = false;
       }
     }
