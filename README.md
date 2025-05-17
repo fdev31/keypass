@@ -2,7 +2,7 @@ A password manager in your keychain
 
 # Requirements
 
-- ESP32 C3 super mini (can easily support more)
+- ESP32 C3 super mini (any controller with Wifi and Serial will do, but an Espressif will require no or little code change)
 - (optional) 3D printer
 - CH9329 device (better than bitbang and more convenient to plug)
 
