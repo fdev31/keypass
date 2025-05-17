@@ -3,9 +3,9 @@
     <head>
       <title>ESP32 Captive Portal</title>
       <style>
-        body {background-color:#062c33;}
-        h1 {color: white;}
-        h2 {color: white;}
+body {background-color:#365c53;}
+h1 {color: white;}
+h2 {color: white;}
 
 button {
     margin-bottom: 1em;
@@ -16,12 +16,14 @@ button {
 .pass {
     background-color: #3094fa;
 }
+.shadowed {
+  box-shadow: rgba(0, 0, 0, 0.2) 0 1px 3px 0;
+}
 .button-5 {
   align-items: center;
   background-clip: padding-box;
   border: 1px solid transparent;
   border-radius: .25rem;
-  box-shadow: rgba(0, 0, 0, 0.2) 0 1px 3px 0;
   box-sizing: border-box;
   color: #fff;
   cursor: pointer;
@@ -48,11 +50,22 @@ button {
 .button-5:hover,
 .button-5:focus {
   background-color: #fbc302;
-  box-shadow: rgba(0, 0, 0, 0.1) 0 4px 12px;
+  box-shadow: rgba(0, 0, 0, 0.1) 0 4px 6px;
 }
 
 .button-5:hover {
   transform: translateY(-1px);
+}
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    background-color: #5a5b7c;
+    color: #dee;
+    border-radius: 10px;
+    font-family: system-ui,-apple-system,system-ui,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    margin: 1em;
+    padding: 1em;
 }
 
 .button-5:active {
@@ -64,14 +77,11 @@ button {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body style="display: flex; flex-direction: column; align-items: center;">
-    <div id="passList">
-    </div>
     <div style="display: flex; width: 100%;">
-
         <button
             id="edit-button"
             onclick="runAction('edit')"
-            class="button-5 action"
+            class="button-5 action shadowed"
             style="flex: 1; margin-right: 0.5em"
             role="button"
         >Edit</button>
@@ -79,7 +89,7 @@ button {
         <button
             id="add-button"
             onclick="runAction('add')"
-            class="button-5 action"
+            class="button-5 action shadowed"
             style="flex: 1; margin-right: 0.5em"
             role="button"
         >Add</button>
@@ -87,15 +97,79 @@ button {
         <button
             id="type-button"
             onclick="runAction('type')"
-            class="button-5 action"
+            class="button-5 action shadowed"
             style="flex: 1;"
             role="button"
         >Type</button>
     </div>
+    <div class="mainScreen" id="editForm" style="display: none">
+    <form class="form shadowed" id="editFormContent" method="get" action="/editPass" style="display: flex; flex-direction: column; gap: 1em;">
+      <label>Position:
+        <select name="id" id="positionSelect" required disabled>
+            <option value="0">1</option>
+            <option value="1">2</option>
+            <option value="2">3</option>
+            <option value="3">4</option>
+            <option value="4">5</option>
+            <option value="5">6</option>
+            <option value="6">7</option>
+            <option value="7">8</option>
+            <option value="8">9</option>
+            <option value="9">10</option>
+        </select>
+      </label>
+      <label>
+        Layout:
+        <select name="lang" id="layoutSelect" required>
+          <option value="fr">fr</option>
+          <option value="us">us</option>
+        </select>
+        <input type="hidden" name="layout" id="layoutIndex">
+      </label>
+      <label>
+        Name:
+        <input id="passLabel" type="text" name="name" required placeholder="Password Caption">
+      </label>
+      <label>
+        Password:
+        <input type="text" name="password">
+      </label>
+      <button type="submit">Submit</button>
+    </form>
+    <script>
+      const layoutSelect = document.getElementById('layoutSelect');
+      const layoutIndex = document.getElementById('layoutIndex');
+      layoutSelect.addEventListener('change', function() {
+        layoutIndex.value = layoutSelect.selectedIndex;
+      });
+      // Set initial index
+      layoutIndex.value = layoutSelect.selectedIndex;
+
+      document.getElementById('editFormContent').addEventListener('submit', function(e) {
+        document.getElementById("positionSelect").disabled = false;
+        e.preventDefault();
+        const formData = new FormData(this);
+        if ((formData.get('password') || '').match(/^\s*$/)) {
+          formData.delete('password');
+        }
+        formData.delete('lang');
+        const params = new URLSearchParams(formData).toString();
+        fetch('/editPass?' + params)
+          .then(response => response.text())
+          .finally(async (data) => {
+              await getPasswords();
+              runAction('type');
+          });
+      });
+
+    </script>
+    </div>
+    <div id="passList" class="mainScreen">
+    </div>
 </body>
 <script>
 const ui_data = {
-    mode: "standard",
+    mode: "type",
     current_focus : false,
     change_focus(elementId) {
         if(this.current_focus) {
@@ -109,6 +183,24 @@ const ui_data = {
         this.current_focus = elementId;
     }
 }
+
+function hideAll() {
+    Array.from(document.getElementsByClassName('mainScreen')).forEach((el) => {
+        el.style.display = 'none';
+    });
+}
+function showPasswords() {
+    hideAll();
+    document.getElementById('passList').style.display = 'block';
+}
+
+function showEditForm(uid) {
+    const el = document.getElementById('positionSelect');
+    el.value = uid;
+    el.disabled = true;
+    hideAll();
+    document.getElementById('editForm').style.display = 'block';
+}
 function switchMode(mode) {
     switch (mode) {
         case 'edit':
@@ -117,6 +209,9 @@ function switchMode(mode) {
         case 'type':
             ui_data.change_focus('type-button');
             break;
+        case 'add':
+            ui_data.change_focus('add-button');
+            break;
         default:
             console.error('Invalid mode');
     }
@@ -124,34 +219,63 @@ function switchMode(mode) {
 }
 
 function runAction(action) {
+    if (ui_data.mode == action) {
+        runAction("type");
+    }
+    document.getElementsByClassName('mainScreen')[0].style.display = 'none';
     switch(action) {
         case 'edit':
             switchMode('edit')
+            showPasswords();
             break;
         case 'type':
             switchMode('type')
+            showPasswords();
             break;
         case 'add':
-            showAddForm();
+            const uid = ui_data.passwords.length;
+            switchMode('add')
+            fillForm({name: ""})
+            showEditForm(uid);
             break;
         default:
             console.error('Invalid action');
     }
 }
 
-function genKeys(uid) {
-    fetch(`/typePass?id=${uid}`);
+function fillForm(data) {
+    if (data.layout != undefined)
+        document.getElementById('layoutSelect').selectedIndex = data.layout;
+    if (data.uid != undefined)
+        document.getElementById('positionSelect').value = data.uid;
+    if (data.name != undefined)
+        document.getElementById('passLabel').value = data.name;
+}
+
+function passwordClick(uid) {
+    switch (ui_data.mode) {
+        case 'edit':
+            fillForm({
+                uid: uid,
+                name: ui_data.passwords[uid].name,
+                layout: ui_data.passwords[uid].layout,
+            });
+            showEditForm(uid);
+            break;
+        default:
+            fetch(`/typePass?id=${uid}`);
+    }
 }
 async function getPasswords() {
     // call /list returning a JSON containing a "passwords" property
     const req = await fetch('/list');
     const passwords = await req.json();
-    console.log(passwords);
+    ui_data.passwords = passwords.passwords;
     // update #passList with the fresh content
     const passList = document.getElementById('passList');
     const domData = [];
     for (const pass of passwords.passwords) {
-        domData.push(`<button onclick="genKeys(${pass.uid})" class="button-5 pass" style="flex: 0.5" role="button">${pass.name}</button>`);
+        domData.push(`<button onclick="passwordClick(${pass.uid})" class="button-5 pass" style="flex: 0.5" role="button">${pass.name}</button>`);
     }
     passList.innerHTML = domData.join('');
 }
