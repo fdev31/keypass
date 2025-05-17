@@ -1,4 +1,3 @@
-#include <Arduino.h> //not needed in the arduino ide
 #include <EEPROM.h>
 #include <string.h>
 
@@ -110,16 +109,6 @@ void setUpWebserver(AsyncWebServer &server, const IPAddress &localIP) {
   server.on("/ncsi.txt", [](AsyncWebServerRequest *request) {
     request->redirect(localIPURL);
   }); // windows call home
-
-  // B Tier (uncommon)
-  //  server.on("/chrome-variations/seed",[](AsyncWebServerRequest
-  //  *request){request->send(200);}); //chrome captive portal call home
-  //  server.on("/service/update2/json",[](AsyncWebServerRequest
-  //  *request){request->send(200);}); //firefox?
-  //  server.on("/chat",[](AsyncWebServerRequest
-  //  *request){request->send(404);}); //No stop asking Whatsapp, there is no
-  //  internet connection server.on("/startpage",[](AsyncWebServerRequest
-  //  *request){request->redirect(localIPURL);});
 
   // return 404 to webpage icon
   server.on("/favicon.ico", [](AsyncWebServerRequest *request) {
