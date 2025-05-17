@@ -13,8 +13,8 @@
 const char *ssid =
     "KeyPass"; // FYI The SSID can't have a space in it.
                // const char * password = "12345678"; //At least 8 chars
-const char *password = NULL; // no password
-                             //
+const char *password = "12345678";
+// const char *password = NULL; // no password
 
 #define MAX_CLIENTS 4
 #define WIFI_CHANNEL 6
