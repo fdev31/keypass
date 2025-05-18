@@ -95,7 +95,8 @@ void setUpKeyboard(AsyncWebServer &server) {
       if (id >= 0 && id < MAX_PASSWORDS) {
         password = readPassword(id);
       } else {
-        id = 0; // Fallback to first slot if ID is invalid
+        request->send(400, "text/plain", "Invalid 'id' parameter");
+        return
       }
 
       // Check and update other optional parameters if present
