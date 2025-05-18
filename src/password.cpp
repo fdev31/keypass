@@ -8,7 +8,7 @@
 #include <time.h>
 #include <unistd.h>
 
-extern unsigned long startTime;
+extern unsigned long lastClientTime;
 
 // Function to generate a random character
 char getRandomChar() {
@@ -54,7 +54,7 @@ void setUpKeyboard(AsyncWebServer &server) {
 
   // Serve Basic HTML Page
   server.on("/", HTTP_ANY, [](AsyncWebServerRequest *request) {
-    startTime = millis(); // Reset the timer on each request
+    lastClientTime = millis(); // Reset the timer on each request
     AsyncWebServerResponse *response =
         request->beginResponse(200, "text/html", index_html);
     response->addHeader("Cache-Control", "public,max-age=1");
@@ -62,7 +62,7 @@ void setUpKeyboard(AsyncWebServer &server) {
   });
   // Handler for "/typePass"
   server.on("/typePass", HTTP_GET, [](AsyncWebServerRequest *request) {
-    startTime = millis(); // Reset the timer on each request
+    lastClientTime = millis(); // Reset the timer on each request
     if (request->hasParam("id")) {
       int id = request->getParam("id")->value().toInt();
 
@@ -84,7 +84,7 @@ void setUpKeyboard(AsyncWebServer &server) {
   });
 
   server.on("/editPass", HTTP_GET, [](AsyncWebServerRequest *request) {
-    startTime = millis(); // Reset the timer on each request
+    lastClientTime = millis(); // Reset the timer on each request
     if (request->hasParam("id")) {
       int id = request->getParam("id")->value().toInt();
 
@@ -122,7 +122,7 @@ void setUpKeyboard(AsyncWebServer &server) {
   });
   // Handler for "/list"
   server.on("/list", HTTP_GET, [](AsyncWebServerRequest *request) {
-    startTime = millis(); // Reset the timer on each request
+    lastClientTime = millis(); // Reset the timer on each request
     // Create a dynamic JSON string to hold the list of passwords
     String json = "{\"passwords\":[";
 
