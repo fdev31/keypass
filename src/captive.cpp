@@ -1,4 +1,6 @@
+#include "configuration.h"
 #include <EEPROM.h>
+#include <WiFi.h>
 #include <string.h>
 
 // Captive Portal
@@ -9,12 +11,6 @@
 
 // Pre reading on the fundamentals of captive portals
 // https://textslashplain.com/2022/06/24/captive-portals/
-
-const char *ssid =
-    "KeyPass"; // FYI The SSID can't have a space in it.
-               // const char * password = "12345678"; //At least 8 chars
-const char *password = "12345678";
-// const char *password = NULL; // no password
 
 #define MAX_CLIENTS 4
 #define WIFI_CHANNEL 6
