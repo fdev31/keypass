@@ -116,7 +116,7 @@ void setUpWebserver(AsyncWebServer &server, const IPAddress &localIP) {
     if (request->hasParam("newPass")) {
       const char *pass = request->getParam("newPass")->value().c_str();
       Preferences preferences;
-      preferences.begin("KeyPass");
+      preferences.begin("KeyPass", false);
       preferences.putString("wifi_password", pass);
       preferences.end();
     }
@@ -129,7 +129,7 @@ void setUpWebserver(AsyncWebServer &server, const IPAddress &localIP) {
 
 void captiveSetup() {
   Preferences preferences;
-  preferences.begin("KeyPass");
+  preferences.begin("KeyPass", true);
   String password =
       preferences.getString("wifi_password", DEFAULT_WIFI_PASSWORD);
   preferences.end();
