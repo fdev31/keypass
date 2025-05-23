@@ -83,7 +83,7 @@ void setUpKeyboard(AsyncWebServer &server) {
     }
   });
 
-  server.on("/editPass", HTTP_GET, [](AsyncWebServerRequest *request) {
+  server.on("/editPass", HTTP_GET, [&](AsyncWebServerRequest *request) {
     lastClientTime = millis(); // Reset the timer on each request
     if (request->hasParam("id")) {
       int id = request->getParam("id")->value().toInt();

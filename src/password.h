@@ -5,7 +5,7 @@
 //
 #include "hid.h"
 
-#define MAX_PASSWORDS 10
+#define MAX_PASSWORDS 100
 #define MAX_NAME_LEN 30
 #define MAX_PASS_LEN 40
 

@@ -1,4 +1,8 @@
 #include "captive.h"
+#include "configuration.h"
+#ifdef ENABLE_GRAPHICS
+#include "graphics.h"
+#endif
 #include "password.h"
 #include <Arduino.h>
 
@@ -9,17 +13,22 @@ unsigned long lastClientTime;
 void setup() {
   Serial.begin(baudRate);
   captiveSetup();
+#ifdef ENABLE_GRAPHICS
+  graphicsSetup();
+#endif
   setUpKeyboard(server);
   lastClientTime = millis();
 }
 
 void loop() {
   captiveLoop();
+#ifdef ENABLE_GRAPHICS
+  graphicsLoop();
+#endif
+  delay(100);
 
   // Check if it's time to go to deep sleep
   if (millis() - lastClientTime >= SHUTDOWN_TIMEOUT) {
     ESP.deepSleep(0); // Deep sleep indefinitely
   }
-
-  delay(200);
 }
