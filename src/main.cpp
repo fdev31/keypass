@@ -9,16 +9,16 @@
 #endif
 
 const int baudRate = 9600;
-const unsigned long SHUTDOWN_TIMEOUT = 5 * 60 * 1000; // 5 minutes in ms
 unsigned long lastClientTime;
 
 void setup() {
-  Serial.begin(baudRate);
-  captiveSetup();
 #ifdef ENABLE_GRAPHICS
   graphicsSetup();
 #endif
+  Serial.begin(baudRate);
+  captiveSetup();
   setUpKeyboard(server);
+  setUpPassword();
   lastClientTime = millis();
 }
 
@@ -31,6 +31,8 @@ void loop() {
 
   // Check if it's time to go to deep sleep
   if (millis() - lastClientTime >= SHUTDOWN_TIMEOUT) {
-    ESP.deepSleep(0); // Deep sleep indefinitely
+    Serial.flush(); // Make sure serial output is complete before sleep
+    shutdownGraphics();
+    esp_deep_sleep_start();
   }
 }

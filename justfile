@@ -1,4 +1,9 @@
+build:
+    ./genIndexPage.sh
+    pio run
+
 upload:
+    ./genIndexPage.sh
     pio run -t upload
 
 clean:

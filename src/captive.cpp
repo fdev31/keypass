@@ -111,6 +111,16 @@ void setUpWebserver(AsyncWebServer &server, const IPAddress &localIP) {
   server.on("/favicon.ico", [](AsyncWebServerRequest *request) {
     request->send(404);
   }); // webpage icon
+  //
+  server.on("/updateWifiPass", HTTP_GET, [&](AsyncWebServerRequest *request) {
+    if (request->hasParam("newPass")) {
+      const char *pass = request->getParam("newPass")->value().c_str();
+      Preferences preferences;
+      preferences.begin("KeyPass");
+      preferences.putString("wifi_password", pass);
+      preferences.end();
+    }
+  });
 
   // the catch all
   server.onNotFound(

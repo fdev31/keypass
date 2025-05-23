@@ -10,6 +10,9 @@
 
 extern unsigned long lastClientTime;
 
+extern char DEBUG_BUFFER[100];
+extern char DEBUG_BUFFER2[100];
+
 // Function to generate a random character
 char getRandomChar() {
   const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0"
@@ -45,13 +48,20 @@ Password readPassword(int id) {
 #else
   Preferences preferences;
   Password password;
-  preferences.begin(mkEntryName(id), true);
-  strlcpy(password.name, preferences.getString("name", "").c_str(),
-          MAX_NAME_LEN);
-  strlcpy(password.password, preferences.getString("password", "").c_str(),
-          MAX_PASS_LEN);
-  password.layout = preferences.getInt("layout", 0); // Default layout is 0
-  preferences.end();
+  const char *key = mkEntryName(id);
+  if (true) {
+    preferences.begin(key, true);
+    strlcpy(password.name, preferences.getString("name").c_str(), MAX_NAME_LEN);
+    strlcpy(password.password, preferences.getString("password").c_str(),
+            MAX_PASS_LEN);
+    password.layout = preferences.getInt("layout", -1);
+
+    preferences.end();
+  } else {
+    password.layout = -1;        // Mark as not initialized
+    password.name[0] = '\0';     // Mark as empty
+    password.password[0] = '\0'; // Mark as empty
+  }
   return password;
 #endif
 }
@@ -64,7 +74,7 @@ void writePassword(int id, const Password &password) {
   EEPROM.commit();
 #else
   Preferences preferences;
-  preferences.begin(mkEntryName(id), true);
+  preferences.begin(mkEntryName(id), false);
   preferences.putString("name", password.name);
   preferences.putString("password", password.password);
   preferences.putInt("layout", password.layout);
@@ -80,6 +90,7 @@ void setUpKeyboard(AsyncWebServer &server) {
 
   // Serve Basic HTML Page
   server.on("/", HTTP_ANY, [](AsyncWebServerRequest *request) {
+    strlcpy(DEBUG_BUFFER, "Welcome !", 99);
     lastClientTime = millis(); // Reset the timer on each request
     AsyncWebServerResponse *response =
         request->beginResponse(200, "text/html", index_html);
@@ -88,7 +99,8 @@ void setUpKeyboard(AsyncWebServer &server) {
   });
   // Handler for "/typePass"
   server.on("/typePass", HTTP_GET, [](AsyncWebServerRequest *request) {
-    lastClientTime = millis(); // Reset the timer on each request
+    strlcpy(DEBUG_BUFFER, "Shazzaam", 99);
+    millis(); // Reset the timer on each request
     if (request->hasParam("id")) {
       int id = request->getParam("id")->value().toInt();
 
@@ -110,6 +122,7 @@ void setUpKeyboard(AsyncWebServer &server) {
   });
 
   server.on("/editPass", HTTP_GET, [&](AsyncWebServerRequest *request) {
+    strlcpy(DEBUG_BUFFER, "Edited", 99);
     lastClientTime = millis(); // Reset the timer on each request
     if (request->hasParam("id")) {
       int id = request->getParam("id")->value().toInt();
@@ -155,21 +168,26 @@ void setUpKeyboard(AsyncWebServer &server) {
 
     // Loop through password ids and add existing passwords to the JSON
     bool firstItem = true;
-    for (int id = 0; id < MAX_PASSWORDS;
-         id++) { // Assuming max 10 passwords for now
+    for (int id = 0; id < MAX_PASSWORDS; id++) {
       Password pwd = readPassword(id);
-      // Only include passwords that have been set (non-empty name)
-      if (pwd.name[0] != '\0') {
-        if (!firstItem) {
-          json += ",";
-        }
-        json += "{\"name\":\"" + String(pwd.name) + "\",\"uid\":" + String(id) +
-                ",\"layout\":" + String(pwd.layout) + "}";
-        firstItem = false;
+      if (pwd.name[0] == '\0')
+        break;
+
+      if (!firstItem) {
+        json += ",";
       }
+      json += "{\"name\":\"" + String(pwd.name) + "\",\"uid\":" + String(id) +
+              ",\"layout\":" + String(pwd.layout) + "}";
+      firstItem = false;
     }
 
     json += "]}";
     request->send(200, "application/json", json);
   });
+}
+
+void setUpPassword() {
+  Preferences prefs;
+  size_t entries_left = prefs.freeEntries();
+  strlcpy(DEBUG_BUFFER2, (String(entries_left) + String(" left.")).c_str(), 99);
 }

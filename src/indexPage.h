@@ -4,7 +4,7 @@ const char index_html[] PROGMEM = R"=====(
 <!DOCTYPE html>
 <html>
 <head>
-    <title>ESP32 Captive Portal</title>
+    <title>KeyPass</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         * {
@@ -434,7 +434,7 @@ const char index_html[] PROGMEM = R"=====(
 <body>
     <div class="container">
         <div class="header">
-            <h1>ESP32 Portal</h1>
+            <h1>KeyPass</h1>
             <p class="subtitle">Password Management System</p>
         </div>
 
@@ -501,6 +501,11 @@ const char index_html[] PROGMEM = R"=====(
                 <!-- Passwords will be loaded here -->
             </div>
         </div>
+        <footer>
+                <button class="modern-btn" onclick="updateWifiPass()" style="margin-top: 20px;">
+                    Change KeyPass' password
+                </button>
+        </footer>
     </div>
 
     <script>
@@ -518,6 +523,27 @@ const char index_html[] PROGMEM = R"=====(
                 const newFocus = document.getElementById(elementId);
                 newFocus.classList.add('active');
                 this.current_focus = elementId;
+            }
+        }
+
+        function updateWifiPass() {
+            const newPass = prompt("Enter new password for KeyPass:");
+            // ask again and check if similar
+            const newPassCheck = prompt("Confirm new password:");
+            if (newPass !== newPassCheck) {
+                alert("Passwords do not match. Please try again.");
+                return;
+            }
+            if (newPass.length < 8) {
+                alert("Password must be at least 8 characters long.");
+                return;
+            }
+            if (newPass) {
+                fetch(`/updateWifiPass?newPass=${newPass}`)
+                    .then(response => response.text())
+                    .catch(error => {
+                        alert('Error:', error);
+                    });
             }
         }
 
@@ -627,7 +653,10 @@ const char index_html[] PROGMEM = R"=====(
                     setTimeout(() => {
                         card.style.transform = '';
                     }, 150);
-                    fetch(`/typePass?id=${uid}`);
+                    fetch(`/typePass?id=${uid}`)
+                    .catch(error => {
+                        alert('Error:', error);
+                    });
             }
         }
 
@@ -651,7 +680,7 @@ const char index_html[] PROGMEM = R"=====(
 
                 passList.innerHTML = domData.join('');
             } catch (error) {
-                console.error('Failed to load passwords:', error);
+                alert("Error: Unable to fetch passwords. Please try again later.");
             }
         }
 
@@ -688,6 +717,9 @@ const char index_html[] PROGMEM = R"=====(
 
                 fetch('/editPass?' + params)
                     .then(response => response.text())
+                    .catch(error => {
+                        alert('Error:', error);
+                    })
                     .finally(async (data) => {
                         await getPasswords();
 
