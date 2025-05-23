@@ -8,14 +8,15 @@
 #include "graphics.h"
 #endif
 
-const int baudRate = 9600;
 unsigned long lastClientTime;
 
 void setup() {
 #ifdef ENABLE_GRAPHICS
   graphicsSetup();
 #endif
-  Serial.begin(baudRate);
+#if USE_CH9329
+  Serial.begin(9600);
+#endif
   captiveSetup();
   setUpKeyboard(server);
   setUpPassword();
@@ -27,7 +28,7 @@ void loop() {
 #ifdef ENABLE_GRAPHICS
   graphicsLoop();
 #endif
-  delay(100);
+  delay(50);
 
   // Check if it's time to go to deep sleep
   if (millis() - lastClientTime >= SHUTDOWN_TIMEOUT) {

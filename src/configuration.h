@@ -10,4 +10,5 @@ const unsigned long SHUTDOWN_TIMEOUT = 2 * 60 * 1000; // minutes in ms
 #define ENABLE_GRAPHICS
 
 #define USE_EEPROM_EMULATION 0
+#define USE_CH9329 0
 #endif

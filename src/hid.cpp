@@ -1,7 +1,12 @@
+#include "configuration.h"
 #include "keymap.h"
 #include <Arduino.h>
 #include <stdint.h>
 #include <string.h>
+
+#if USE_CH9329 == 0
+#include "hidkeyboard.h"
+#endif
 
 const uint8_t HEADER[] = {0x57, 0xAB, 0x00};
 
@@ -24,9 +29,14 @@ void genKey(uint8_t key, uint8_t modifiers) {
   uint8_t rel[] = {0x02, 0x08, modifiers, 0x00, 0x00,
                    0x00, 0x00, 0x00,      0x00, 0x00};
 
+#if USE_CH9329
   sendHID(press, sizeof(press));
   delay(20);
   sendHID(rel, sizeof(rel));
+#else
+  HIDkeyboard dev;
+  dev.sendKey(key, modifiers);
+#endif
 }
 
 void sendKey(char c) { genKey(KBD_MAP[0][(int)c][0], KBD_MAP[0][(int)c][1]); }
