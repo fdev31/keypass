@@ -4,8 +4,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#if USE_CH9329 == 0
+#if not USE_CH9329
 #include "hidkeyboard.h"
+HIDkeyboard dev;
 #endif
 
 const uint8_t HEADER[] = {0x57, 0xAB, 0x00};
@@ -24,17 +25,15 @@ void sendHID(uint8_t values[], int length) {
 }
 
 void genKey(uint8_t key, uint8_t modifiers) {
+#if USE_CH9329
   uint8_t press[] = {0x02, 0x08, modifiers, 0x00, key,
                      0x00, 0x00, 0x00,      0x00, 0x00};
   uint8_t rel[] = {0x02, 0x08, modifiers, 0x00, 0x00,
                    0x00, 0x00, 0x00,      0x00, 0x00};
-
-#if USE_CH9329
   sendHID(press, sizeof(press));
   delay(20);
   sendHID(rel, sizeof(rel));
 #else
-  HIDkeyboard dev;
   dev.sendKey(key, modifiers);
 #endif
 }
