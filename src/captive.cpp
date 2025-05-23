@@ -1,5 +1,5 @@
 #include "configuration.h"
-#include <EEPROM.h>
+#include <Preferences.h>
 #include <WiFi.h>
 #include <string.h>
 
@@ -27,14 +27,15 @@ const String localIPURL = "http://4.3.2.1";
 DNSServer dnsServer;
 AsyncWebServer server(80);
 
-void setUpDNSServer(DNSServer &dnsServer, const IPAddress &localIP) {
+void setUpDNSServer(const char *ssid, const char *password,
+                    DNSServer &dnsServer, const IPAddress &localIP) {
 
   // Set the TTL for DNS response and start the DNS server
   dnsServer.setTTL(3600);
   dnsServer.start(53, "*", localIP);
 }
 
-void startSoftAccessPoint(const char *ssid, const char *password,
+void startSoftAccessPoint(const char *wifi_ssid, const char *wifi_password,
                           const IPAddress &localIP,
                           const IPAddress &gatewayIP) {
   // Define the maximum number of clients that can connect to the server
@@ -53,7 +54,7 @@ void startSoftAccessPoint(const char *ssid, const char *password,
 
   // Start the soft access point with the given ssid, password, channel, max
   // number of clients
-  WiFi.softAP(WIFI_SSID, WIFI_PASSWORD, WIFI_CHANNEL, 0, MAX_CLIENTS);
+  WiFi.softAP(wifi_ssid, wifi_password, WIFI_CHANNEL, 0, MAX_CLIENTS);
 
   // Disable AMPDU RX on the ESP32 WiFi to fix a bug on Android
   esp_wifi_stop();
@@ -117,8 +118,13 @@ void setUpWebserver(AsyncWebServer &server, const IPAddress &localIP) {
 };
 
 void captiveSetup() {
-  startSoftAccessPoint(WIFI_SSID, WIFI_PASSWORD, localIP, gatewayIP);
-  setUpDNSServer(dnsServer, localIP);
+  Preferences preferences;
+  preferences.begin("KeyPass");
+  String password =
+      preferences.getString("wifi_password", DEFAULT_WIFI_PASSWORD);
+  preferences.end();
+  startSoftAccessPoint(DEFAULT_WIFI_SSID, password.c_str(), localIP, gatewayIP);
+  setUpDNSServer(DEFAULT_WIFI_SSID, password.c_str(), dnsServer, localIP);
   setUpWebserver(server, localIP);
   server.begin();
 }

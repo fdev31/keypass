@@ -1,5 +1,5 @@
 #include "password.h"
-#include "EEPROM.h"
+#include "Preferences.h"
 #include "indexPage.h"
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
@@ -26,8 +26,14 @@ void generatePassword(char *password, int length) {
   password[length] = '\0'; // Null-terminate the string
 }
 
-// Function to read a password from EEPROM
+const char *mkEntryName(int num) {
+  static char buffer[16]; // Static buffer to hold the result
+  snprintf(buffer, sizeof(buffer), "p%d", num);
+  return buffer;
+}
+
 Password readPassword(int id) {
+#if USE_EEPROM_EMULATION
   Password password;
   int address = id * sizeof(Password);
   EEPROM.get(address, password);
@@ -36,21 +42,41 @@ Password readPassword(int id) {
     password.name[0] = '\0';      // Mark as empty
   }
   return password;
+#else
+  Preferences preferences;
+  Password password;
+  preferences.begin(mkEntryName(id), true);
+  strlcpy(password.name, preferences.getString("name", "").c_str(),
+          MAX_NAME_LEN);
+  strlcpy(password.password, preferences.getString("password", "").c_str(),
+          MAX_PASS_LEN);
+  password.layout = preferences.getInt("layout", 0); // Default layout is 0
+  preferences.end();
+  return password;
+#endif
 }
 
 // Function to write a password to EEPROM
 void writePassword(int id, const Password &password) {
+#if USE_EEPROM_EMULATION
   int address = id * sizeof(Password);
   EEPROM.put(address, password);
   EEPROM.commit();
+#else
+  Preferences preferences;
+  preferences.begin(mkEntryName(id), true);
+  preferences.putString("name", password.name);
+  preferences.putString("password", password.password);
+  preferences.putInt("layout", password.layout);
+  preferences.end();
+#endif
 }
 
 void setUpKeyboard(AsyncWebServer &server) {
 
+#if USE_EEPROM_EMULATION
   EEPROM.begin(sizeof(Password) * MAX_PASSWORDS);
-  // Write a basic password as the first one to ensure valid data
-  // Password password = { "Default", 0, "DefaultPassword" };
-  // EEPROM.put(0, password);
+#endif
 
   // Serve Basic HTML Page
   server.on("/", HTTP_ANY, [](AsyncWebServerRequest *request) {
