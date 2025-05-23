@@ -96,7 +96,7 @@ void setUpKeyboard(AsyncWebServer &server) {
         password = readPassword(id);
       } else {
         request->send(400, "text/plain", "Invalid 'id' parameter");
-        return
+        return;
       }
 
       // Check and update other optional parameters if present
