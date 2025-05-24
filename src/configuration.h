@@ -8,7 +8,7 @@ const unsigned long SHUTDOWN_TIMEOUT = 2 * 60 * 1000; // minutes in ms
 #define DEFAULT_WIFI_PASSWORD "12345678" // set to NULL for no password
 
 #define ENABLE_GRAPHICS true
-#define USE_EEPROM_EMULATION 0
+#define USE_EEPROM_API 0
 #define USE_CH9329 1
 #define FLIP_SCREEN 1
 #endif

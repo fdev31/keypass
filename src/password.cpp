@@ -30,7 +30,7 @@ const char *mkEntryName(int num) {
 }
 
 Password readPassword(int id) {
-#if USE_EEPROM_EMULATION
+#if USE_EEPROM_API
   Password password;
   int address = id * sizeof(Password);
   EEPROM.get(address, password);
@@ -62,7 +62,7 @@ Password readPassword(int id) {
 
 // Function to write a password to EEPROM
 void writePassword(int id, const Password &password) {
-#if USE_EEPROM_EMULATION
+#if USE_EEPROM_API
   int address = id * sizeof(Password);
   EEPROM.put(address, password);
   EEPROM.commit();
@@ -200,7 +200,7 @@ void handleList(AsyncWebServerRequest *request) {
 
 void setUpKeyboard(AsyncWebServer &server) {
 
-#if USE_EEPROM_EMULATION
+#if USE_EEPROM_API
   EEPROM.begin(sizeof(Password) * MAX_PASSWORDS);
 #endif
 
