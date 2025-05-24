@@ -1,3 +1,5 @@
+#include "configuration.h"
+
 #include "graphics.h"
 
 #include <Arduino.h>
@@ -23,7 +25,11 @@ void u8g2_prepare(void) {
   u8g2.setFontRefHeightExtendedText();
   u8g2.setDrawColor(1);
   u8g2.setFontPosTop();
+#if FLIP_SCREEN
+  u8g2.setFontDirection(2);
+#else
   u8g2.setFontDirection(0);
+#endif
 }
 
 void u8g2_box_frame(uint8_t a) {
@@ -272,8 +278,13 @@ if (n > WIDTH && int(n / WIDTH) % 2) {
   u8g2.drawBox(0, 20, 72, 10);
   u8g2.setDrawColor(0);
 */
+#if FLIP_SCREEN
+  u8g2.drawStr(WIDTH, HEIGHT, DEBUG_BUFFER);
+  u8g2.drawStr(WIDTH, HEIGHT / 2, DEBUG_BUFFER2);
+#else
   u8g2.drawStr(0, 0, DEBUG_BUFFER);
   u8g2.drawStr(5, 20, DEBUG_BUFFER2);
+#endif
   //  u8g2.drawStr(0, 3, "12345678910ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   u8g2.sendBuffer();
 
