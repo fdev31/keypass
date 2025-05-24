@@ -485,30 +485,27 @@
       <div class="mainScreen hidden" id="editForm">
         <div class="glass-panel">
           <form id="editFormContent" method="get" action="/editPass">
-            <div class="form-group">
-              <label for="positionSelect">Position</label>
-              <input type="text" id="positionSelect" disabled>
-            </div>
+              <input type="hidden" name="id" id="positionSelect" disabled>
 
             <div class="form-group">
               <label for="layoutSelect">Layout</label>
-              <select id="layoutSelect" required>
+              <select name="lang" id="layoutSelect" required>
                 <option value="fr">French</option>
                 <option value="us">US</option>
               </select>
-              <input type="hidden" id="layoutIndex">
+              <input type="hidden" name="layout" id="layoutIndex">
             </div>
 
             <div class="form-group">
               <label for="passLabel">Name</label>
-              <input id="passLabel" type="text" required placeholder="Enter password name (15 characters max)" maxlength="15">
+              <input id="passLabel" name="name" type="text" required placeholder="Enter password name (15 characters max)" maxlength="15">
             </div>
 
             <div class="form-group">
 
               <label for="passwordInput">Password</label>
               <div style="display: flex; gap: 10px;">
-                <input id="passwordInput" type="password" placeholder="Enter password...">
+                <input id="passwordInput" type="password" name="password" placeholder="Enter password...">
                 <button type="button" onclick="generatePass()" class="modern-btn" style="width: 50px; flex: 0 0 auto; padding: 0;"><div class="icon"><div class="icon-die"></div></div></button>
 
               </div>

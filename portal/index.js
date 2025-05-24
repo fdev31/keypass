@@ -210,8 +210,20 @@ async function getPasswords() {
 }
 
 function toggleVisibility() {
-  const password = document.getElementById("passwordInput");
-  password.type = password.type === "password" ? "text" : "password";
+  const passwordInput = document.getElementById("passwordInput");
+  const dieButton =
+    document.querySelector(".icon-die").parentElement.parentElement;
+
+  // Toggle password visibility
+  passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+
+  // Add wiggle class
+  dieButton.classList.add("wiggle-dots");
+
+  // Remove wiggle class after animation completes
+  setTimeout(() => {
+    dieButton.classList.remove("wiggle-dots");
+  }, 500);
 }
 
 // Enhanced form submission with loading states
