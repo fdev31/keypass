@@ -1,6 +1,8 @@
-#include "password.h"
+#include "configuration.h"
+
 #include "Preferences.h"
 #include "indexPage.h"
+#include "password.h"
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
 #include <stdio.h>
