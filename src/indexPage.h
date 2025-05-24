@@ -455,7 +455,7 @@ const char index_html[] PROGMEM = R"=====(
                 <form id="editFormContent" method="get" action="/editPass">
                     <div class="form-group">
                         <label for="positionSelect">Position</label>
-                        <input type="text" ame="id" id="positionSelect" disabled>
+                        <input type="text" name="id" id="positionSelect" disabled>
                     </div>
 
                     <div class="form-group">
