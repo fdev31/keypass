@@ -7,22 +7,23 @@
 #if not USE_CH9329
 #include "hidkeyboard.h"
 HIDkeyboard dev;
-#endif
-
+#else
 const uint8_t HEADER[] = {0x57, 0xAB, 0x00};
 
 void sendHID(uint8_t values[], int length) {
   uint8_t packet[length + 1];
+  uint8_t packet_sz = length + sizeof(HEADER);
   memcpy(packet, HEADER, sizeof(HEADER));
   memcpy(packet + sizeof(HEADER), values, length);
-  packet[length + sizeof(HEADER)] = 0;
+  packet[packet_sz] = 0;
 
-  for (int i = 0; i < length + sizeof(HEADER); i++) {
-    packet[length + sizeof(HEADER)] += packet[i];
+  for (int i = 0; i < packet_sz; i++) {
+    packet[packet_sz] += packet[i];
   }
 
-  Serial.write(packet, length + sizeof(HEADER) + 1);
+  Serial.write(packet, packet_sz + 1);
 }
+#endif
 
 void genKey(uint8_t key, uint8_t modifiers) {
 #if USE_CH9329

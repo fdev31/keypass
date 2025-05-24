@@ -13,21 +13,7 @@ extern unsigned long lastClientTime;
 extern char DEBUG_BUFFER[100];
 extern char DEBUG_BUFFER2[100];
 
-// Function to generate a random character
-char getRandomChar() {
-  const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0"
-                         "123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
-  const size_t charsetSize = sizeof(charset) - 1;
-  return charset[rand() % charsetSize];
-}
-
-// Function to generate a random password of given length
-void generatePassword(char *password, int length) {
-  for (int i = 0; i < length; ++i) {
-    password[i] = getRandomChar();
-  }
-  password[length] = '\0'; // Null-terminate the string
-}
+void handleTypeRaw(AsyncWebServerRequest *request);
 
 const char *mkEntryName(int num) {
   static char buffer[16]; // Static buffer to hold the result
@@ -97,7 +83,10 @@ void setUpKeyboard(AsyncWebServer &server) {
     response->addHeader("Cache-Control", "public,max-age=1");
     request->send(response);
   });
-  // Handler for "/typePass"
+
+  // Then in your setup code:
+  server.on("/typeRaw", HTTP_GET, handleTypeRaw);
+
   server.on("/typePass", HTTP_GET, [](AsyncWebServerRequest *request) {
     strlcpy(DEBUG_BUFFER, "Shazzaam", 99);
     millis(); // Reset the timer on each request
@@ -190,4 +179,22 @@ void setUpPassword() {
   Preferences prefs;
   size_t entries_left = prefs.freeEntries();
   strlcpy(DEBUG_BUFFER2, (String(entries_left) + String(" left.")).c_str(), 99);
+}
+
+void handleTypeRaw(AsyncWebServerRequest *request) {
+  if (request->hasParam("text")) {
+    const char *text = request->getParam("text")->value().c_str();
+    int layout = 0; // Default layout
+    if (request->hasParam("layout")) {
+      layout = request->getParam("layout")->value().toInt();
+    }
+
+    while (*text) {
+      sendKeymap(*text++, layout);
+    }
+    sendKey('\n');
+    request->send(200, "text/plain", "OK");
+  } else {
+    request->send(400, "text/plain", "Missing 'text' parameter");
+  }
 }

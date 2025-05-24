@@ -1,3 +1,4 @@
+#!/bin/env python
 # HTTP Service
 # run using:
 # uvicorn thismodule:app --host 0.0.0.0 --reload --port 5000 --log-level=debug
@@ -41,6 +42,11 @@ async def index():
 @app.get("/typePass")
 async def typePass(id: int):
     print(passwords[id])
+
+
+@app.get("/typeRaw")
+async def typeRaw(text: str, layout: int):
+    print(text)
 
 
 @app.get("/editPass")
