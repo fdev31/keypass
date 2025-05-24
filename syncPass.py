@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import subprocess
 import urllib.parse
 import json
@@ -18,6 +19,9 @@ def get_password_from_gopass(path):
             ["gopass", "show", path], capture_output=True, text=True, check=True
         )
         lines = result.stdout.strip().split("\n")
+        # remove lines starting with a "[a-z]+: " prefix
+        regex = re.compile(r"^\w+: ")
+        lines = list(filter(lambda x: not regex.match(x), lines))
         return lines[-1]
     except subprocess.CalledProcessError as e:
         logging.error(f"Failed to retrieve password for {path}: {e}")
@@ -26,7 +30,12 @@ def get_password_from_gopass(path):
 
 def export_passwords(mapping, base_url="http://foobar.com/editPass"):
     """Export passwords to the specified URL"""
-    for i, (name, path) in enumerate(mapping.items()):
+    for i, (name, data) in enumerate(mapping.items()):
+        if len(data) == 1:
+            path = data
+            layout = 0
+        else:
+            (path, layout) = data
         if path.startswith("gopass:"):
             password = get_password_from_gopass(path.split(":", 1)[1])
         else:
@@ -34,9 +43,7 @@ def export_passwords(mapping, base_url="http://foobar.com/editPass"):
         if password:
             # Properly escape the password for URL usage
             escaped_password = urllib.parse.quote(password)
-            url = f"{base_url}?id={i}&name={urllib.parse.quote(name)}&password={escaped_password}"
-            print(url)
-
+            url = f"{base_url}?id={i}&name={urllib.parse.quote(name)}&password={escaped_password}&layout={layout}"
             logging.info(f"Exporting password for {name}")
             try:
                 response = requests.get(url)
