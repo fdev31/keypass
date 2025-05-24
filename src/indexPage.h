@@ -454,16 +454,6 @@ top: 4px;
 left: 4px;
 content: "";
 }
-.icon-die:after {
-background-color: #000;
-width: 7px;
-height: 7px;
-border-radius: 50%;
-position: absolute;
-top: 13px;
-left: 13px;
-content: "";
-}
 </style>
 </head>
 <body>
@@ -756,8 +746,20 @@ async function getPasswords() {
 }
 
 function toggleVisibility() {
-  const password = document.getElementById("passwordInput");
-  password.type = password.type === "password" ? "text" : "password";
+  const passwordInput = document.getElementById("passwordInput");
+  const dieButton =
+    document.querySelector(".icon-die").parentElement.parentElement;
+
+  // Toggle password visibility
+  passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+
+  // Add wiggle class
+  dieButton.classList.add("wiggle-dots");
+
+  // Remove wiggle class after animation completes
+  setTimeout(() => {
+    dieButton.classList.remove("wiggle-dots");
+  }, 500);
 }
 
 // Enhanced form submission with loading states
@@ -816,6 +818,7 @@ window.onload = async () => {
 </script>
 </body>
 </html>
-<!-- vim:ts=2:sw:2:et-->
+<!-- vim:ts=2:sw=2:et:
+-->
 )=====";
 #endif
