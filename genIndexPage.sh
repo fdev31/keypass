@@ -1,18 +1,21 @@
 #!/bin/sh
-sed -f - portal/index.html > index.html << EOF
+OUT="src/indexPage.h"
+TEST_INDEX="index.html"
+SOURCE_HTML="portal/index.html"
+SOURCE_JS="portal/index.js"
+sed -f - "$SOURCE_HTML" > ${TEST_INDEX} << EOF
 /<!-- CODE HERE -->/ {
- r portal/index.js
+ r ${SOURCE_JS}
  d
 }
 s/^ *//g
 EOF
-OUT="src/indexPage.h"
 cat <<EOF > $OUT
 #ifndef _INDEXPAGE_H
 #define _INDEXPAGE_H
 const static char index_html[] PROGMEM = R"=====(
 EOF
-cat index.html >> $OUT
+cat ${TEST_INDEX} >> $OUT
 cat <<EOF >> $OUT
 )=====";
 #endif
