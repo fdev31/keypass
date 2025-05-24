@@ -8,7 +8,7 @@
 #include "hidkeyboard.h"
 HIDkeyboard dev;
 #else
-const uint8_t HEADER[] = {0x57, 0xAB, 0x00};
+static const uint8_t HEADER[] = {0x57, 0xAB, 0x00};
 
 void sendHID(uint8_t values[], int length) {
   uint8_t packet[length + 1];

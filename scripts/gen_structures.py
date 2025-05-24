@@ -23,7 +23,7 @@ last_keymap = keymaps[-1]
 print("#ifndef __CUSTOM_KEYMAP")
 print("#define __CUSTOM_KEYMAP")
 print("#include <stdint.h>")
-print("uint8_t KBD_MAP[][255][2] = {")
+print("static uint8_t KBD_MAP[][255][2] = {")
 for km in keymaps:
     print("{")
     for n in range(0, 255):

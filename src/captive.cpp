@@ -12,14 +12,15 @@
 // Pre reading on the fundamentals of captive portals
 // https://textslashplain.com/2022/06/24/captive-portals/
 
-const IPAddress localIP(4, 3, 2, 1); // the IP address the web server, Samsung
-                                     // requires the IP to be in public space
-const IPAddress gatewayIP(4, 3, 2,
-                          1); // IP address of the network should be the same
-                              // as the local IP for captive portals
-const IPAddress subnetMask(255, 255, 255, 0);
+static const IPAddress localIP(4, 3, 2,
+                               1); // the IP address the web server, Samsung
+                                   // requires the IP to be in public space
+static const IPAddress gatewayIP(4, 3, 2,
+                                 1); // IP address of the network should be the
+                                     // same as the local IP for captive portals
+static const IPAddress subnetMask(255, 255, 255, 0);
 
-const String localIPURL = "http://4.3.2.1";
+static const String localIPURL = "http://4.3.2.1";
 
 DNSServer dnsServer;
 AsyncWebServer server(80);
