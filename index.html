@@ -425,6 +425,41 @@ animation: spin 1s ease-in-out infinite;
 @keyframes spin {
 to { transform: rotate(360deg); }
 }
+.icon {
+position: relative;
+width:16px;
+height:16px;
+margin: 16px;
+}
+.icon-die {
+background-color: #000;
+border-radius:3px;
+width: 16px;
+height: 16px;
+position: relative;
+top:0;
+left:0;
+}
+.icon-die:before{
+background-color: #fff;
+width: 5px;
+height: 5px;
+border-radius: 10px;
+position: absolute;
+top: 3px;
+left: 3px;
+content: "";
+}
+.icon-die:after {
+background-color: #fff;
+width: 5px;
+height: 5px;
+border-radius: 10px;
+position: absolute;
+top: 8px;
+left: 8px;
+content: "";
+}
 </style>
 </head>
 <body>
@@ -472,7 +507,8 @@ Type
 <label for="passwordInput">Password</label>
 <div style="display: flex; gap: 10px;">
 <input id="passwordInput" type="password" name="password" placeholder="Enter password..." maxlength="15">
-<button type="button" onclick="generatePass()" class="modern-btn" style="width: auto; flex: 0 0 auto;">&#128397;</button>
+<button type="button" onclick="generatePass()" class="modern-btn" style="width: auto; flex: 0 0 auto;"><div class="icon icon-die">
+</button>
 </div>
 <div style="display: flex; gap: 10px; margin-top: 10px;">
 
