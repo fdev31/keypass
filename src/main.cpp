@@ -32,7 +32,9 @@ void loop() {
   // Check if it's time to go to deep sleep
   if (millis() - lastClientTime >= SHUTDOWN_TIMEOUT) {
     Serial.flush(); // Make sure serial output is complete before sleep
+#ifdef ENABLE_GRAPHICS
     shutdownGraphics();
+#endif
     esp_deep_sleep_start();
   }
 }
