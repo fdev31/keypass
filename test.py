@@ -78,7 +78,7 @@ async def listPasswords():
     for i, p in enumerate(passwords):
         p["uid"] = i
 
-    return {"passwords": passwords}
+    return {"passwords": passwords, "free": 9999}
 
 
 if __name__ == "__main__":

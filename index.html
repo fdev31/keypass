@@ -432,7 +432,7 @@
     <div class="container">
         <div class="header">
             <h1>KeyPass</h1>
-            <p class="subtitle">Password Management System</p>
+            <p id="subtitle" class="subtitle">Password Management System</p>
         </div>
 
         <div class="button-row">
@@ -559,6 +559,7 @@
 
         function updateWifiPass() {
             const newPass = prompt("Enter new password for KeyPass:");
+            if (!newPass) return;
             // ask again and check if similar
             const newPassCheck = prompt("Confirm new password:");
             if (newPass !== newPassCheck) {
@@ -569,13 +570,11 @@
                 alert("Password must be at least 8 characters long.");
                 return;
             }
-            if (newPass) {
-                fetch(`/updateWifiPass?newPass=${newPass}`)
-                    .then(response => response.text())
-                    .catch(error => {
-                        alert('Error:', error);
-                    });
-            }
+            fetch(`/updateWifiPass?newPass=${newPass}`)
+                .then(response => response.text())
+                .catch(error => {
+                    alert('Error:', error);
+                });
         }
 
         function hideAll() {
@@ -706,6 +705,9 @@
                 const req = await fetch('/list');
                 const passwords = await req.json();
                 ui_data.passwords = passwords.passwords;
+                const count = passwords.passwords.length;
+                const total = passwords.free + count;
+                document.getElementById('subtitle').innerText = `Stored ${count} over ${total}`;
 
                 const passList = document.querySelector('#passList .password-grid');
                 const domData = [];
@@ -721,7 +723,7 @@
 
                 passList.innerHTML = domData.join('');
             } catch (error) {
-                alert("Error: Unable to fetch passwords. Please try again later.");
+                alert("Error: Unable to fetch passwords. Please try again later." + error);
             }
         }
 

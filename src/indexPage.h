@@ -435,17 +435,17 @@ const char index_html[] PROGMEM = R"=====(
     <div class="container">
         <div class="header">
             <h1>KeyPass</h1>
-            <p class="subtitle">Password Management System</p>
+            <p id="subtitle" class="subtitle">Password Management System</p>
         </div>
 
         <div class="button-row">
-            <button id="edit-button" onclick="runAction('edit')" class="modern-btn" role="button">
+            <button id="edit-button" onclick="setMode('edit')" class="modern-btn" role="button">
                 Edit
             </button>
-            <button id="add-button" onclick="runAction('add')" class="modern-btn" role="button">
+            <button id="add-button" onclick="setMode('add')" class="modern-btn" role="button">
                 Add
             </button>
-            <button id="type-button" onclick="runAction('type')" class="modern-btn active" role="button">
+            <button id="type-button" onclick="setMode('type')" class="modern-btn active" role="button">
                 Type
             </button>
         </div>
@@ -483,10 +483,18 @@ const char index_html[] PROGMEM = R"=====(
                         <input id="passLabel" type="text" name="name" required placeholder="Enter password name...">
                     </div>
 
-                    <div class="form-group">
-                        <label for="passwordInput">Password</label>
-                        <input id="passwordInput" type="text" name="password" placeholder="Enter password...">
-                    </div>
+                        <div class="form-group">
+                            <label for="passwordInput">Password</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input id="passwordInput" type="password" name="password" placeholder="Enter password...">
+                                <button type="button" onclick="generatePass()" class="modern-btn" style="width: auto; flex: 0 0 auto;">&#128397;</button>
+                            </div>
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+
+                                <button id="typeOldPassBtn" type="button" onclick="typeOldPass()" class="modern-btn hidden" style="width: auto; flex: auto;">Type old pass</button>
+                                <button id="typeNewPassBtn" type="button" onclick="typeNewPass()" class="modern-btn hidden" style="width: auto; flex: auto;">Type new pass</button>
+                            </div>
+                        </div>
 
                     <button type="submit" class="submit-btn">
                         <span class="btn-text">Save Password</span>
@@ -526,8 +534,35 @@ const char index_html[] PROGMEM = R"=====(
             }
         }
 
+        function getRandomChar() {
+          const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0" +
+                         "123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
+          const charsetSize = charset.length;
+          return charset[Math.floor(Math.random() * charsetSize)];
+        }
+
+        // Function to generate a random password of given length
+        function generatePassword(length) {
+          let password = '';
+          for (let i = 0; i < length; ++i) {
+            password += getRandomChar();
+          }
+          return password;
+        }
+
+        function generatePass() {
+            let length = 12;
+            length = prompt("Password length (default 12):", length);
+            const password = generatePassword(length);
+            document.getElementById('passwordInput').value = password;
+            document.getElementById('typeNewPassBtn').classList.remove('hidden');
+            if (ui_data.mode != "add")
+                document.getElementById('typeOldPassBtn').classList.remove('hidden');
+        }
+
         function updateWifiPass() {
             const newPass = prompt("Enter new password for KeyPass:");
+            if (!newPass) return;
             // ask again and check if similar
             const newPassCheck = prompt("Confirm new password:");
             if (newPass !== newPassCheck) {
@@ -538,13 +573,11 @@ const char index_html[] PROGMEM = R"=====(
                 alert("Password must be at least 8 characters long.");
                 return;
             }
-            if (newPass) {
-                fetch(`/updateWifiPass?newPass=${newPass}`)
-                    .then(response => response.text())
-                    .catch(error => {
-                        alert('Error:', error);
-                    });
-            }
+            fetch(`/updateWifiPass?newPass=${newPass}`)
+                .then(response => response.text())
+                .catch(error => {
+                    alert('Error:', error);
+                });
         }
 
         function hideAll() {
@@ -574,6 +607,12 @@ const char index_html[] PROGMEM = R"=====(
             }
         }
 
+        function leaveEditForm(uid) {
+            document.getElementById('typeNewPassBtn').classList.add('hidden');
+            document.getElementById('typeOldPassBtn').classList.add('hidden');
+            document.getElementById('passwordInput').value = '';
+        }
+
         function showEditForm(uid) {
             if (document.getElementById('editForm').classList.contains('hidden')) {
                 const el = document.getElementById('positionSelect');
@@ -584,41 +623,27 @@ const char index_html[] PROGMEM = R"=====(
             }
         }
 
-        function switchMode(mode) {
-            switch (mode) {
-                case 'edit':
-                    ui_data.change_focus('edit-button');
-                    break;
-                case 'type':
-                    ui_data.change_focus('type-button');
-                    break;
-                case 'add':
-                    ui_data.change_focus('add-button');
-                    break;
-                default:
-                    console.error('Invalid mode');
-            }
-            ui_data.mode = mode;
-        }
-
-        function runAction(action) {
+        function setMode(action) {
             if (ui_data.mode == action) {
-                runAction("type");
                 return;
             }
+            if (ui_data.mode == 'edit' || ui_data.mode == 'add') {
+                leaveEditForm();
+            }
+            ui_data.mode = action;
 
             switch(action) {
                 case 'edit':
-                    switchMode('edit');
+                    ui_data.change_focus('edit-button');
                     showPasswords();
                     break;
                 case 'type':
-                    switchMode('type');
+                    ui_data.change_focus('type-button');
                     showPasswords();
                     break;
                 case 'add':
                     const uid = ui_data.passwords.length;
-                    switchMode('add');
+                    ui_data.change_focus('add-button');
                     fillForm({name: ""});
                     showEditForm(uid);
                     break;
@@ -634,6 +659,24 @@ const char index_html[] PROGMEM = R"=====(
                 document.getElementById('positionSelect').value = data.uid;
             if (data.name != undefined)
                 document.getElementById('passLabel').value = data.name;
+        }
+
+        function typeOldPass() {
+            const uid = document.getElementById('positionSelect').value;
+            fetch(`/typePass?id=${uid}`)
+            .catch(error => {
+                alert('Error:', error);
+            });
+        }
+
+        function typeNewPass() {
+            const password = document.getElementById('passwordInput').value;
+            const escaped = encodeURIComponent(password);
+            const layout = document.getElementById('layoutSelect').value;
+            fetch(`/typeRaw?text=${escaped}&layout=${layout}`)
+            .catch(error => {
+                alert('Error:', error);
+            });
         }
 
         function passwordClick(uid) {
@@ -665,6 +708,9 @@ const char index_html[] PROGMEM = R"=====(
                 const req = await fetch('/list');
                 const passwords = await req.json();
                 ui_data.passwords = passwords.passwords;
+                const count = passwords.passwords.length;
+                const total = passwords.free + count;
+                document.getElementById('subtitle').innerText = `Stored ${count} over ${total}`;
 
                 const passList = document.querySelector('#passList .password-grid');
                 const domData = [];
@@ -680,7 +726,7 @@ const char index_html[] PROGMEM = R"=====(
 
                 passList.innerHTML = domData.join('');
             } catch (error) {
-                alert("Error: Unable to fetch passwords. Please try again later.");
+                alert("Error: Unable to fetch passwords. Please try again later." + error);
             }
         }
 
@@ -722,13 +768,11 @@ const char index_html[] PROGMEM = R"=====(
                     })
                     .finally(async (data) => {
                         await getPasswords();
-
                         // Reset button state
                         btnText.style.opacity = '1';
                         loading.classList.add('hidden');
                         submitBtn.disabled = false;
-
-                        runAction('type');
+                        setMode('type');
                     });
             });
         });

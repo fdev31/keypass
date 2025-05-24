@@ -206,7 +206,7 @@ void setUpKeyboard(AsyncWebServer &server) {
   server.on("/typeRaw", HTTP_GET, handleTypeRaw);
   server.on("/typePass", HTTP_GET, handleTypePass);
   server.on("/editPass", HTTP_GET, handleEditPass);
-  server.on("/list", HTTP_GET, handleEditPass);
+  server.on("/list", HTTP_GET, handleList);
 
 #ifdef ENABLE_GRAPHICS
   Preferences prefs;
