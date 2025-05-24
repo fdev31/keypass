@@ -197,10 +197,9 @@ async function getPasswords() {
 
     for (const pass of passwords.passwords) {
       domData.push(`
-                        <div onclick="passwordClick(${pass.uid})" class="password-card" role="button">
-                            <div class="password-name">${pass.name}</div>
-                            <div class="password-info">Position: ${pass.uid + 1}</div>
-                        </div>
+    <div onclick="passwordClick(${pass.uid})" class="password-card" role="button">
+        <div class="password-name">${pass.name}</div>
+    </div>
                     `);
     }
 

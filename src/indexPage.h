@@ -115,6 +115,9 @@ opacity: 1;
 transform: translateY(0);
 }
 }
+.menu-btn {
+background-color: rgba(0, 0, 0, 0.1) !important;
+}
 
 .modern-btn {
 flex: 1;
@@ -358,11 +361,7 @@ color: white;
 font-weight: 600;
 font-size: 18px;
 margin-bottom: 5px;
-}
-
-.password-info {
-color: rgba(255, 255, 255, 0.7);
-font-size: 14px;
+text-align: center;
 }
 
 .hidden {
@@ -439,13 +438,13 @@ to { transform: rotate(360deg); }
 </div>
 
 <div class="button-row">
-<button id="edit-button" onclick="setMode('edit')" class="modern-btn" role="button">
+<button id="edit-button" onclick="setMode('edit')" class="modern-btn menu-btn" role="button">
 Edit
 </button>
-<button id="add-button" onclick="setMode('add')" class="modern-btn" role="button">
+<button id="add-button" onclick="setMode('add')" class="modern-btn menu-btn" role="button">
 Add
 </button>
-<button id="type-button" onclick="setMode('type')" class="modern-btn active" role="button">
+<button id="type-button" onclick="setMode('type')" class="modern-btn menu-btn active" role="button">
 Type
 </button>
 </div>
@@ -499,7 +498,7 @@ Type
 </div>
 </div>
 <footer>
-<button class="modern-btn" onclick="updateWifiPass()" style="margin-top: 20px;">
+<button class="menu-btn modern-btn" onclick="updateWifiPass()" style="margin-top: 20px;">
 Change KeyPass' password
 </button>
 </footer>
@@ -704,10 +703,9 @@ async function getPasswords() {
 
     for (const pass of passwords.passwords) {
       domData.push(`
-                        <div onclick="passwordClick(${pass.uid})" class="password-card" role="button">
-                            <div class="password-name">${pass.name}</div>
-                            <div class="password-info">Position: ${pass.uid + 1}</div>
-                        </div>
+    <div onclick="passwordClick(${pass.uid})" class="password-card" role="button">
+        <div class="password-name">${pass.name}</div>
+    </div>
                     `);
     }
 
@@ -773,5 +771,6 @@ window.onload = async () => {
 </script>
 </body>
 </html>
+<!-- vim:ts=2:sw:2:et-->
 )=====";
 #endif
