@@ -23,7 +23,7 @@ A password manager in your keychain
 # DIY
 
 - Get a microcontroller which has a serial interface and WiFi
-- Get some CH9329 device
+- Get some CH9329 device (in Mode 1 : `MOD0` set to `LOW`)
 - Connect the serial of the micro controller to the input of CH9329
 - If not using and ESP32 C3, make some minor `platformio.ini` & code changes
 
