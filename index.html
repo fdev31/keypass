@@ -543,9 +543,14 @@ Type
 </div>
 </div>
 <footer>
-<button class="menu-btn modern-btn" onclick="updateWifiPass()" style="margin-top: 20px;">
+<div style="display: flex; gap: 15px; margin-top: 20px;">
+<button class="menu-btn modern-btn" onclick="updateWifiPass()">
 Change KeyPass' password
 </button>
+<button class="menu-btn modern-btn" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">
+Factory Reset
+</button>
+</div>
 </footer>
 </div>
 <script>
@@ -837,6 +842,34 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 });
+
+function confirmFactoryReset() {
+  if (
+    confirm(
+      "Are you sure you want to factory reset KeyPass? This will delete ALL your saved passwords!",
+    )
+  ) {
+    if (
+      confirm(
+        "FINAL WARNING: This action cannot be undone. Proceed with factory reset?",
+      )
+    ) {
+      fetch("/reset")
+        .then((response) => {
+          if (response.ok) {
+            alert("Factory reset successful. The device will reload the page.");
+            setTimeout(() => window.location.reload(), 1000);
+          } else {
+            alert("Factory reset failed.");
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("Factory reset failed due to an error.");
+        });
+    }
+  }
+}
 
 // Load passwords on page load
 window.onload = async () => {

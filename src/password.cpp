@@ -22,6 +22,7 @@ void handleTypePass(AsyncWebServerRequest *request);
 void handleIndex(AsyncWebServerRequest *request);
 void handleEditPass(AsyncWebServerRequest *request);
 void handleList(AsyncWebServerRequest *request);
+void handleFactoryReset(AsyncWebServerRequest *request);
 
 const char *mkEntryName(int num) {
   static char buffer[16]; // Static buffer to hold the result
@@ -198,6 +199,28 @@ void handleList(AsyncWebServerRequest *request) {
   request->send(200, "application/json", json);
 }
 
+void handleFactoryReset(AsyncWebServerRequest *request) {
+#ifdef ENABLE_GRAPHICS
+  strlcpy(DEBUG_BUFFER, "Reset", 99);
+#endif
+  Preferences preferences;
+
+  for (int id = 0; id < MAX_PASSWORDS; id++) {
+    Password emptyPassword;
+    memset(&emptyPassword, 0, sizeof(Password)); // Initialize to zeros
+    writePassword(id, emptyPassword);
+  }
+
+#if not USE_EEPROM_API
+  preferences.begin("KeyPass", false);
+  preferences.clear(); // Clear all preferences
+  preferences.end();
+#elif
+// TODO: implement this
+#pragma message "EEPROM API is used, factory reset not implemented for settings"
+#endif
+}
+
 void setUpKeyboard(AsyncWebServer &server) {
 
 #if USE_EEPROM_API
@@ -209,6 +232,7 @@ void setUpKeyboard(AsyncWebServer &server) {
   server.on("/typePass", HTTP_GET, handleTypePass);
   server.on("/editPass", HTTP_GET, handleEditPass);
   server.on("/list", HTTP_GET, handleList);
+  server.on("/reset", HTTP_GET, handleFactoryReset);
 
 #ifdef ENABLE_GRAPHICS
   Preferences prefs;

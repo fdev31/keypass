@@ -543,9 +543,14 @@
         </div>
       </div>
       <footer>
-        <button class="menu-btn modern-btn" onclick="updateWifiPass()" style="margin-top: 20px;">
-          Change KeyPass' password
-        </button>
+        <div style="display: flex; gap: 15px; margin-top: 20px;">
+          <button class="menu-btn modern-btn" onclick="updateWifiPass()">
+            Change KeyPass' password
+          </button>
+          <button class="menu-btn modern-btn" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">
+            Factory Reset
+          </button>
+        </div>
       </footer>
     </div>
     <script>

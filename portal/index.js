@@ -286,6 +286,34 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+function confirmFactoryReset() {
+  if (
+    confirm(
+      "Are you sure you want to factory reset KeyPass? This will delete ALL your saved passwords!",
+    )
+  ) {
+    if (
+      confirm(
+        "FINAL WARNING: This action cannot be undone. Proceed with factory reset?",
+      )
+    ) {
+      fetch("/reset")
+        .then((response) => {
+          if (response.ok) {
+            alert("Factory reset successful. The device will reload the page.");
+            setTimeout(() => window.location.reload(), 1000);
+          } else {
+            alert("Factory reset failed.");
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("Factory reset failed due to an error.");
+        });
+    }
+  }
+}
+
 // Load passwords on page load
 window.onload = async () => {
   await getPasswords();
