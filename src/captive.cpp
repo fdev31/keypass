@@ -12,7 +12,6 @@
 // Pre reading on the fundamentals of captive portals
 // https://textslashplain.com/2022/06/24/captive-portals/
 
-#define MAX_CLIENTS 1
 #define WIFI_CHANNEL 6
 
 const IPAddress localIP(4, 3, 2, 1); // the IP address the web server, Samsung
@@ -38,8 +37,6 @@ void setUpDNSServer(const char *ssid, const char *password,
 void startSoftAccessPoint(const char *wifi_ssid, const char *wifi_password,
                           const IPAddress &localIP,
                           const IPAddress &gatewayIP) {
-  // Define the maximum number of clients that can connect to the server
-#define MAX_CLIENTS 4
   // Define the WiFi channel to be used (channel 6 in this case)
 #define WIFI_CHANNEL 6
 

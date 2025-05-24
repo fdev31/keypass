@@ -657,9 +657,9 @@ function showPasswords() {
 }
 
 function leaveEditForm(uid) {
+  document.getElementById("passwordInput").value = "";
   document.getElementById("typeNewPassBtn").classList.add("hidden");
   document.getElementById("typeOldPassBtn").classList.add("hidden");
-  document.getElementById("passwordInput").value = "";
 }
 
 function showEditForm(uid) {
