@@ -426,38 +426,39 @@
     to { transform: rotate(360deg); }
     }
     .icon {
-      position: relative;
-      width:16px;
-      height:16px;
-      margin: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      margin: 0;
     }
     .icon-die {
-      background-color: #000;
-      border-radius:3px;
-      width: 16px;
-      height: 16px;
+      background-color: #fff;
+      border-radius: 3px;
+      width: 24px;
+      height: 24px;
       position: relative;
-      top:0;
-      left:0;
+      margin: auto;
     }
     .icon-die:before{
-      background-color: #fff;
-      width: 5px;
-      height: 5px;
-      border-radius: 10px;
+      background-color: #000;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
       position: absolute;
-      top: 3px;
-      left: 3px;
+      top: 4px;
+      left: 4px;
       content: "";
     }
     .icon-die:after {
-      background-color: #fff;
-      width: 5px;
-      height: 5px;
-      border-radius: 10px;
+      background-color: #000;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
       position: absolute;
-      top: 8px;
-      left: 8px;
+      top: 13px;
+      left: 13px;
       content: "";
     }
     </style>
@@ -504,11 +505,12 @@
             </div>
 
             <div class="form-group">
+
               <label for="passwordInput">Password</label>
               <div style="display: flex; gap: 10px;">
                 <input id="passwordInput" type="password" name="password" placeholder="Enter password..." maxlength="15">
-                <button type="button" onclick="generatePass()" class="modern-btn" style="width: auto; flex: 0 0 auto;"><div class="icon icon-die">
-                </button>
+                <button type="button" onclick="generatePass()" class="modern-btn" style="width: 50px; flex: 0 0 auto; padding: 0;"><div class="icon"><div class="icon-die"></div></div></button>
+
               </div>
               <div style="display: flex; gap: 10px; margin-top: 10px;">
 
