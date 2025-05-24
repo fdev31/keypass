@@ -32,14 +32,14 @@ function generatePassword(length) {
   return password;
 }
 
-function wiggleDots() {
+function wiggleDots(elementId = "diceIcon") {
   // Add wiggle class
-  const dieIcon = document.getElementById("diceIcon");
-  dieIcon.classList.add("wiggle-dots");
+  const icon = document.getElementById(elementId);
+  icon.classList.add("wiggle-dots");
 
   // Remove wiggle class after animation completes
   setTimeout(() => {
-    dieIcon.classList.remove("wiggle-dots");
+    icon.classList.remove("wiggle-dots");
   }, 500);
 }
 
@@ -49,7 +49,7 @@ function generatePass() {
   if (!length || isNaN(length) || length < 8) {
     return;
   }
-  wiggleDots();
+  wiggleDots("diceIcon");
   const password = generatePassword(length);
   document.getElementById("passwordInput").value = password;
   document.getElementById("typeNewPassBtn").classList.remove("hidden");
@@ -144,8 +144,18 @@ function setMode(action) {
       fillForm({ name: "" });
       showEditForm(uid);
       break;
+    case "settings":
+      showSettings();
+      break;
     default:
       console.error("Invalid action");
+  }
+}
+
+function showSettings() {
+  if (document.getElementById("settingsForm").classList.contains("hidden")) {
+    hideAll();
+    setTimeout(() => showElement("settingsForm"), 300);
   }
 }
 
@@ -235,6 +245,7 @@ function toggleVisibility() {
   } else {
     visibility.innerHTML = "&#x1f648;"; // Show eye with slash icon
   }
+  wiggleDots("toggleVisibilityIcon");
 }
 
 // Enhanced form submission with loading states

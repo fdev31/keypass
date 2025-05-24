@@ -501,6 +501,24 @@ Add
 </button>
 </div>
 
+<div class="mainScreen hidden" id="settingsForm">
+<div class="glass-panel">
+<form id="settingsFormContent" method="get" action="/settings">
+<div class="form-group">
+<label for="wifiPassInput">Wi-Fi Password</label>
+<input id="wifiPassInput" type="password" name="wifiPass" placeholder="Enter Wi-Fi password..." required>
+</div>
+<button type="submit" class="submit-btn">
+<span class="btn-text">Save Settings</span>
+<span class="loading hidden"></span>
+</button>
+</form>
+<button class="menu-btn modern-btn" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">
+Factory Reset
+</button>
+</div>
+</div>
+
 <div class="mainScreen hidden" id="editForm">
 <div class="glass-panel">
 <form id="editFormContent" method="get" action="/editPass">
@@ -553,9 +571,6 @@ Add
 <button class="menu-btn modern-btn" onclick="updateWifiPass()">
 Change KeyPass' password
 </button>
-<button class="menu-btn modern-btn" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">
-Factory Reset
-</button>
 </div>
 </footer>
 </div>
@@ -595,14 +610,14 @@ function generatePassword(length) {
   return password;
 }
 
-function wiggleDots() {
+function wiggleDots(elementId = "diceIcon") {
   // Add wiggle class
-  const dieIcon = document.getElementById("diceIcon");
-  dieIcon.classList.add("wiggle-dots");
+  const icon = document.getElementById(elementId);
+  icon.classList.add("wiggle-dots");
 
   // Remove wiggle class after animation completes
   setTimeout(() => {
-    dieIcon.classList.remove("wiggle-dots");
+    icon.classList.remove("wiggle-dots");
   }, 500);
 }
 
@@ -612,7 +627,7 @@ function generatePass() {
   if (!length || isNaN(length) || length < 8) {
     return;
   }
-  wiggleDots();
+  wiggleDots("diceIcon");
   const password = generatePassword(length);
   document.getElementById("passwordInput").value = password;
   document.getElementById("typeNewPassBtn").classList.remove("hidden");
@@ -707,8 +722,18 @@ function setMode(action) {
       fillForm({ name: "" });
       showEditForm(uid);
       break;
+    case "settings":
+      showSettings();
+      break;
     default:
       console.error("Invalid action");
+  }
+}
+
+function showSettings() {
+  if (document.getElementById("settingsForm").classList.contains("hidden")) {
+    hideAll();
+    setTimeout(() => showElement("settingsForm"), 300);
   }
 }
 
@@ -798,6 +823,7 @@ function toggleVisibility() {
   } else {
     visibility.innerHTML = "&#x1f648;"; // Show eye with slash icon
   }
+  wiggleDots("toggleVisibilityIcon");
 }
 
 // Enhanced form submission with loading states

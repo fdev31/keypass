@@ -498,6 +498,24 @@
         </button>
       </div>
 
+      <div class="mainScreen hidden" id="settingsForm">
+        <div class="glass-panel">
+          <form id="settingsFormContent" method="get" action="/settings">
+            <div class="form-group">
+              <label for="wifiPassInput">Wi-Fi Password</label>
+              <input id="wifiPassInput" type="password" name="wifiPass" placeholder="Enter Wi-Fi password..." required>
+            </div>
+            <button type="submit" class="submit-btn">
+              <span class="btn-text">Save Settings</span>
+              <span class="loading hidden"></span>
+            </button>
+          </form>
+          <button class="menu-btn modern-btn" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">
+            Factory Reset
+          </button>
+        </div>
+      </div>
+
       <div class="mainScreen hidden" id="editForm">
         <div class="glass-panel">
           <form id="editFormContent" method="get" action="/editPass">
@@ -549,9 +567,6 @@
         <div style="display: flex; gap: 15px; margin-top: 20px;">
           <button class="menu-btn modern-btn" onclick="updateWifiPass()">
             Change KeyPass' password
-          </button>
-          <button class="menu-btn modern-btn" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">
-            Factory Reset
           </button>
         </div>
       </footer>
