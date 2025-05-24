@@ -487,28 +487,28 @@
           <form id="editFormContent" method="get" action="/editPass">
             <div class="form-group">
               <label for="positionSelect">Position</label>
-              <input type="text" name="id" id="positionSelect" disabled>
+              <input type="text" id="positionSelect" disabled>
             </div>
 
             <div class="form-group">
               <label for="layoutSelect">Layout</label>
-              <select name="lang" id="layoutSelect" required>
+              <select id="layoutSelect" required>
                 <option value="fr">French</option>
                 <option value="us">US</option>
               </select>
-              <input type="hidden" name="layout" id="layoutIndex">
+              <input type="hidden" id="layoutIndex">
             </div>
 
             <div class="form-group">
               <label for="passLabel">Name</label>
-              <input id="passLabel" type="text" name="name" required placeholder="Enter password name...">
+              <input id="passLabel" type="text" required placeholder="Enter password name...">
             </div>
 
             <div class="form-group">
 
               <label for="passwordInput">Password</label>
               <div style="display: flex; gap: 10px;">
-                <input id="passwordInput" type="password" name="password" placeholder="Enter password..." maxlength="15">
+                <input id="passwordInput" type="password" placeholder="Enter password..." maxlength="15">
                 <button type="button" onclick="generatePass()" class="modern-btn" style="width: 50px; flex: 0 0 auto; padding: 0;"><div class="icon"><div class="icon-die"></div></div></button>
 
               </div>
