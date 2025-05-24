@@ -1,5 +1,5 @@
 #!/bin/sh
-sed -f - portal/index.html > index.html << 'EOF'
+sed -f - portal/index.html > index.html << EOF
 /<!-- CODE HERE -->/ {
  r portal/index.js
  d
