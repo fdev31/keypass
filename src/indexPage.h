@@ -1,6 +1,6 @@
 #ifndef _INDEXPAGE_H
 #define _INDEXPAGE_H
-const char index_html[] PROGMEM = R"=====(
+const static char index_html[] PROGMEM = R"=====(
 <!DOCTYPE html>
 <html>
 <head>
