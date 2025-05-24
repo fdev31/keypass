@@ -4,6 +4,7 @@
 const unsigned long SHUTDOWN_TIMEOUT = 2 * 60 * 1000; // minutes in ms
 // Max wifi clients, keep it low for security, or higher for dev
 #define MAX_CLIENTS 1
+#define WIFI_CHANNEL 6
 // FYI The SSID can't have a space in it.
 #define DEFAULT_WIFI_SSID "KeyPass"
 // At least 8 chars

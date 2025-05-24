@@ -12,8 +12,6 @@
 // Pre reading on the fundamentals of captive portals
 // https://textslashplain.com/2022/06/24/captive-portals/
 
-#define WIFI_CHANNEL 6
-
 const IPAddress localIP(4, 3, 2, 1); // the IP address the web server, Samsung
                                      // requires the IP to be in public space
 const IPAddress gatewayIP(4, 3, 2,
