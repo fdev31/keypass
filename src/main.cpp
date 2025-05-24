@@ -19,7 +19,6 @@ void setup() {
 #endif
   captiveSetup();
   setUpKeyboard(server);
-  setUpPassword();
   lastClientTime = millis();
 }
 
