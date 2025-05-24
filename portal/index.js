@@ -209,6 +209,11 @@ async function getPasswords() {
   }
 }
 
+function toggleVisibility() {
+  const password = document.getElementById("passwordInput");
+  password.type = password.type === "password" ? "text" : "password";
+}
+
 // Enhanced form submission with loading states
 document.addEventListener("DOMContentLoaded", function () {
   const layoutSelect = document.getElementById("layoutSelect");
