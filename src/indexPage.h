@@ -522,12 +522,11 @@ Type
 <label for="passwordInput">Password</label>
 <div style="display: flex; gap: 10px;">
 <input id="passwordInput" type="password" name="password" placeholder="Enter password...">
+<button id="toggleVisibilityIcon" type="button" onclick="toggleVisibility()" class="modern-btn"  style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</button>
 <button type="button" onclick="generatePass()" class="modern-btn" style="width: 50px; flex: 0 0 auto; padding: 0;"><div class="icon"><div id="diceIcon" class="icon-die"></div></div></button>
 
 </div>
 <div style="display: flex; gap: 10px; margin-top: 10px;">
-
-<button type="button" onclick="toggleVisibility()" class="modern-btn" style="width: auto; flex: auto;">Toggle Visibility</button>
 <button id="typeOldPassBtn" type="button" onclick="typeOldPass()" class="modern-btn hidden" style="width: auto; flex: auto;">Type old pass</button>
 <button id="typeNewPassBtn" type="button" onclick="typeNewPass()" class="modern-btn hidden" style="width: auto; flex: auto;">Type new pass</button>
 </div>
@@ -782,11 +781,15 @@ async function getPasswords() {
 
 function toggleVisibility() {
   const passwordInput = document.getElementById("passwordInput");
-  const dieButton =
-    document.querySelector(".icon-die").parentElement.parentElement;
+  const visibility = document.getElementById("toggleVisibilityIcon");
 
   // Toggle password visibility
   passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+  if (passwordInput.type === "text") {
+    visibility.innerHTML = "&#x1f64a";
+  } else {
+    visibility.innerHTML = "&#x1f648;"; // Show eye with slash icon
+  }
 }
 
 // Enhanced form submission with loading states

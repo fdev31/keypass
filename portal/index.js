@@ -226,11 +226,15 @@ async function getPasswords() {
 
 function toggleVisibility() {
   const passwordInput = document.getElementById("passwordInput");
-  const dieButton =
-    document.querySelector(".icon-die").parentElement.parentElement;
+  const visibility = document.getElementById("toggleVisibilityIcon");
 
   // Toggle password visibility
   passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+  if (passwordInput.type === "text") {
+    visibility.innerHTML = "&#x1f64a";
+  } else {
+    visibility.innerHTML = "&#x1f648;"; // Show eye with slash icon
+  }
 }
 
 // Enhanced form submission with loading states
