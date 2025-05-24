@@ -7,6 +7,7 @@ import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse, HTMLResponse
+import random
 
 debug = bool(os.environ.get("DEBUG", False))
 
@@ -14,6 +15,14 @@ passwords: list[dict[str, str | int]] = [
     {"name": "example", "layout": 1, "password": "abc"},
     {"name": "example2", "layout": 0, "password": "123"},
 ]
+for n in range(12):
+    passwords.append(
+        {
+            "name": f"example{n}",
+            "layout": int(random.random()),
+            "password": "irrelevant",
+        }
+    )
 
 
 if debug:
