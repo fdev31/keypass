@@ -27,6 +27,9 @@ A password manager in your keychain
 - Connect the serial of the micro controller to the input of CH9329
 - If not using and ESP32 C3, make some minor `platformio.ini` & code changes
 
+Optionally:
+- Use KeyPass1.stl and KeyPass2.stl in the "casing" folder and print your own!
+
 # Special thanks
 
 - [Captive portal](https://github.com/CDFER/Captive-Portal-ESP32/) for showing all the tricks for Captive portals and giving a good code base
