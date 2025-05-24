@@ -32,9 +32,24 @@ function generatePassword(length) {
   return password;
 }
 
+function wiggleDots() {
+  // Add wiggle class
+  const dieIcon = document.getElementById("diceIcon");
+  dieIcon.classList.add("wiggle-dots");
+
+  // Remove wiggle class after animation completes
+  setTimeout(() => {
+    dieIcon.classList.remove("wiggle-dots");
+  }, 500);
+}
+
 function generatePass() {
   let length = 12;
   length = prompt("Password length (default 12):", length);
+  if (!length || isNaN(length) || length < 8) {
+    return;
+  }
+  wiggleDots();
   const password = generatePassword(length);
   document.getElementById("passwordInput").value = password;
   document.getElementById("typeNewPassBtn").classList.remove("hidden");
@@ -216,14 +231,6 @@ function toggleVisibility() {
 
   // Toggle password visibility
   passwordInput.type = passwordInput.type === "password" ? "text" : "password";
-
-  // Add wiggle class
-  dieButton.classList.add("wiggle-dots");
-
-  // Remove wiggle class after animation completes
-  setTimeout(() => {
-    dieButton.classList.remove("wiggle-dots");
-  }, 500);
 }
 
 // Enhanced form submission with loading states

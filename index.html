@@ -425,6 +425,19 @@ animation: spin 1s ease-in-out infinite;
 @keyframes spin {
 to { transform: rotate(360deg); }
 }
+
+@keyframes wiggle-dots {
+0% { transform: rotate(0deg); }
+20% { transform: rotate(-10deg); }
+40% { transform: rotate(10deg); }
+60% { transform: rotate(-7deg); }
+80% { transform: rotate(7deg); }
+100% { transform: rotate(0deg); }
+}
+
+.wiggle-dots {
+animation: wiggle-dots 0.5s ease-in-out;
+}
 .icon {
 display: flex;
 justify-content: center;
@@ -506,7 +519,7 @@ Type
 <label for="passwordInput">Password</label>
 <div style="display: flex; gap: 10px;">
 <input id="passwordInput" type="password" name="password" placeholder="Enter password...">
-<button type="button" onclick="generatePass()" class="modern-btn" style="width: 50px; flex: 0 0 auto; padding: 0;"><div class="icon"><div class="icon-die"></div></div></button>
+<button type="button" onclick="generatePass()" class="modern-btn" style="width: 50px; flex: 0 0 auto; padding: 0;"><div class="icon"><div id="diceIcon" class="icon-die"></div></div></button>
 
 </div>
 <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -572,9 +585,24 @@ function generatePassword(length) {
   return password;
 }
 
+function wiggleDots() {
+  // Add wiggle class
+  const dieIcon = document.getElementById("diceIcon");
+  dieIcon.classList.add("wiggle-dots");
+
+  // Remove wiggle class after animation completes
+  setTimeout(() => {
+    dieIcon.classList.remove("wiggle-dots");
+  }, 500);
+}
+
 function generatePass() {
   let length = 12;
   length = prompt("Password length (default 12):", length);
+  if (!length || isNaN(length) || length < 8) {
+    return;
+  }
+  wiggleDots();
   const password = generatePassword(length);
   document.getElementById("passwordInput").value = password;
   document.getElementById("typeNewPassBtn").classList.remove("hidden");
@@ -756,14 +784,6 @@ function toggleVisibility() {
 
   // Toggle password visibility
   passwordInput.type = passwordInput.type === "password" ? "text" : "password";
-
-  // Add wiggle class
-  dieButton.classList.add("wiggle-dots");
-
-  // Remove wiggle class after animation completes
-  setTimeout(() => {
-    dieButton.classList.remove("wiggle-dots");
-  }, 500);
 }
 
 // Enhanced form submission with loading states
