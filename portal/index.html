@@ -501,14 +501,14 @@
 
             <div class="form-group">
               <label for="passLabel">Name</label>
-              <input id="passLabel" type="text" required placeholder="Enter password name...">
+              <input id="passLabel" type="text" required placeholder="Enter password name (15 characters max)" maxlength="15">
             </div>
 
             <div class="form-group">
 
               <label for="passwordInput">Password</label>
               <div style="display: flex; gap: 10px;">
-                <input id="passwordInput" type="password" placeholder="Enter password..." maxlength="15">
+                <input id="passwordInput" type="password" placeholder="Enter password...">
                 <button type="button" onclick="generatePass()" class="modern-btn" style="width: 50px; flex: 0 0 auto; padding: 0;"><div class="icon"><div class="icon-die"></div></div></button>
 
               </div>
