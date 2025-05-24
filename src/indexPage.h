@@ -487,14 +487,17 @@ content: "";
 </div>
 
 <div class="button-row">
+<button id="type-button" onclick="setMode('type')" class="modern-btn menu-btn active" role="button">
+Type
+</button>
 <button id="edit-button" onclick="setMode('edit')" class="modern-btn menu-btn" role="button">
 Edit
 </button>
 <button id="add-button" onclick="setMode('add')" class="modern-btn menu-btn" role="button">
 Add
 </button>
-<button id="type-button" onclick="setMode('type')" class="modern-btn menu-btn active" role="button">
-Type
+<button id="type-button" onclick="setMode('settings')" class="modern-btn menu-btn" role="button" style="flex: 0 0 auto; padding: 0; font-size: 200%; width: 50px; height: 50px;">
+&#x1F4AB;
 </button>
 </div>
 
@@ -527,8 +530,8 @@ Type
 
 </div>
 <div style="display: flex; gap: 10px; margin-top: 10px;">
-<button id="typeOldPassBtn" type="button" onclick="typeOldPass()" class="modern-btn hidden" style="width: auto; flex: auto;">Type old pass</button>
-<button id="typeNewPassBtn" type="button" onclick="typeNewPass()" class="modern-btn hidden" style="width: auto; flex: auto;">Type new pass</button>
+<button id="typeOldPassBtn" type="button" onclick="typeOldPass()" class="modern-btn hidden" style="width: auto; flex: auto;">&#x2328; Type old pass</button>
+<button id="typeNewPassBtn" type="button" onclick="typeNewPass()" class="modern-btn hidden" style="width: auto; flex: auto;">&#x2328; Type new pass</button>
 </div>
 </div>
 
