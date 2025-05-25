@@ -1,7 +1,8 @@
 const UserPreferences = {
   // Default preferences
   defaults: {
-    confirmations: true,
+    confirm_actions: true,
+    password_visibility: false,
   },
 
   // Save a preference
