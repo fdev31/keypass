@@ -531,15 +531,6 @@
               <input type="hidden" name="id" id="positionSelect" disabled>
 
             <div class="form-group">
-              <label for="layoutSelect">Keyboard layout</label>
-              <select name="lang" id="layoutSelect" required>
-                <option value="fr">French</option>
-                <option value="us">US</option>
-              </select>
-              <input type="hidden" name="layout" id="layoutIndex">
-            </div>
-
-            <div class="form-group">
               <label for="passLabel">Name</label>
               <input id="passLabel" name="name" type="text" required placeholder="Enter password name" maxlength="15">
             </div>
@@ -564,6 +555,16 @@
                 <button id="typeNewPassBtn" type="button" onclick="typeNewPass()" class="modern-btn hidden" style="width: auto; flex: auto;">&#x2328; Type new pass</button>
               </div>
             </div>
+
+            <div class="form-group">
+              <label for="layoutSelect">Keyboard layout</label>
+              <select name="lang" id="layoutSelect" required>
+                <option value="fr">French</option>
+                <option value="us">US</option>
+              </select>
+              <input type="hidden" name="layout" id="layoutIndex">
+            </div>
+
 
             <button type="submit" class="submit-btn">
               <span class="btn-text">Save Password</span>
