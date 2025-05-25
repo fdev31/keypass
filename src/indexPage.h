@@ -108,8 +108,16 @@ font-size: 1.1rem;
 font-weight: 300;
 }
 
+.button-column {
+display: flex;
+flex-direction: column;
+gap: 15px;
+margin-bottom: 30px;
+animation: slideUp 0.8s ease-out 0.2s both;
+}
 .button-row {
 display: flex;
+flex-direction: row;
 gap: 15px;
 margin-bottom: 30px;
 animation: slideUp 0.8s ease-out 0.2s both;
@@ -415,6 +423,11 @@ font-size: 2rem;
 }
 
 .button-row {
+flex-direction: row;
+gap: 10px;
+}
+
+.button-column {
 flex-direction: column;
 gap: 10px;
 }
@@ -506,7 +519,7 @@ content: "";
 <button id="add-button" onclick="setMode('add')" class="modern-btn menu-btn" role="button">Add</button>
 </div>
 <div class="mainScreen hidden" id="settingsForm">
-<div class="glass-panel" style="display: flex; gap: 15px; margin-top: 20px; flex-direction: column;">
+<div class="glass-panel button-column">
 <button class="modern-btn column togglableButton" role="button" data-setting="confirm_actions" data-enabled-text="Confirm actions" data-disabled-text="Just run actions">Ask for confirmations</button>
 <button class="modern-btn column togglableButton" role="button" data-setting="password_visibility" data-enabled-text="Show passwords" data-disabled-text="Hide passwords">Ask for confirmations</button>
 <button class="modern-btn column" role="button" onclick="toggleWifiPassForm()">Change Wi-Fi password</button>
