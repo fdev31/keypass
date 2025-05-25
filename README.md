@@ -10,7 +10,7 @@ A password manager in your keychain
 # Installation
 
 - Install platformIO
-- Replace the "12345678" WIFI password in `src/configuration.h` with your own
+- Replace the "12345678" WIFI password in `src/configuration.h` with your own (you can also change it later on)
 - run "build & upload" in GUI or `pio run --target=upload` in CLI
 
 # Usage
