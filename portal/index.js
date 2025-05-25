@@ -101,7 +101,7 @@ function toggleButton(buttonElement, options = {}) {
   const mode = newState ? "enabled" : "disabled";
   buttonElement.textContent = buttonElement.getAttribute(`data-${mode}-text`);
   shake(buttonElement);
-  const fn = buttonElement.getAttribute("data-changed") || "";
+  const fn = buttonElement.getAttribute("data-changed") || "()=>{}";
   eval(fn)(newState);
 }
 
