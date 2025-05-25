@@ -567,8 +567,8 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 
 </div>
 <div style="display: flex; gap: 10px; margin-top: 10px;">
-<button id="typeOldPassBtn" type="button" onclick="typeOldPass()" class="modern-btn hidden" style="width: auto; flex: auto;">&#x2328; Type old pass</button>
-<button id="typeNewPassBtn" type="button" onclick="typeNewPass()" class="modern-btn hidden" style="width: auto; flex: auto;">&#x2328; Type new pass</button>
+<button id="typeOldPassBtn" type="button" onclick="typeOldPass()" class="modern-btn hidden" style="width: auto; flex: auto;">&#x2328;&nbsp;&nbsp;Type old pass</button>
+<button id="typeNewPassBtn" type="button" onclick="typeNewPass()" class="modern-btn hidden" style="width: auto; flex: auto;">&#x2328;&nbsp;&nbsp;Type new pass</button>
 </div>
 </div>
 
