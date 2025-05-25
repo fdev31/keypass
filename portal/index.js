@@ -300,7 +300,7 @@ async function getPasswords() {
     <div onclick="passwordClick(${pass.uid})" class="password-card" role="button">
         <div class="password-name">${pass.name}</div>
     </div>
-                    `);
+    `);
     }
 
     passList.innerHTML = domData.join("");
