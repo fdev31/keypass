@@ -66,7 +66,10 @@ function generatePassword(length) {
 
 function generatePass() {
   const uid = ~~document.getElementById("positionSelect").value;
-  const length = ui_data.passwords[uid]?.len || prompt("Length:", 12);
+  const length =
+    document.getElementById("passwordInput").value.length ||
+    ui_data.passwords[uid]?.len ||
+    prompt("How many characters ?", 18);
 
   if (!length || isNaN(length) || length < 4) {
     return;

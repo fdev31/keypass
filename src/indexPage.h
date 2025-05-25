@@ -611,7 +611,7 @@ const UserPreferences={defaults:{confirm_actions:true,password_visibility:false,
 function getRandomChar(){const charset="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0"+"123456789!@#$%^&*()_+-=[]{}|;:,.<>?";const charsetSize=charset.length;return charset[Math.floor(Math.random()*charsetSize)];}
 function generatePassword(length){let password="";for(let i=0;i<length;++i){password+=getRandomChar();}
 return password;}
-function generatePass(){const uid=~~document.getElementById("positionSelect").value;const length=ui_data.passwords[uid]?.len||prompt("Length:",12);if(!length||isNaN(length)||length<4){return;}
+function generatePass(){const uid=~~document.getElementById("positionSelect").value;const length=document.getElementById("passwordInput").value.length||ui_data.passwords[uid]?.len||prompt("How many characters ?",18);if(!length||isNaN(length)||length<4){return;}
 shake("diceIcon");const password=generatePassword(length);document.getElementById("passwordInput").value=password;document.getElementById("typeNewPassBtn").classList.remove("hidden");if(ui_data.mode!="add")
 document.getElementById("typeOldPassBtn").classList.remove("hidden");}
 function shake(elementId="diceIcon"){const icon=typeof elementId=="string"?document.getElementById(elementId):elementId;icon.classList.add("wiggle");setTimeout(()=>{icon.classList.remove("wiggle");},500);}
