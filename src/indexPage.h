@@ -27,6 +27,13 @@ overflow-x: hidden;
 .column {
 flex-direction: column !important;
 }
+#wifiPassForm {
+max-height: 0;
+overflow: hidden;
+transition: max-height 0.3s ease-out, opacity 0.3s ease-out, margin 0.3s ease-out;
+opacity: 0;
+margin: 0;
+}
 
 body::before {
 content: '';
@@ -502,7 +509,21 @@ content: "";
 <div class="glass-panel" style="display: flex; gap: 15px; margin-top: 20px; flex-direction: column;">
 <button class="modern-btn column togglableButton" role="button" data-setting="confirm_actions" data-enabled-text="Confirm actions" data-disabled-text="Just run actions">Ask for confirmations</button>
 <button class="modern-btn column togglableButton" role="button" data-setting="password_visibility" data-enabled-text="Show passwords" data-disabled-text="Hide passwords">Ask for confirmations</button>
-<button class="modern-btn column" role="button" onclick="updateWifiPass()">Change Wi-Fi password</button>
+<button class="modern-btn column" role="button" onclick="toggleWifiPassForm()">Change Wi-Fi password</button>
+<div id="wifiPassForm" class="hidden" style="overflow: hidden; transition: all 0.3s ease-out;">
+<div class="glass-panel" style="margin-top: 10px;">
+<div class="form-group">
+<input type="password" id="newWifiPass" placeholder="New Wi-Fi password" required>
+</div>
+<div class="form-group">
+<input type="password" id="confirmWifiPass" placeholder="Confirm password" required>
+</div>
+<button type="button" onclick="updateWifiPass()" class="submit-btn">
+<span class="btn-text">Update Password</span>
+<span class="loading hidden"></span>
+</button>
+</div>
+</div>
 <button class="modern-btn column" role="button" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">Factory Reset</button>
 </div>
 </div>
@@ -590,9 +611,10 @@ document.getElementById("passLabel").value=data.name;}
 function typeOldPass(){const uid=document.getElementById("positionSelect").value;fetch(`/typePass?id=${uid}`).catch(errorHandler);}
 function typeNewPass(){const password=document.getElementById("passwordInput").value;const escaped=encodeURIComponent(password);const layout=document.getElementById("layoutSelect").value;fetch(`/typeRaw?text=${escaped}&layout=${layout}`).catch(errorHandler);}
 function passwordClick(uid){switch(ui_data.mode){case"edit":fillForm({uid:uid,name:ui_data.passwords[uid].name,layout:ui_data.passwords[uid].layout,});showEditForm(uid);break;default:const card=event.target.closest(".password-card");card.style.transform="scale(0.95)";setTimeout(()=>{card.style.transform="";},150);fetch(`/typePass?id=${uid}`).catch(errorHandler);}}
-function updateWifiPass(){const newPass=prompt("Enter new password for KeyPass:");if(!newPass)return;const newPassCheck=prompt("Confirm new password:");if(newPass!==newPassCheck){alert("Passwords do not match. Please try again.");return;}
+function updateWifiPass(){const newPass=document.getElementById("newWifiPass").value;const confirmPass=document.getElementById("confirmWifiPass").value;if(!newPass)return;if(newPass!==confirmPass){alert("Passwords do not match. Please try again.");return;}
 if(newPass.length<8){alert("Password must be at least 8 characters long.");return;}
-fetch(`/updateWifiPass?newPass=${newPass}`).then((response)=>response.text()).catch(errorHandler);}
+fetch(`/updateWifiPass?newPass=${newPass}`).then((response)=>response.text()).catch(errorHandler);const loadingEl=document.querySelector("#wifiPassForm .loading");const btnText=document.querySelector("#wifiPassForm .btn-text");if(loadingEl&&btnText){btnText.classList.add("hidden");loadingEl.classList.remove("hidden");}
+setTimeout(()=>{toggleWifiPassForm();document.getElementById("newWifiPass").value="";document.getElementById("confirmWifiPass").value="";if(loadingEl&&btnText){btnText.classList.remove("hidden");loadingEl.classList.add("hidden");}},1000);}
 async function getPasswords(){try{const req=await fetch("/list");const passwords=await req.json();ui_data.passwords=passwords.passwords;const count=passwords.passwords.length;const total=passwords.free+count;document.getElementById("subtitle").innerText=`Stored ${count} over ${total}`;const passList=document.querySelector("#passList .password-grid");const domData=[];for(const pass of passwords.passwords){domData.push(`
     <div onclick="passwordClick(${pass.uid})" class="password-card" role="button">
         <div class="password-name">${pass.name}</div>
@@ -600,6 +622,7 @@ async function getPasswords(){try{const req=await fetch("/list");const passwords
                     `);}
 passList.innerHTML=domData.join("");}catch(error){alert("Error: Unable to fetch passwords. Please try again later."+error);}}
 function confirmFactoryReset(){if(confirm("Are you sure you want to factory reset KeyPass? This will delete ALL your saved passwords!",)){if(confirm("FINAL WARNING: This action cannot be undone. Proceed with factory reset?",)){fetch("/reset").then((response)=>{if(response.ok){alert("Factory reset successful. The device will reload the page.");setTimeout(()=>window.location.reload(),1000);}else{alert("Factory reset failed.");}}).catch(errorHandler);}}}
+function toggleWifiPassForm(){const form=document.getElementById("wifiPassForm");if(form.classList.contains("hidden")){form.classList.remove("hidden");form.style.display="block";form.style.maxHeight="0";form.style.opacity="0";form.style.margin="0";void form.offsetWidth;form.style.maxHeight="500px";form.style.opacity="1";form.style.margin="10px 0";}else{form.style.maxHeight="0";form.style.opacity="0";form.style.margin="0";setTimeout(()=>{form.classList.add("hidden");},300);}}
 function editFormHandler(e){e.preventDefault();const submitBtn=this.querySelector(".submit-btn");const btnText=submitBtn.querySelector(".btn-text");const loading=submitBtn.querySelector(".loading");btnText.style.opacity="0";loading.classList.remove("hidden");submitBtn.disabled=true;document.getElementById("positionSelect").disabled=false;const formData=new FormData(this);if((formData.get("password")||"").match(/^\s*$/)){formData.delete("password");}
 formData.delete("lang");const params=new URLSearchParams(formData).toString();fetch("/editPass?"+params).then((response)=>response.text()).catch(errorHandler).finally(async(data)=>{await getPasswords();btnText.style.opacity="1";loading.classList.add("hidden");submitBtn.disabled=false;setMode("type");});}
 document.addEventListener("DOMContentLoaded",function(){const layoutSelect=document.getElementById("layoutSelect");const layoutIndex=document.getElementById("layoutIndex");layoutSelect.addEventListener("change",function(){layoutIndex.value=layoutSelect.selectedIndex;});layoutIndex.value=layoutSelect.selectedIndex;document.getElementById("editFormContent").addEventListener("submit",editFormHandler);initToggleButtons();});window.onload=async()=>{await getPasswords();};</script>

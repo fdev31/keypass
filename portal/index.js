@@ -244,11 +244,11 @@ function passwordClick(uid) {
 }
 
 function updateWifiPass() {
-  const newPass = prompt("Enter new password for KeyPass:");
+  const newPass = document.getElementById("newWifiPass").value;
+  const confirmPass = document.getElementById("confirmWifiPass").value;
   if (!newPass) return;
   // ask again and check if similar
-  const newPassCheck = prompt("Confirm new password:");
-  if (newPass !== newPassCheck) {
+  if (newPass !== confirmPass) {
     alert("Passwords do not match. Please try again.");
     return;
   }
@@ -259,6 +259,28 @@ function updateWifiPass() {
   fetch(`/updateWifiPass?newPass=${newPass}`)
     .then((response) => response.text())
     .catch(errorHandler);
+
+  const loadingEl = document.querySelector("#wifiPassForm .loading");
+  const btnText = document.querySelector("#wifiPassForm .btn-text");
+  if (loadingEl && btnText) {
+    btnText.classList.add("hidden");
+    loadingEl.classList.remove("hidden");
+  }
+
+  // Simulate API call (remove this in production)
+  setTimeout(() => {
+    // Hide the form with animation
+    toggleWifiPassForm();
+
+    // Reset form and loading state
+    document.getElementById("newWifiPass").value = "";
+    document.getElementById("confirmWifiPass").value = "";
+
+    if (loadingEl && btnText) {
+      btnText.classList.remove("hidden");
+      loadingEl.classList.add("hidden");
+    }
+  }, 1000);
 }
 
 async function getPasswords() {
@@ -310,6 +332,37 @@ function confirmFactoryReset() {
         })
         .catch(errorHandler);
     }
+  }
+}
+
+function toggleWifiPassForm() {
+  const form = document.getElementById("wifiPassForm");
+
+  if (form.classList.contains("hidden")) {
+    // Show the form
+    form.classList.remove("hidden");
+    form.style.display = "block";
+    form.style.maxHeight = "0";
+    form.style.opacity = "0";
+    form.style.margin = "0";
+
+    // Force reflow
+    void form.offsetWidth;
+
+    // Animate to visible state
+    form.style.maxHeight = "500px"; // Adjust based on your form's actual height
+    form.style.opacity = "1";
+    form.style.margin = "10px 0";
+  } else {
+    // Animate to hidden state
+    form.style.maxHeight = "0";
+    form.style.opacity = "0";
+    form.style.margin = "0";
+
+    // After animation completes, hide the element
+    setTimeout(() => {
+      form.classList.add("hidden");
+    }, 300); // Match your transition duration
   }
 }
 
