@@ -3,8 +3,9 @@ A password manager in your keychain
 # Requirements
 
 - ESP32 C3 super mini (any controller with Wifi and Serial will do, but an Espressif will require no or little code change)
+    - supports the version with a built-in 0.42" OLED screen
 - (optional) 3D printer
-- CH9329 device (better than bitbang and more convenient to plug)
+- A CH9329 device
 
 # Installation
 
@@ -25,6 +26,7 @@ A password manager in your keychain
 - Get a microcontroller which has a serial interface and WiFi
 - Get some CH9329 device (in Mode 1 : `MOD0` set to `LOW`)
 - Connect the serial of the micro controller to the input of CH9329
+- Connect GND and 5V together
 - If not using and ESP32 C3, make some minor `platformio.ini` & code changes
 
 Optionally:
