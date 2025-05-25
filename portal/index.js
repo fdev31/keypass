@@ -42,6 +42,11 @@ const ui_data = {
   },
 };
 
+function errorHandler(error) {
+  alert("Error: " + error);
+}
+
+// password stuff
 function getRandomChar() {
   const charset =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0" +
@@ -59,19 +64,6 @@ function generatePassword(length) {
   return password;
 }
 
-function wiggleDots(elementId = "diceIcon") {
-  const icon =
-    typeof elementId == "string"
-      ? document.getElementById(elementId)
-      : elementId;
-  icon.classList.add("wiggle");
-
-  // Remove wiggle class after animation completes
-  setTimeout(() => {
-    icon.classList.remove("wiggle");
-  }, 500);
-}
-
 function generatePass() {
   const base_length = UserPreferences.get("password_length");
   const length = prompt(
@@ -84,7 +76,7 @@ function generatePass() {
   if (base_length != length) {
     UserPreferences.save("password_length", length);
   }
-  wiggleDots("diceIcon");
+  wiggle("diceIcon");
   const password = generatePassword(length);
   document.getElementById("passwordInput").value = password;
   document.getElementById("typeNewPassBtn").classList.remove("hidden");
@@ -92,24 +84,40 @@ function generatePass() {
     document.getElementById("typeOldPassBtn").classList.remove("hidden");
 }
 
-function updateWifiPass() {
-  const newPass = prompt("Enter new password for KeyPass:");
-  if (!newPass) return;
-  // ask again and check if similar
-  const newPassCheck = prompt("Confirm new password:");
-  if (newPass !== newPassCheck) {
-    alert("Passwords do not match. Please try again.");
-    return;
-  }
-  if (newPass.length < 8) {
-    alert("Password must be at least 8 characters long.");
-    return;
-  }
-  fetch(`/updateWifiPass?newPass=${newPass}`)
-    .then((response) => response.text())
-    .catch((error) => {
-      alert("Error:", error);
+function wiggle(elementId = "diceIcon") {
+  const icon =
+    typeof elementId == "string"
+      ? document.getElementById(elementId)
+      : elementId;
+  icon.classList.add("wiggle");
+
+  // Remove wiggle class after animation completes
+  setTimeout(() => {
+    icon.classList.remove("wiggle");
+  }, 500);
+}
+function toggleButton(buttonElement, options = {}) {
+  const setting = buttonElement.getAttribute("data-setting") || options.setting;
+  const currentState = UserPreferences.get(setting) !== false;
+
+  const newState = options.noflip ? currentState : !currentState;
+
+  UserPreferences.save(setting, newState);
+  const mode = newState ? "enabled" : "disabled";
+  buttonElement.textContent = buttonElement.getAttribute(`data-${mode}-text`);
+  const fn = buttonElement.getAttribute("data-changed") || (() => {});
+  wiggle(buttonElement);
+  eval(fn)(newState);
+}
+
+function initToggleButtons() {
+  const elements = document.querySelectorAll(".togglableButton");
+  elements.forEach((button) => {
+    toggleButton(button, { noflip: true });
+    button.addEventListener("click", () => {
+      toggleButton(button);
     });
+  });
 }
 
 function hideAll() {
@@ -201,20 +209,17 @@ function fillForm(data) {
     document.getElementById("passLabel").value = data.name;
 }
 
+// MCU Actions
 function typeOldPass() {
   const uid = document.getElementById("positionSelect").value;
-  fetch(`/typePass?id=${uid}`).catch((error) => {
-    alert("Error:", error);
-  });
+  fetch(`/typePass?id=${uid}`).catch(errorHandler);
 }
 
 function typeNewPass() {
   const password = document.getElementById("passwordInput").value;
   const escaped = encodeURIComponent(password);
   const layout = document.getElementById("layoutSelect").value;
-  fetch(`/typeRaw?text=${escaped}&layout=${layout}`).catch((error) => {
-    alert("Error:", error);
-  });
+  fetch(`/typeRaw?text=${escaped}&layout=${layout}`).catch(errorHandler);
 }
 
 function passwordClick(uid) {
@@ -234,10 +239,26 @@ function passwordClick(uid) {
       setTimeout(() => {
         card.style.transform = "";
       }, 150);
-      fetch(`/typePass?id=${uid}`).catch((error) => {
-        alert("Error:", error);
-      });
+      fetch(`/typePass?id=${uid}`).catch(errorHandler);
   }
+}
+
+function updateWifiPass() {
+  const newPass = prompt("Enter new password for KeyPass:");
+  if (!newPass) return;
+  // ask again and check if similar
+  const newPassCheck = prompt("Confirm new password:");
+  if (newPass !== newPassCheck) {
+    alert("Passwords do not match. Please try again.");
+    return;
+  }
+  if (newPass.length < 8) {
+    alert("Password must be at least 8 characters long.");
+    return;
+  }
+  fetch(`/updateWifiPass?newPass=${newPass}`)
+    .then((response) => response.text())
+    .catch(errorHandler);
 }
 
 async function getPasswords() {
@@ -267,80 +288,6 @@ async function getPasswords() {
   }
 }
 
-function toggleButton(buttonElement, options = {}) {
-  const setting = buttonElement.getAttribute("data-setting") || options.setting;
-  const currentState = UserPreferences.get(setting) !== false;
-
-  const newState = options.noflip ? currentState : !currentState;
-
-  UserPreferences.save(setting, newState);
-  const mode = newState ? "enabled" : "disabled";
-  buttonElement.textContent = buttonElement.getAttribute(`data-${mode}-text`);
-  const fn = buttonElement.getAttribute("data-changed") || (() => {});
-  wiggleDots(buttonElement);
-  eval(fn)(newState);
-}
-
-function initToggleButtons() {
-  const elements = document.querySelectorAll(".togglableButton");
-  elements.forEach((button) => {
-    toggleButton(button, { noflip: true });
-    button.addEventListener("click", () => {
-      toggleButton(button);
-    });
-  });
-}
-
-// Enhanced form submission with loading states
-document.addEventListener("DOMContentLoaded", function () {
-  const layoutSelect = document.getElementById("layoutSelect");
-  const layoutIndex = document.getElementById("layoutIndex");
-
-  layoutSelect.addEventListener("change", function () {
-    layoutIndex.value = layoutSelect.selectedIndex;
-  });
-  layoutIndex.value = layoutSelect.selectedIndex;
-
-  document
-    .getElementById("editFormContent")
-    .addEventListener("submit", function (e) {
-      e.preventDefault();
-
-      // Show loading state
-      const submitBtn = this.querySelector(".submit-btn");
-      const btnText = submitBtn.querySelector(".btn-text");
-      const loading = submitBtn.querySelector(".loading");
-
-      btnText.style.opacity = "0";
-      loading.classList.remove("hidden");
-      submitBtn.disabled = true;
-
-      document.getElementById("positionSelect").disabled = false;
-
-      const formData = new FormData(this);
-      if ((formData.get("password") || "").match(/^\s*$/)) {
-        formData.delete("password");
-      }
-      formData.delete("lang");
-      const params = new URLSearchParams(formData).toString();
-
-      fetch("/editPass?" + params)
-        .then((response) => response.text())
-        .catch((error) => {
-          alert("Error:", error);
-        })
-        .finally(async (data) => {
-          await getPasswords();
-          // Reset button state
-          btnText.style.opacity = "1";
-          loading.classList.add("hidden");
-          submitBtn.disabled = false;
-          setMode("type");
-        });
-    });
-  initToggleButtons();
-});
-
 function confirmFactoryReset() {
   if (
     confirm(
@@ -361,13 +308,59 @@ function confirmFactoryReset() {
             alert("Factory reset failed.");
           }
         })
-        .catch((error) => {
-          console.error("Error:", error);
-          alert("Factory reset failed due to an error.");
-        });
+        .catch(errorHandler);
     }
   }
 }
+
+function editFormHandler(e) {
+  e.preventDefault();
+
+  // Show loading state
+  const submitBtn = this.querySelector(".submit-btn");
+  const btnText = submitBtn.querySelector(".btn-text");
+  const loading = submitBtn.querySelector(".loading");
+
+  btnText.style.opacity = "0";
+  loading.classList.remove("hidden");
+  submitBtn.disabled = true;
+
+  document.getElementById("positionSelect").disabled = false;
+
+  const formData = new FormData(this);
+  if ((formData.get("password") || "").match(/^\s*$/)) {
+    formData.delete("password");
+  }
+  formData.delete("lang");
+  const params = new URLSearchParams(formData).toString();
+
+  fetch("/editPass?" + params)
+    .then((response) => response.text())
+    .catch(errorHandler)
+    .finally(async (data) => {
+      await getPasswords();
+      // Reset button state
+      btnText.style.opacity = "1";
+      loading.classList.add("hidden");
+      submitBtn.disabled = false;
+      setMode("type");
+    });
+}
+// Enhanced form submission with loading states
+document.addEventListener("DOMContentLoaded", function () {
+  const layoutSelect = document.getElementById("layoutSelect");
+  const layoutIndex = document.getElementById("layoutIndex");
+
+  layoutSelect.addEventListener("change", function () {
+    layoutIndex.value = layoutSelect.selectedIndex;
+  });
+  layoutIndex.value = layoutSelect.selectedIndex;
+
+  document
+    .getElementById("editFormContent")
+    .addEventListener("submit", editFormHandler);
+  initToggleButtons();
+});
 
 // Load passwords on page load
 window.onload = async () => {
