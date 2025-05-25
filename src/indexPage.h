@@ -493,7 +493,7 @@ content: "";
 <div class="container">
 <div class="header">
 
-<button id="settings-button" onclick="setMode('settings')" class="modern-btn menu-btn" role="button" style="z-index: 10; float: right; padding: 0; font-size: 200%; width: 50px; height: 50px;">
+<button id="settings-button" onclick="shake('settings-button'); setMode('settings')" class="modern-btn menu-btn" role="button" style="z-index: 10; float: right; padding: 0; font-size: 200%; width: 50px; height: 50px;">
 &#x1F4AB;
 </button>
 <h1>KeyPass</h1>
