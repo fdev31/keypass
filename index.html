@@ -21,6 +21,9 @@ padding: 20px;
 position: relative;
 overflow-x: hidden;
 }
+.column {
+flex-direction: column !important;
+}
 
 body::before {
 content: '';
@@ -479,40 +482,23 @@ content: "";
 <body>
 <div class="container">
 <div class="header">
+
+<button id="settings-button" onclick="setMode('settings')" class="modern-btn menu-btn" role="button" style="z-index: 10; float: right; padding: 0; font-size: 200%; width: 50px; height: 50px;">
+&#x1F4AB;
+</button>
 <h1>KeyPass</h1>
 <p id="subtitle" class="subtitle">Password Management System</p>
 </div>
 
 <div class="button-row">
-<button id="type-button" onclick="setMode('type')" class="modern-btn menu-btn active" role="button">
-Type
-</button>
-<button id="edit-button" onclick="setMode('edit')" class="modern-btn menu-btn" role="button">
-Edit
-</button>
-<button id="add-button" onclick="setMode('add')" class="modern-btn menu-btn" role="button">
-Add
-</button>
-<button id="type-button" onclick="setMode('settings')" class="modern-btn menu-btn" role="button" style="flex: 0 0 auto; padding: 0; font-size: 200%; width: 50px; height: 50px;">
-&#x1F4AB;
-</button>
+<button id="type-button" onclick="setMode('type')" class="modern-btn menu-btn active" role="button">Type</button>
+<button id="edit-button" onclick="setMode('edit')" class="modern-btn menu-btn" role="button">Edit</button>
+<button id="add-button" onclick="setMode('add')" class="modern-btn menu-btn" role="button">Add</button>
 </div>
-
 <div class="mainScreen hidden" id="settingsForm">
-<div class="glass-panel">
-<form id="settingsFormContent" method="get" action="/settings">
-<div class="form-group">
-<label for="wifiPassInput">Wi-Fi Password</label>
-<input id="wifiPassInput" type="password" name="wifiPass" placeholder="Enter Wi-Fi password..." required>
-</div>
-<button type="submit" class="submit-btn">
-<span class="btn-text">Save Settings</span>
-<span class="loading hidden"></span>
-</button>
-</form>
-<button class="menu-btn modern-btn" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">
-Factory Reset
-</button>
+<div class="glass-panel" style="display: flex; gap: 15px; margin-top: 20px; flex-direction: column;">
+<button class="modern-btn column" role="button" onclick="updateWifiPass()">Change Wi-Fi password</button>
+<button class="modern-btn column" role="button" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">Factory Reset</button>
 </div>
 </div>
 
@@ -522,7 +508,7 @@ Factory Reset
 <input type="hidden" name="id" id="positionSelect" disabled>
 
 <div class="form-group">
-<label for="layoutSelect">Layout</label>
+<label for="layoutSelect">Keyboard layout</label>
 <select name="lang" id="layoutSelect" required>
 <option value="fr">French</option>
 <option value="us">US</option>
@@ -563,13 +549,6 @@ Factory Reset
 <!-- Passwords will be loaded here -->
 </div>
 </div>
-<footer>
-<div style="display: flex; gap: 15px; margin-top: 20px;">
-<button class="menu-btn modern-btn" onclick="updateWifiPass()">
-Change KeyPass' password
-</button>
-</div>
-</footer>
 </div>
 <script>
 <!-- WARN: The following line must not be changed and is replaced with index.js content automatically -->
@@ -703,19 +682,17 @@ function setMode(action) {
     leaveEditForm();
   }
   ui_data.mode = action;
+  ui_data.change_focus(`${action}-button`);
 
   switch (action) {
     case "edit":
-      ui_data.change_focus("edit-button");
       showPasswords();
       break;
     case "type":
-      ui_data.change_focus("type-button");
       showPasswords();
       break;
     case "add":
       const uid = ui_data.passwords.length;
-      ui_data.change_focus("add-button");
       fillForm({ name: "" });
       showEditForm(uid);
       break;

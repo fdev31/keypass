@@ -128,19 +128,17 @@ function setMode(action) {
     leaveEditForm();
   }
   ui_data.mode = action;
+  ui_data.change_focus(`${action}-button`);
 
   switch (action) {
     case "edit":
-      ui_data.change_focus("edit-button");
       showPasswords();
       break;
     case "type":
-      ui_data.change_focus("type-button");
       showPasswords();
       break;
     case "add":
       const uid = ui_data.passwords.length;
-      ui_data.change_focus("add-button");
       fillForm({ name: "" });
       showEditForm(uid);
       break;
