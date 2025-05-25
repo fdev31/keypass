@@ -3,9 +3,10 @@ OUT="src/indexPage.h"
 TEST_INDEX="index.html"
 SOURCE_HTML="portal/index.html"
 SOURCE_JS="portal/index.js"
+cat ${SOURCE_JS} | python -m rjsmin > /tmp/jsmin
 sed -f - "$SOURCE_HTML" > ${TEST_INDEX} << EOF
 /<!-- CODE HERE -->/ {
- r ${SOURCE_JS}
+ r /tmp/jsmin
  d
 }
 s/^ *//g
