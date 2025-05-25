@@ -585,7 +585,7 @@ const UserPreferences={defaults:{confirm_actions:true,password_visibility:false,
 function getRandomChar(){const charset="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0"+"123456789!@#$%^&*()_+-=[]{}|;:,.<>?";const charsetSize=charset.length;return charset[Math.floor(Math.random()*charsetSize)];}
 function generatePassword(length){let password="";for(let i=0;i<length;++i){password+=getRandomChar();}
 return password;}
-function generatePass(){const base_length=UserPreferences.get("password_length");const length=prompt(`Password length (default ${base_length}):`,base_length,);if(!length||isNaN(length)||length<8){return;}
+function generatePass(){const base_length=UserPreferences.get("password_length");const length=prompt(`Password length:`,base_length);if(!length||isNaN(length)||length<8){return;}
 if(base_length!=length){UserPreferences.save("password_length",length);}
 wiggle("diceIcon");const password=generatePassword(length);document.getElementById("passwordInput").value=password;document.getElementById("typeNewPassBtn").classList.remove("hidden");if(ui_data.mode!="add")
 document.getElementById("typeOldPassBtn").classList.remove("hidden");}

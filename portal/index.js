@@ -66,10 +66,7 @@ function generatePassword(length) {
 
 function generatePass() {
   const base_length = UserPreferences.get("password_length");
-  const length = prompt(
-    `Password length (default ${base_length}):`,
-    base_length,
-  );
+  const length = prompt(`Password length:`, base_length);
   if (!length || isNaN(length) || length < 8) {
     return;
   }
