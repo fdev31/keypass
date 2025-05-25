@@ -513,10 +513,10 @@ content: "";
 <div id="wifiPassForm" class="hidden" style="overflow: hidden; transition: all 0.3s ease-out;">
 <div class="glass-panel" style="margin-top: 10px;">
 <div class="form-group">
-<input type="password" id="newWifiPass" placeholder="New Wi-Fi password" required>
+<input type="password" id="newWifiPass" placeholder="New Wi-Fi password" minlength="8" required>
 </div>
 <div class="form-group">
-<input type="password" id="confirmWifiPass" placeholder="Confirm password" required>
+<input type="password" id="confirmWifiPass" placeholder="Confirm password" minlength="8" required>
 </div>
 <button type="button" onclick="updateWifiPass()" class="submit-btn">
 <span class="btn-text">Update Password</span>
@@ -544,7 +544,7 @@ content: "";
 
 <div class="form-group">
 <label for="passLabel">Name</label>
-<input id="passLabel" name="name" type="text" required placeholder="Enter password name (15 characters max)" maxlength="15">
+<input id="passLabel" name="name" type="text" required placeholder="Enter password name" maxlength="15">
 </div>
 
 <div class="form-group">
