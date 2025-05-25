@@ -68,7 +68,7 @@ function generatePass() {
   const uid = ~~document.getElementById("positionSelect").value;
   const length = ui_data.passwords[uid]?.len || prompt("Length:", 12);
 
-  if (!length || isNaN(length) || length < 8) {
+  if (!length || isNaN(length) || length < 4) {
     return;
   }
   shake("diceIcon");
