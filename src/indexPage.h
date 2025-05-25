@@ -578,9 +578,6 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 </div>
 
 <div id="passList" class="mainScreen">
-<div class="password-grid">
-<!-- Passwords will be loaded here -->
-</div>
 <div class="form-group" id="passListKbLayout">
 <label for="layoutOverrideSelect">Keyboard override:</label>
 <select name="lang" id="layoutOverrideSelect" required>
@@ -589,6 +586,9 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 <option value="us">US</option>
 </select>
 <input type="hidden" name="layout" id="layoutIndex">
+</div>
+<div class="password-grid">
+<!-- Passwords will be loaded here -->
 </div>
 </div>
 </div>
