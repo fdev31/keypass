@@ -3,6 +3,7 @@ const UserPreferences = {
   defaults: {
     confirm_actions: true,
     password_visibility: false,
+    password_length: 12,
   },
 
   // Save a preference
@@ -72,10 +73,16 @@ function wiggleDots(elementId = "diceIcon") {
 }
 
 function generatePass() {
-  let length = 12;
-  length = prompt("Password length (default 12):", length);
+  const base_length = UserPreferences.get("password_length");
+  const length = prompt(
+    `Password length (default ${base_length}):`,
+    base_length,
+  );
   if (!length || isNaN(length) || length < 8) {
     return;
+  }
+  if (base_length != length) {
+    UserPreferences.save("password_length", length);
   }
   wiggleDots("diceIcon");
   const password = generatePassword(length);
