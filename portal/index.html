@@ -429,7 +429,7 @@
     to { transform: rotate(360deg); }
     }
 
-    @keyframes wiggle-dots {
+    @keyframes wiggle {
       0% { transform: rotate(0deg); }
       20% { transform: rotate(-10deg); }
       40% { transform: rotate(10deg); }
@@ -438,8 +438,8 @@
       100% { transform: rotate(0deg); }
     }
 
-    .wiggle-dots {
-      animation: wiggle-dots 0.5s ease-in-out;
+    .wiggle {
+      animation: wiggle 0.5s ease-in-out;
     }
     .icon {
       display: flex;
@@ -497,6 +497,8 @@
       </div>
       <div class="mainScreen hidden" id="settingsForm">
         <div class="glass-panel" style="display: flex; gap: 15px; margin-top: 20px; flex-direction: column;">
+          <button class="modern-btn column togglableButton" role="button" data-setting="confirm_actions" data-enabled-text="Ask for confirmations" data-disabled-text="Don't ask for confirmations">Ask for confirmations</button>
+          <button class="modern-btn column togglableButton" role="button" data-setting="password_visibility" data-enabled-text="Show passwords" data-disabled-text="Hide passwords">Ask for confirmations</button>
           <button class="modern-btn column" role="button" onclick="updateWifiPass()">Change Wi-Fi password</button>
           <button class="modern-btn column" role="button" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">Factory Reset</button>
         </div>
@@ -526,7 +528,13 @@
               <label for="passwordInput">Password</label>
               <div style="display: flex; gap: 10px;">
                 <input id="passwordInput" type="password" name="password" placeholder="Enter password...">
-                <button id="toggleVisibilityIcon" type="button" onclick="toggleVisibility()" class="modern-btn"  style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</button>
+
+                <button id="toggleVisibilityIcon" type="button" class="modern-btn togglableButton"
+                  data-setting="password_visibility"
+                  data-enabled-text="&#x1f64a;" data-disabled-text="&#x1f648;"
+                  data-changed="(visible) => passwordInput.type = visible ? 'text' : 'password'"
+
+                  style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</button>
                 <button type="button" onclick="generatePass()" class="modern-btn" style="width: 50px; flex: 0 0 auto; padding: 0;"><div class="icon"><div id="diceIcon" class="icon-die"></div></div></button>
 
               </div>

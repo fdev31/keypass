@@ -432,7 +432,7 @@ animation: spin 1s ease-in-out infinite;
 to { transform: rotate(360deg); }
 }
 
-@keyframes wiggle-dots {
+@keyframes wiggle {
 0% { transform: rotate(0deg); }
 20% { transform: rotate(-10deg); }
 40% { transform: rotate(10deg); }
@@ -441,8 +441,8 @@ to { transform: rotate(360deg); }
 100% { transform: rotate(0deg); }
 }
 
-.wiggle-dots {
-animation: wiggle-dots 0.5s ease-in-out;
+.wiggle {
+animation: wiggle 0.5s ease-in-out;
 }
 .icon {
 display: flex;
@@ -500,6 +500,8 @@ content: "";
 </div>
 <div class="mainScreen hidden" id="settingsForm">
 <div class="glass-panel" style="display: flex; gap: 15px; margin-top: 20px; flex-direction: column;">
+<button class="modern-btn column togglableButton" role="button" data-setting="confirm_actions" data-enabled-text="Ask for confirmations" data-disabled-text="Don't ask for confirmations">Ask for confirmations</button>
+<button class="modern-btn column togglableButton" role="button" data-setting="password_visibility" data-enabled-text="Show passwords" data-disabled-text="Hide passwords">Ask for confirmations</button>
 <button class="modern-btn column" role="button" onclick="updateWifiPass()">Change Wi-Fi password</button>
 <button class="modern-btn column" role="button" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">Factory Reset</button>
 </div>
@@ -529,7 +531,13 @@ content: "";
 <label for="passwordInput">Password</label>
 <div style="display: flex; gap: 10px;">
 <input id="passwordInput" type="password" name="password" placeholder="Enter password...">
-<button id="toggleVisibilityIcon" type="button" onclick="toggleVisibility()" class="modern-btn"  style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</button>
+
+<button id="toggleVisibilityIcon" type="button" class="modern-btn togglableButton"
+data-setting="password_visibility"
+data-enabled-text="&#x1f64a;" data-disabled-text="&#x1f648;"
+data-changed="(visible) => passwordInput.type = visible ? 'text' : 'password'"
+
+style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</button>
 <button type="button" onclick="generatePass()" class="modern-btn" style="width: 50px; flex: 0 0 auto; padding: 0;"><div class="icon"><div id="diceIcon" class="icon-die"></div></div></button>
 
 </div>
@@ -555,6 +563,31 @@ content: "";
 </div>
 <script>
 <!-- WARN: The following line must not be changed and is replaced with index.js content automatically -->
+const UserPreferences = {
+  // Default preferences
+  defaults: {
+    confirmations: true,
+  },
+
+  // Save a preference
+  save: function (key, value) {
+    localStorage.setItem(`userPref_${key}`, JSON.stringify(value));
+  },
+
+  // Get a preference (returns default if not found)
+  get: function (key) {
+    const stored = localStorage.getItem(`userPref_${key}`);
+    return stored ? JSON.parse(stored) : this.defaults[key];
+  },
+
+  // Reset all preferences to defaults
+  reset: function () {
+    Object.keys(this.defaults).forEach((key) => {
+      this.save(key, this.defaults[key]);
+    });
+  },
+};
+
 const ui_data = {
   mode: "type",
   current_focus: "type-button",
@@ -590,13 +623,15 @@ function generatePassword(length) {
 }
 
 function wiggleDots(elementId = "diceIcon") {
-  // Add wiggle class
-  const icon = document.getElementById(elementId);
-  icon.classList.add("wiggle-dots");
+  const icon =
+    typeof elementId == "string"
+      ? document.getElementById(elementId)
+      : elementId;
+  icon.classList.add("wiggle");
 
   // Remove wiggle class after animation completes
   setTimeout(() => {
-    icon.classList.remove("wiggle-dots");
+    icon.classList.remove("wiggle");
   }, 500);
 }
 
@@ -789,18 +824,28 @@ async function getPasswords() {
   }
 }
 
-function toggleVisibility() {
-  const passwordInput = document.getElementById("passwordInput");
-  const visibility = document.getElementById("toggleVisibilityIcon");
+function toggleButton(buttonElement, options = {}) {
+  const setting = buttonElement.getAttribute("data-setting") || options.setting;
+  const currentState = UserPreferences.get(setting) !== false;
 
-  // Toggle password visibility
-  passwordInput.type = passwordInput.type === "password" ? "text" : "password";
-  if (passwordInput.type === "text") {
-    visibility.innerHTML = "&#x1f64a";
-  } else {
-    visibility.innerHTML = "&#x1f648;"; // Show eye with slash icon
-  }
-  wiggleDots("toggleVisibilityIcon");
+  const newState = options.noflip ? currentState : !currentState;
+
+  UserPreferences.save(setting, newState);
+  const mode = newState ? "enabled" : "disabled";
+  buttonElement.textContent = buttonElement.getAttribute(`data-${mode}-text`);
+  const fn = buttonElement.getAttribute("data-changed") || (() => {});
+  wiggleDots(buttonElement);
+  eval(fn)(newState);
+}
+
+function initToggleButtons() {
+  const elements = document.querySelectorAll(".togglableButton");
+  elements.forEach((button) => {
+    toggleButton(button, { noflip: true });
+    button.addEventListener("click", () => {
+      toggleButton(button);
+    });
+  });
 }
 
 // Enhanced form submission with loading states
@@ -850,6 +895,7 @@ document.addEventListener("DOMContentLoaded", function () {
           setMode("type");
         });
     });
+  initToggleButtons();
 });
 
 function confirmFactoryReset() {

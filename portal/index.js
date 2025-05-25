@@ -1,3 +1,28 @@
+const UserPreferences = {
+  // Default preferences
+  defaults: {
+    confirmations: true,
+  },
+
+  // Save a preference
+  save: function (key, value) {
+    localStorage.setItem(`userPref_${key}`, JSON.stringify(value));
+  },
+
+  // Get a preference (returns default if not found)
+  get: function (key) {
+    const stored = localStorage.getItem(`userPref_${key}`);
+    return stored ? JSON.parse(stored) : this.defaults[key];
+  },
+
+  // Reset all preferences to defaults
+  reset: function () {
+    Object.keys(this.defaults).forEach((key) => {
+      this.save(key, this.defaults[key]);
+    });
+  },
+};
+
 const ui_data = {
   mode: "type",
   current_focus: "type-button",
@@ -33,13 +58,15 @@ function generatePassword(length) {
 }
 
 function wiggleDots(elementId = "diceIcon") {
-  // Add wiggle class
-  const icon = document.getElementById(elementId);
-  icon.classList.add("wiggle-dots");
+  const icon =
+    typeof elementId == "string"
+      ? document.getElementById(elementId)
+      : elementId;
+  icon.classList.add("wiggle");
 
   // Remove wiggle class after animation completes
   setTimeout(() => {
-    icon.classList.remove("wiggle-dots");
+    icon.classList.remove("wiggle");
   }, 500);
 }
 
@@ -232,18 +259,28 @@ async function getPasswords() {
   }
 }
 
-function toggleVisibility() {
-  const passwordInput = document.getElementById("passwordInput");
-  const visibility = document.getElementById("toggleVisibilityIcon");
+function toggleButton(buttonElement, options = {}) {
+  const setting = buttonElement.getAttribute("data-setting") || options.setting;
+  const currentState = UserPreferences.get(setting) !== false;
 
-  // Toggle password visibility
-  passwordInput.type = passwordInput.type === "password" ? "text" : "password";
-  if (passwordInput.type === "text") {
-    visibility.innerHTML = "&#x1f64a";
-  } else {
-    visibility.innerHTML = "&#x1f648;"; // Show eye with slash icon
-  }
-  wiggleDots("toggleVisibilityIcon");
+  const newState = options.noflip ? currentState : !currentState;
+
+  UserPreferences.save(setting, newState);
+  const mode = newState ? "enabled" : "disabled";
+  buttonElement.textContent = buttonElement.getAttribute(`data-${mode}-text`);
+  const fn = buttonElement.getAttribute("data-changed") || (() => {});
+  wiggleDots(buttonElement);
+  eval(fn)(newState);
+}
+
+function initToggleButtons() {
+  const elements = document.querySelectorAll(".togglableButton");
+  elements.forEach((button) => {
+    toggleButton(button, { noflip: true });
+    button.addEventListener("click", () => {
+      toggleButton(button);
+    });
+  });
 }
 
 // Enhanced form submission with loading states
@@ -293,6 +330,7 @@ document.addEventListener("DOMContentLoaded", function () {
           setMode("type");
         });
     });
+  initToggleButtons();
 });
 
 function confirmFactoryReset() {
