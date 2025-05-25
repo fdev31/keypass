@@ -189,7 +189,8 @@ void handleList(AsyncWebServerRequest *request) {
       json += ",";
     }
     json += "{\"name\":\"" + String(pwd.name) + "\",\"uid\":" + String(id) +
-            ",\"layout\":" + String(pwd.layout) + "}";
+            ",\"layout\":" + String(pwd.layout) +
+            ",\"len\":" + strlen(pwd.password) + "}";
     firstItem = false;
   }
 

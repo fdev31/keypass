@@ -65,13 +65,11 @@ function generatePassword(length) {
 }
 
 function generatePass() {
-  const base_length = UserPreferences.get("password_length");
-  const length = prompt(`Password length:`, base_length);
+  const uid = ~~document.getElementById("positionSelect").value;
+  const length = ui_data.passwords[uid]?.len || prompt("Length:", 12);
+
   if (!length || isNaN(length) || length < 8) {
     return;
-  }
-  if (base_length != length) {
-    UserPreferences.save("password_length", length);
   }
   wiggle("diceIcon");
   const password = generatePassword(length);
@@ -200,8 +198,12 @@ function showSettings() {
 function fillForm(data) {
   if (data.layout != undefined)
     document.getElementById("layoutSelect").selectedIndex = data.layout;
-  if (data.uid != undefined)
+  if (data.uid != undefined) {
     document.getElementById("positionSelect").value = data.uid;
+  } else {
+    document.getElementById("positionSelect").value = -1;
+  }
+
   if (data.name != undefined)
     document.getElementById("passLabel").value = data.name;
 }

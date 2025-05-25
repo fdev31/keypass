@@ -588,8 +588,7 @@ const UserPreferences={defaults:{confirm_actions:true,password_visibility:false,
 function getRandomChar(){const charset="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0"+"123456789!@#$%^&*()_+-=[]{}|;:,.<>?";const charsetSize=charset.length;return charset[Math.floor(Math.random()*charsetSize)];}
 function generatePassword(length){let password="";for(let i=0;i<length;++i){password+=getRandomChar();}
 return password;}
-function generatePass(){const base_length=UserPreferences.get("password_length");const length=prompt(`Password length:`,base_length);if(!length||isNaN(length)||length<8){return;}
-if(base_length!=length){UserPreferences.save("password_length",length);}
+function generatePass(){const uid=~~document.getElementById("positionSelect").value;const length=ui_data.passwords[uid]?.len||prompt("Length:",12);if(!length||isNaN(length)||length<8){return;}
 wiggle("diceIcon");const password=generatePassword(length);document.getElementById("passwordInput").value=password;document.getElementById("typeNewPassBtn").classList.remove("hidden");if(ui_data.mode!="add")
 document.getElementById("typeOldPassBtn").classList.remove("hidden");}
 function wiggle(elementId="diceIcon"){const icon=typeof elementId=="string"?document.getElementById(elementId):elementId;icon.classList.add("wiggle");setTimeout(()=>{icon.classList.remove("wiggle");},500);}
@@ -605,8 +604,8 @@ if(ui_data.mode=="edit"||ui_data.mode=="add"){leaveEditForm();}
 ui_data.mode=action;ui_data.change_focus(`${action}-button`);switch(action){case"edit":showPasswords();break;case"type":showPasswords();break;case"add":const uid=ui_data.passwords.length;fillForm({name:""});showEditForm(uid);break;case"settings":showSettings();break;default:console.error("Invalid action");}}
 function showSettings(){if(document.getElementById("settingsForm").classList.contains("hidden")){hideAll();setTimeout(()=>showElement("settingsForm"),300);}}
 function fillForm(data){if(data.layout!=undefined)
-document.getElementById("layoutSelect").selectedIndex=data.layout;if(data.uid!=undefined)
-document.getElementById("positionSelect").value=data.uid;if(data.name!=undefined)
+document.getElementById("layoutSelect").selectedIndex=data.layout;if(data.uid!=undefined){document.getElementById("positionSelect").value=data.uid;}else{document.getElementById("positionSelect").value=-1;}
+if(data.name!=undefined)
 document.getElementById("passLabel").value=data.name;}
 function typeOldPass(){const uid=document.getElementById("positionSelect").value;fetch(`/typePass?id=${uid}`).catch(errorHandler);}
 function typeNewPass(){const password=document.getElementById("passwordInput").value;const escaped=encodeURIComponent(password);const layout=document.getElementById("layoutSelect").value;fetch(`/typeRaw?text=${escaped}&layout=${layout}`).catch(errorHandler);}
