@@ -71,7 +71,7 @@ function generatePass() {
   if (!length || isNaN(length) || length < 8) {
     return;
   }
-  wiggle("diceIcon");
+  shake("diceIcon");
   const password = generatePassword(length);
   document.getElementById("passwordInput").value = password;
   document.getElementById("typeNewPassBtn").classList.remove("hidden");
@@ -79,7 +79,7 @@ function generatePass() {
     document.getElementById("typeOldPassBtn").classList.remove("hidden");
 }
 
-function wiggle(elementId = "diceIcon") {
+function shake(elementId = "diceIcon") {
   const icon =
     typeof elementId == "string"
       ? document.getElementById(elementId)
@@ -100,8 +100,8 @@ function toggleButton(buttonElement, options = {}) {
   UserPreferences.save(setting, newState);
   const mode = newState ? "enabled" : "disabled";
   buttonElement.textContent = buttonElement.getAttribute(`data-${mode}-text`);
-  const fn = buttonElement.getAttribute("data-changed") || (() => {});
-  wiggle(buttonElement);
+  shake(buttonElement);
+  const fn = buttonElement.getAttribute("data-changed") || "";
   eval(fn)(newState);
 }
 
