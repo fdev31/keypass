@@ -117,6 +117,11 @@ void handleTypePass(AsyncWebServerRequest *request) {
     // Retrieve the password based on the provided id
     Password password = readPassword(id);
     char *text = password.password;
+
+    if (request->hasParam("layout")) {
+      password.layout = request->getParam("layout")->value().toInt();
+    }
+
     int layout = password.layout;
 
     while (*text) {

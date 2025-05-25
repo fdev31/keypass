@@ -581,6 +581,15 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 <div class="password-grid">
 <!-- Passwords will be loaded here -->
 </div>
+<div class="form-group" id="passListKbLayout">
+<label for="layoutOverrideSelect">Keyboard override:</label>
+<select name="lang" id="layoutOverrideSelect" required>
+<option value=""></option>
+<option value="fr">French</option>
+<option value="us">US</option>
+</select>
+<input type="hidden" name="layout" id="layoutIndex">
+</div>
 </div>
 </div>
 <script>
@@ -601,6 +610,7 @@ function showPasswords(){if(document.getElementById("passList").classList.contai
 function leaveEditForm(uid){document.getElementById("passwordInput").value="";document.getElementById("typeNewPassBtn").classList.add("hidden");document.getElementById("typeOldPassBtn").classList.add("hidden");}
 function showEditForm(uid){if(document.getElementById("editForm").classList.contains("hidden")){const el=document.getElementById("positionSelect");el.value=uid;el.disabled=true;hideAll();setTimeout(()=>showElement("editForm"),300);}}
 function setMode(action){if(ui_data.mode==action){return;}
+if(action=="type"){document.getElementById("passListKbLayout").classList.remove("hidden");}else{document.getElementById("passListKbLayout").classList.add("hidden");}
 if(ui_data.mode=="edit"||ui_data.mode=="add"){leaveEditForm();}
 ui_data.mode=action;ui_data.change_focus(`${action}-button`);switch(action){case"edit":showPasswords();break;case"type":showPasswords();break;case"add":const uid=ui_data.passwords.length;fillForm({name:""});showEditForm(uid);break;case"settings":showSettings();break;default:console.error("Invalid action");}}
 function showSettings(){if(document.getElementById("settingsForm").classList.contains("hidden")){hideAll();setTimeout(()=>showElement("settingsForm"),300);}}
@@ -610,7 +620,7 @@ if(data.name!=undefined)
 document.getElementById("passLabel").value=data.name;}
 function typeOldPass(){const uid=document.getElementById("positionSelect").value;fetch(`/typePass?id=${uid}`).catch(errorHandler);}
 function typeNewPass(){const password=document.getElementById("passwordInput").value;const escaped=encodeURIComponent(password);const layout=document.getElementById("layoutSelect").value;fetch(`/typeRaw?text=${escaped}&layout=${layout}`).catch(errorHandler);}
-function passwordClick(uid){switch(ui_data.mode){case"edit":fillForm({uid:uid,name:ui_data.passwords[uid].name,layout:ui_data.passwords[uid].layout,});showEditForm(uid);break;default:const card=event.target.closest(".password-card");card.style.transform="scale(0.95)";setTimeout(()=>{card.style.transform="";},150);fetch(`/typePass?id=${uid}`).catch(errorHandler);}}
+function passwordClick(uid){switch(ui_data.mode){case"edit":fillForm({uid:uid,name:ui_data.passwords[uid].name,layout:ui_data.passwords[uid].layout,});showEditForm(uid);break;default:const card=event.target.closest(".password-card");card.style.transform="scale(0.95)";setTimeout(()=>{card.style.transform="";},150);const layout=document.getElementById("layoutOverrideSelect",).selectedIndex;if(layout>0){fetch(`/typePass?id=${uid}&layout=${layout - 1}`).catch(errorHandler);}else{fetch(`/typePass?id=${uid}`).catch(errorHandler);}}}
 function updateWifiPass(){const newPass=document.getElementById("newWifiPass").value;const confirmPass=document.getElementById("confirmWifiPass").value;if(!newPass)return;if(newPass!==confirmPass){alert("Passwords do not match. Please try again.");return;}
 if(newPass.length<8){alert("Password must be at least 8 characters long.");return;}
 fetch(`/updateWifiPass?newPass=${newPass}`).then((response)=>response.text()).catch(errorHandler);const loadingEl=document.querySelector("#wifiPassForm .loading");const btnText=document.querySelector("#wifiPassForm .btn-text");if(loadingEl&&btnText){btnText.classList.add("hidden");loadingEl.classList.remove("hidden");}

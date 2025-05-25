@@ -162,6 +162,11 @@ function setMode(action) {
   if (ui_data.mode == action) {
     return;
   }
+  if (action == "type") {
+    document.getElementById("passListKbLayout").classList.remove("hidden");
+  } else {
+    document.getElementById("passListKbLayout").classList.add("hidden");
+  }
   if (ui_data.mode == "edit" || ui_data.mode == "add") {
     leaveEditForm();
   }
@@ -231,14 +236,21 @@ function passwordClick(uid) {
       });
       showEditForm(uid);
       break;
-    default:
+    default: // "type"
       // Add visual feedback for typing action
       const card = event.target.closest(".password-card");
       card.style.transform = "scale(0.95)";
       setTimeout(() => {
         card.style.transform = "";
       }, 150);
-      fetch(`/typePass?id=${uid}`).catch(errorHandler);
+      const layout = document.getElementById(
+        "layoutOverrideSelect",
+      ).selectedIndex;
+      if (layout > 0) {
+        fetch(`/typePass?id=${uid}&layout=${layout - 1}`).catch(errorHandler);
+      } else {
+        fetch(`/typePass?id=${uid}`).catch(errorHandler);
+      }
   }
 }
 
