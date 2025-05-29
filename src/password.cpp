@@ -21,6 +21,7 @@ void handleTypeRaw(AsyncWebServerRequest *request);
 void handleTypePass(AsyncWebServerRequest *request);
 void handleIndex(AsyncWebServerRequest *request);
 void handleEditPass(AsyncWebServerRequest *request);
+void handleFetchPass(AsyncWebServerRequest *request);
 void handleList(AsyncWebServerRequest *request);
 void handleFactoryReset(AsyncWebServerRequest *request);
 
@@ -136,6 +137,14 @@ void handleTypePass(AsyncWebServerRequest *request) {
   }
 }
 
+void handleFetchPass(AsyncWebServerRequest *request) {
+  lastClientTime = millis(); // Reset the timer on each request
+  if (request->hasParam("id")) {
+    int id = request->getParam("id")->value().toInt();
+    Password password = readPassword(id);
+    return request->send(200, "text/plain", password.password);
+  }
+}
 void handleEditPass(AsyncWebServerRequest *request) {
 #ifdef ENABLE_GRAPHICS
   strlcpy(DEBUG_BUFFER, "Edited", 99);
@@ -237,6 +246,7 @@ void setUpKeyboard(AsyncWebServer &server) {
   server.on("/typeRaw", HTTP_GET, handleTypeRaw);
   server.on("/typePass", HTTP_GET, handleTypePass);
   server.on("/editPass", HTTP_GET, handleEditPass);
+  server.on("/fetchPass", HTTP_GET, handleFetchPass);
   server.on("/list", HTTP_GET, handleList);
   server.on("/reset", HTTP_GET, handleFactoryReset);
 

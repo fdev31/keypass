@@ -108,6 +108,14 @@ function toggleButton(buttonElement, options = {}) {
   eval(fn)(newState);
 }
 
+async function togglePasswordVisibility(visible) {
+  passwordInput.type = visible ? "text" : "password";
+  if (ui_data.mode == "edit" && passwordInput.value.length == 0) {
+    const pass = await fetch(`/fetchPass?id=${positionSelect.value}`);
+    passwordInput.value = JSON.parse(await pass.text());
+  }
+}
+
 function initToggleButtons() {
   const elements = document.querySelectorAll(".togglableButton");
   elements.forEach((button) => {
@@ -146,16 +154,15 @@ function showPasswords() {
 }
 
 function leaveEditForm(uid) {
-  document.getElementById("passwordInput").value = "";
-  document.getElementById("typeNewPassBtn").classList.add("hidden");
-  document.getElementById("typeOldPassBtn").classList.add("hidden");
+  passwordInput.value = "";
+  typeNewPassBtn.classList.add("hidden");
+  typeOldPassBtn.classList.add("hidden");
 }
 
 function showEditForm(uid) {
   if (document.getElementById("editForm").classList.contains("hidden")) {
-    const el = document.getElementById("positionSelect");
-    el.value = uid;
-    el.disabled = true;
+    positionSelect.value = uid;
+    positionSelect.disabled = true;
     hideAll();
     setTimeout(() => showElement("editForm"), 300);
   }
@@ -166,9 +173,9 @@ function setMode(action) {
     return;
   }
   if (action == "type") {
-    document.getElementById("passListKbLayout").classList.remove("hidden");
+    passListKbLayout.classList.remove("hidden");
   } else {
-    document.getElementById("passListKbLayout").classList.add("hidden");
+    passListKbLayout.classList.add("hidden");
   }
   if (ui_data.mode == "edit" || ui_data.mode == "add") {
     leaveEditForm();
@@ -204,28 +211,26 @@ function showSettings() {
 }
 
 function fillForm(data) {
-  if (data.layout != undefined)
-    document.getElementById("layoutSelect").selectedIndex = data.layout;
+  if (data.layout != undefined) layoutSelect.selectedIndex = data.layout;
   if (data.uid != undefined) {
-    document.getElementById("positionSelect").value = data.uid;
+    positionSelect.value = data.uid;
   } else {
-    document.getElementById("positionSelect").value = -1;
+    positionSelect.value = -1;
   }
 
-  if (data.name != undefined)
-    document.getElementById("passLabel").value = data.name;
+  if (data.name != undefined) passLabel.value = data.name;
 }
 
 // MCU Actions
 function typeOldPass() {
-  const uid = document.getElementById("positionSelect").value;
+  const uid = positionSelect.value;
   fetch(`/typePass?id=${uid}`).catch(errorHandler);
 }
 
 function typeNewPass() {
-  const password = document.getElementById("passwordInput").value;
+  const password = passwordInput.value;
   const escaped = encodeURIComponent(password);
-  const layout = document.getElementById("layoutSelect").value;
+  const layout = layoutSelect.value;
   fetch(`/typeRaw?text=${escaped}&layout=${layout}`).catch(errorHandler);
 }
 
@@ -246,9 +251,7 @@ function passwordClick(uid) {
       setTimeout(() => {
         card.style.transform = "";
       }, 150);
-      const layout = document.getElementById(
-        "layoutOverrideSelect",
-      ).selectedIndex;
+      const layout = layoutOverrideSelect.selectedIndex;
       if (layout > 0) {
         fetch(`/typePass?id=${uid}&layout=${layout - 1}`).catch(errorHandler);
       } else {
@@ -258,8 +261,8 @@ function passwordClick(uid) {
 }
 
 function updateWifiPass() {
-  const newPass = document.getElementById("newWifiPass").value;
-  const confirmPass = document.getElementById("confirmWifiPass").value;
+  const newPass = newWifiPass.value;
+  const confirmPass = confirmWifiPass.value;
   if (!newPass) return;
   // ask again and check if similar
   if (newPass !== confirmPass) {
@@ -287,8 +290,8 @@ function updateWifiPass() {
     toggleWifiPassForm();
 
     // Reset form and loading state
-    document.getElementById("newWifiPass").value = "";
-    document.getElementById("confirmWifiPass").value = "";
+    newWifiPass.value = "";
+    confirmWifiPass.value = "";
 
     if (loadingEl && btnText) {
       btnText.classList.remove("hidden");
@@ -304,8 +307,7 @@ async function getPasswords() {
     ui_data.passwords = passwords.passwords;
     const count = passwords.passwords.length;
     const total = passwords.free + count;
-    document.getElementById("subtitle").innerText =
-      `Stored ${count} over ${total}`;
+    subtitle.innerText = `Stored ${count} over ${total}`;
 
     const passList = document.querySelector("#passList .password-grid");
     const domData = [];
@@ -350,32 +352,30 @@ function confirmFactoryReset() {
 }
 
 function toggleWifiPassForm() {
-  const form = document.getElementById("wifiPassForm");
-
-  if (form.classList.contains("hidden")) {
+  if (wifiPassForm.classList.contains("hidden")) {
     // Show the form
-    form.classList.remove("hidden");
-    form.style.display = "block";
-    form.style.maxHeight = "0";
-    form.style.opacity = "0";
-    form.style.margin = "0";
+    wifiPassForm.classList.remove("hidden");
+    wifiPassForm.style.display = "block";
+    wifiPassForm.style.maxHeight = "0";
+    wifiPassForm.style.opacity = "0";
+    wifiPassForm.style.margin = "0";
 
     // Force reflow
-    void form.offsetWidth;
+    void wifiPassForm.offsetWidth;
 
     // Animate to visible state
-    form.style.maxHeight = "500px"; // Adjust based on your form's actual height
-    form.style.opacity = "1";
-    form.style.margin = "10px 0";
+    wifiPassForm.style.maxHeight = "500px"; // Adjust based on your form's actual height
+    wifiPassForm.style.opacity = "1";
+    wifiPassForm.style.margin = "10px 0";
   } else {
     // Animate to hidden state
-    form.style.maxHeight = "0";
-    form.style.opacity = "0";
-    form.style.margin = "0";
+    wifiPassForm.style.maxHeight = "0";
+    wifiPassForm.style.opacity = "0";
+    wifiPassForm.style.margin = "0";
 
     // After animation completes, hide the element
     setTimeout(() => {
-      form.classList.add("hidden");
+      wifiPassForm.classList.add("hidden");
     }, 300); // Match your transition duration
   }
 }
@@ -392,7 +392,7 @@ function editFormHandler(e) {
   loading.classList.remove("hidden");
   submitBtn.disabled = true;
 
-  document.getElementById("positionSelect").disabled = false;
+  positionSelect.disabled = false;
 
   const formData = new FormData(this);
   if ((formData.get("password") || "").match(/^\s*$/)) {
@@ -415,17 +415,12 @@ function editFormHandler(e) {
 }
 // Enhanced form submission with loading states
 document.addEventListener("DOMContentLoaded", function () {
-  const layoutSelect = document.getElementById("layoutSelect");
-  const layoutIndex = document.getElementById("layoutIndex");
-
   layoutSelect.addEventListener("change", function () {
     layoutIndex.value = layoutSelect.selectedIndex;
   });
   layoutIndex.value = layoutSelect.selectedIndex;
 
-  document
-    .getElementById("editFormContent")
-    .addEventListener("submit", editFormHandler);
+  editFormContent.addEventListener("submit", editFormHandler);
   initToggleButtons();
 });
 

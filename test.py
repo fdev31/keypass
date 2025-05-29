@@ -57,6 +57,11 @@ async def typeRaw(text: str, layout: int):
     print(text)
 
 
+@app.get("/fetchPass")
+async def fetchPass(id: int):
+    return passwords[id]["password"] if id < len(passwords) else None
+
+
 @app.get("/editPass")
 async def editPass(
     id: int,
