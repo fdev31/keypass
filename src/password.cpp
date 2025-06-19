@@ -236,6 +236,17 @@ void handleFactoryReset(AsyncWebServerRequest *request) {
 #endif
 }
 
+void handleWifiPass(AsyncWebServerRequest *request) {
+  if (request->hasParam("newPass")) {
+    const char *pass = request->getParam("newPass")->value().c_str();
+    Preferences preferences;
+    sleeping = 0; // Reset sleeping state
+    preferences.begin("KeyPass", false);
+    preferences.putString("wifi_password", pass);
+    preferences.end();
+  }
+}
+
 void setUpKeyboard(AsyncWebServer &server) {
 
 #if USE_EEPROM_API
@@ -249,6 +260,7 @@ void setUpKeyboard(AsyncWebServer &server) {
   server.on("/fetchPass", HTTP_GET, handleFetchPass);
   server.on("/list", HTTP_GET, handleList);
   server.on("/reset", HTTP_GET, handleFactoryReset);
+  server.on("/updateWifiPass", HTTP_GET, handleWifiPass);
 
 #ifdef ENABLE_GRAPHICS
   Preferences prefs;
