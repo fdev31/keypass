@@ -8,6 +8,8 @@
 #include <DNSServer.h>
 #include <ESPAsyncWebServer.h> //https://github.com/me-no-dev/ESPAsyncWebServer using the latest dev version from @me-no-dev
 #include <esp_wifi.h>          //Used for mpdu_rx_disable android workaround
+//
+extern int sleeping;
 
 // Pre reading on the fundamentals of captive portals
 // https://textslashplain.com/2022/06/24/captive-portals/
@@ -76,6 +78,7 @@ void setUpWebserver(AsyncWebServer &server, const IPAddress &localIP) {
   // Required
   server.on("/connecttest.txt", [](AsyncWebServerRequest *request) {
     request->redirect("http://logout.net");
+    sleeping = 0;
   }); // windows 11 captive portal workaround
   server.on("/wpad.dat", [](AsyncWebServerRequest *request) {
     request->send(404);
@@ -86,32 +89,54 @@ void setUpWebserver(AsyncWebServer &server, const IPAddress &localIP) {
   // might speed things up? A Tier (commonly used by modern systems)
   server.on("/generate_204", [](AsyncWebServerRequest *request) {
     request->redirect(localIPURL);
+    sleeping = 0;
   }); // android captive portal redirect
   server.on("/redirect", [](AsyncWebServerRequest *request) {
     request->redirect(localIPURL);
+    sleeping = 0;
   }); // microsoft redirect
   server.on("/hotspot-detect.html", [](AsyncWebServerRequest *request) {
     request->redirect(localIPURL);
+    sleeping = 0;
   }); // apple call home
   server.on("/canonical.html", [](AsyncWebServerRequest *request) {
     request->redirect(localIPURL);
+    sleeping = 0;
   }); // firefox captive portal call home
   server.on("/success.txt", [](AsyncWebServerRequest *request) {
     request->send(200);
+    sleeping = 0;
   }); // firefox captive portal call home
   server.on("/ncsi.txt", [](AsyncWebServerRequest *request) {
     request->redirect(localIPURL);
+    sleeping = 0;
   }); // windows call home
 
   // return 404 to webpage icon
   server.on("/favicon.ico", [](AsyncWebServerRequest *request) {
     request->send(404);
+    sleeping = 0;
   }); // webpage icon
+  //
 
   // the catch all
-  server.onNotFound(
-      [](AsyncWebServerRequest *request) { request->redirect(localIPURL); });
+  server.onNotFound([](AsyncWebServerRequest *request) {
+    sleeping = 0;
+    request->redirect(localIPURL);
+  });
 };
+static void handleWifiEvent(void *arg, esp_event_base_t event_base,
+                            int32_t event_id, void *event_data) {
+  if (event_base == WIFI_EVENT) {
+    switch (event_id) {
+    case WIFI_EVENT_AP_STACONNECTED:
+    case WIFI_EVENT_AP_STADISCONNECTED:
+    case WIFI_EVENT_AP_START:
+      sleeping = 0; // Reset sleeping state
+      break;
+    }
+  }
+}
 
 void captiveSetup() {
   Preferences preferences;
@@ -123,6 +148,9 @@ void captiveSetup() {
   setUpDNSServer(DEFAULT_WIFI_SSID, password.c_str(), dnsServer, localIP);
   setUpWebserver(server, localIP);
   server.begin();
+  //
+  esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &handleWifiEvent,
+                             NULL); // Register event handler
 }
 void captiveLoop() {
   dnsServer.processNextRequest(); // I call this at least every 10ms in my other

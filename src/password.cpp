@@ -16,6 +16,7 @@ extern unsigned long lastClientTime;
 extern char DEBUG_BUFFER[100];
 extern char DEBUG_BUFFER2[100];
 #endif
+extern int sleeping;
 
 void handleTypeRaw(AsyncWebServerRequest *request);
 void handleTypePass(AsyncWebServerRequest *request);
@@ -24,6 +25,7 @@ void handleEditPass(AsyncWebServerRequest *request);
 void handleFetchPass(AsyncWebServerRequest *request);
 void handleList(AsyncWebServerRequest *request);
 void handleFactoryReset(AsyncWebServerRequest *request);
+void handleWifiPass(AsyncWebServerRequest *request);
 
 const char *mkEntryName(int num) {
   static char buffer[16]; // Static buffer to hold the result
@@ -80,6 +82,7 @@ void writePassword(int id, const Password &password) {
 
 void handleTypeRaw(AsyncWebServerRequest *request) {
   if (request->hasParam("text")) {
+    sleeping = 0; // Reset sleeping state
     const char *text = request->getParam("text")->value().c_str();
     int layout = 0; // Default layout
     if (request->hasParam("layout")) {
@@ -97,6 +100,7 @@ void handleTypeRaw(AsyncWebServerRequest *request) {
 }
 
 void handleIndex(AsyncWebServerRequest *request) {
+  sleeping = 0; // Reset sleeping state
 #ifdef ENABLE_GRAPHICS
   strlcpy(DEBUG_BUFFER, "Welcome !", 99);
 #endif
@@ -108,6 +112,7 @@ void handleIndex(AsyncWebServerRequest *request) {
 }
 
 void handleTypePass(AsyncWebServerRequest *request) {
+  sleeping = 0; // Reset sleeping state
 #ifdef ENABLE_GRAPHICS
   strlcpy(DEBUG_BUFFER, "Shazzaam", 99);
 #endif
@@ -138,6 +143,7 @@ void handleTypePass(AsyncWebServerRequest *request) {
 }
 
 void handleFetchPass(AsyncWebServerRequest *request) {
+  sleeping = 0;              // Reset sleeping state
   lastClientTime = millis(); // Reset the timer on each request
   if (request->hasParam("id")) {
     int id = request->getParam("id")->value().toInt();
@@ -146,6 +152,7 @@ void handleFetchPass(AsyncWebServerRequest *request) {
   }
 }
 void handleEditPass(AsyncWebServerRequest *request) {
+  sleeping = 0; // Reset sleeping state
 #ifdef ENABLE_GRAPHICS
   strlcpy(DEBUG_BUFFER, "Edited", 99);
 #endif
@@ -188,6 +195,7 @@ void handleEditPass(AsyncWebServerRequest *request) {
 }
 
 void handleList(AsyncWebServerRequest *request) {
+  sleeping = 0;              // Reset sleeping state
   lastClientTime = millis(); // Reset the timer on each request
   // Create a dynamic JSON string to hold the list of passwords
   String json = "{\"passwords\":[";
@@ -215,6 +223,7 @@ void handleList(AsyncWebServerRequest *request) {
 }
 
 void handleFactoryReset(AsyncWebServerRequest *request) {
+  sleeping = 0; // Reset sleeping state
 #ifdef ENABLE_GRAPHICS
   strlcpy(DEBUG_BUFFER, "Reset", 99);
 #endif
