@@ -7,8 +7,8 @@
 
 #define MAX_PASSWORDS 100
 #define MAX_NAME_LEN 30
-#define MAX_PASS_LEN 48
-#define STORED_PASSWD_BLOCKS 3
+#define STORED_PASSWD_BLOCKS 2
+#define MAX_PASS_LEN (16 * STORED_PASSWD_BLOCKS)
 
 typedef struct {
   char name[MAX_NAME_LEN];
