@@ -7,7 +7,7 @@
 
 #define MAX_PASSWORDS 100
 #define MAX_NAME_LEN 30
-#define MAX_PASS_LEN 46
+#define MAX_PASS_LEN 48
 #define STORED_PASSWD_BLOCKS 3
 
 typedef struct {
