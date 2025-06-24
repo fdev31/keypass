@@ -31,6 +31,11 @@ void encryptPassword(const char *password, uint8_t *result) {
   }
 
   uint8_t passBuffer[MAX_PASS_LEN];
+  // initialize the buffer with random values
+  for (size_t i = 0; i < MAX_PASS_LEN; i++) {
+    passBuffer[i] = rand() % 256; // Random byte
+  }
+
   strlcpy((char *)passBuffer, (char *)password, MAX_PASS_LEN);
 
   // Process each 16-byte block
