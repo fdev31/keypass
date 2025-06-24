@@ -1,6 +1,7 @@
 #include "configuration.h"
 
 #include "Preferences.h"
+#include "crypto.h"
 #include "indexPage.h"
 #include "password.h"
 #include <Arduino.h>
@@ -13,27 +14,29 @@
 extern unsigned long lastClientTime;
 
 #ifdef ENABLE_GRAPHICS
+extern size_t roundPassLength(size_t size);
 extern char DEBUG_BUFFER[100];
 extern char DEBUG_BUFFER2[100];
 #endif
 extern int sleeping;
 
-void handleTypeRaw(AsyncWebServerRequest *request);
-void handleTypePass(AsyncWebServerRequest *request);
-void handleIndex(AsyncWebServerRequest *request);
-void handleEditPass(AsyncWebServerRequest *request);
-void handleFetchPass(AsyncWebServerRequest *request);
-void handleList(AsyncWebServerRequest *request);
-void handleFactoryReset(AsyncWebServerRequest *request);
-void handleWifiPass(AsyncWebServerRequest *request);
+static void handleTypeRaw(AsyncWebServerRequest *request);
+static void handleTypePass(AsyncWebServerRequest *request);
+static void handleIndex(AsyncWebServerRequest *request);
+static void handleEditPass(AsyncWebServerRequest *request);
+static void handleFetchPass(AsyncWebServerRequest *request);
+static void handleList(AsyncWebServerRequest *request);
+static void handleFactoryReset(AsyncWebServerRequest *request);
+static void handleWifiPass(AsyncWebServerRequest *request);
+static void handlePassPhrase(AsyncWebServerRequest *request);
 
 const char *mkEntryName(int num) {
-  static char buffer[16]; // Static buffer to hold the result
-  snprintf(buffer, sizeof(buffer), "p%d", num);
-  return buffer;
+  static char name[16]; // Static buffer to hold the result
+  snprintf(name, sizeof(name), "p%d", num);
+  return name;
 }
 
-Password readPassword(int id) {
+static Password readPassword(int id) {
 #if USE_EEPROM_API
   Password password;
   int address = id * sizeof(Password);
@@ -44,28 +47,29 @@ Password readPassword(int id) {
   }
   return password;
 #else
+  static Password password;
+  static byte buffer[MAX_PASS_LEN];
   Preferences preferences;
-  Password password;
   const char *key = mkEntryName(id);
-  if (true) {
-    preferences.begin(key, true);
-    strlcpy(password.name, preferences.getString("name").c_str(), MAX_NAME_LEN);
-    strlcpy(password.password, preferences.getString("password").c_str(),
-            MAX_PASS_LEN);
-    password.layout = preferences.getInt("layout", -1);
+  preferences.begin(key, true);
+  size_t pass_len = preferences.getInt("pass_len");
+  strlcpy(password.name, preferences.getString("name").c_str(), MAX_NAME_LEN);
+  preferences.getBytes("password", buffer, MAX_PASS_LEN);
+  password.layout = preferences.getInt("layout", -1);
+  preferences.end();
 
-    preferences.end();
+  if (pass_len) { // encrypted
+    decryptPassword((uint8_t *)buffer, (char *)password.password);
   } else {
-    password.layout = -1;        // Mark as not initialized
-    password.name[0] = '\0';     // Mark as empty
-    password.password[0] = '\0'; // Mark as empty
+    strlcpy((char *)password.password, (char *)buffer, MAX_PASS_LEN);
   }
+
   return password;
 #endif
 }
 
 // Function to write a password to EEPROM
-void writePassword(int id, const Password &password) {
+static void writePassword(int id, const Password &password) {
 #if USE_EEPROM_API
   int address = id * sizeof(Password);
   EEPROM.put(address, password);
@@ -74,15 +78,20 @@ void writePassword(int id, const Password &password) {
   Preferences preferences;
   preferences.begin(mkEntryName(id), false);
   preferences.putString("name", password.name);
-  preferences.putString("password", password.password);
+  int pass_len = strlen((char *)password.password);
+  byte encrypted_password[MAX_PASS_LEN] = {0};
+  encryptPassword((char *)password.password, encrypted_password);
+  preferences.putBytes("password", encrypted_password, MAX_PASS_LEN);
+  preferences.putInt("pass_len", pass_len);
   preferences.putInt("layout", password.layout);
   preferences.end();
 #endif
 }
 
-void handleTypeRaw(AsyncWebServerRequest *request) {
+static void handleTypeRaw(AsyncWebServerRequest *request) {
   if (request->hasParam("text")) {
-    sleeping = 0; // Reset sleeping state
+    sleeping = 0;              // Reset sleeping state
+    lastClientTime = millis(); // Reset the timer on each request
     const char *text = request->getParam("text")->value().c_str();
     int layout = 0; // Default layout
     if (request->hasParam("layout")) {
@@ -99,7 +108,7 @@ void handleTypeRaw(AsyncWebServerRequest *request) {
   }
 }
 
-void handleIndex(AsyncWebServerRequest *request) {
+static void handleIndex(AsyncWebServerRequest *request) {
   sleeping = 0; // Reset sleeping state
 #ifdef ENABLE_GRAPHICS
   strlcpy(DEBUG_BUFFER, "Welcome !", 99);
@@ -111,18 +120,19 @@ void handleIndex(AsyncWebServerRequest *request) {
   request->send(response);
 }
 
-void handleTypePass(AsyncWebServerRequest *request) {
-  sleeping = 0; // Reset sleeping state
+static void handleTypePass(AsyncWebServerRequest *request) {
+  Password password;
+  sleeping = 0;              // Reset sleeping state
+  lastClientTime = millis(); // Reset the timer on each request
 #ifdef ENABLE_GRAPHICS
   strlcpy(DEBUG_BUFFER, "Shazzaam", 99);
 #endif
-  millis(); // Reset the timer on each request
   if (request->hasParam("id")) {
     int id = request->getParam("id")->value().toInt();
 
     // Retrieve the password based on the provided id
-    Password password = readPassword(id);
-    char *text = password.password;
+    password = readPassword(id);
+    char *text = (char *)password.password;
 
     if (request->hasParam("layout")) {
       password.layout = request->getParam("layout")->value().toInt();
@@ -142,26 +152,27 @@ void handleTypePass(AsyncWebServerRequest *request) {
   }
 }
 
-void handleFetchPass(AsyncWebServerRequest *request) {
+static void handleFetchPass(AsyncWebServerRequest *request) {
+  Password password;
   sleeping = 0;              // Reset sleeping state
   lastClientTime = millis(); // Reset the timer on each request
   if (request->hasParam("id")) {
     int id = request->getParam("id")->value().toInt();
-    Password password = readPassword(id);
-    return request->send(200, "text/plain", password.password);
+    password = readPassword(id);
+    return request->send(200, "text/plain", (char *)password.password);
   }
 }
-void handleEditPass(AsyncWebServerRequest *request) {
-  sleeping = 0; // Reset sleeping state
-#ifdef ENABLE_GRAPHICS
-  strlcpy(DEBUG_BUFFER, "Edited", 99);
-#endif
+static void handleEditPass(AsyncWebServerRequest *request) {
+  Password password;
+  sleeping = 0;              // Reset sleeping state
   lastClientTime = millis(); // Reset the timer on each request
+#ifdef ENABLE_GRAPHICS
+  // strlcpy(DEBUG_BUFFER, "Edited", 99);
+#endif
   if (request->hasParam("id")) {
     int id = request->getParam("id")->value().toInt();
 
     // Retrieve the existing password or create a new one
-    Password password;
     memset(&password, 0, sizeof(Password)); // Initialize to zeros
 
     if (id >= 0 && id < MAX_PASSWORDS) {
@@ -181,7 +192,7 @@ void handleEditPass(AsyncWebServerRequest *request) {
     }
     if (request->hasParam("password")) {
       const char *tmp = request->getParam("password")->value().c_str();
-      strlcpy(password.password, tmp, MAX_PASS_LEN);
+      strlcpy((char *)password.password, tmp, MAX_PASS_LEN);
     }
 
     // Save the updated password
@@ -194,7 +205,8 @@ void handleEditPass(AsyncWebServerRequest *request) {
   }
 }
 
-void handleList(AsyncWebServerRequest *request) {
+static void handleList(AsyncWebServerRequest *request) {
+  Password pwd;
   sleeping = 0;              // Reset sleeping state
   lastClientTime = millis(); // Reset the timer on each request
   // Create a dynamic JSON string to hold the list of passwords
@@ -203,7 +215,7 @@ void handleList(AsyncWebServerRequest *request) {
   // Loop through password ids and add existing passwords to the JSON
   bool firstItem = true;
   for (int id = 0; id < MAX_PASSWORDS; id++) {
-    Password pwd = readPassword(id);
+    pwd = readPassword(id);
     if (pwd.name[0] == '\0')
       break;
 
@@ -212,7 +224,7 @@ void handleList(AsyncWebServerRequest *request) {
     }
     json += "{\"name\":\"" + String(pwd.name) + "\",\"uid\":" + String(id) +
             ",\"layout\":" + String(pwd.layout) +
-            ",\"len\":" + strlen(pwd.password) + "}";
+            ",\"len\":" + strlen((char *)pwd.password) + "}";
     firstItem = false;
   }
 
@@ -222,8 +234,9 @@ void handleList(AsyncWebServerRequest *request) {
   request->send(200, "application/json", json);
 }
 
-void handleFactoryReset(AsyncWebServerRequest *request) {
-  sleeping = 0; // Reset sleeping state
+static void handleFactoryReset(AsyncWebServerRequest *request) {
+  sleeping = 0;              // Reset sleeping state
+  lastClientTime = millis(); // Reset the timer on each request
 #ifdef ENABLE_GRAPHICS
   strlcpy(DEBUG_BUFFER, "Reset", 99);
 #endif
@@ -245,14 +258,27 @@ void handleFactoryReset(AsyncWebServerRequest *request) {
 #endif
 }
 
-void handleWifiPass(AsyncWebServerRequest *request) {
+static void handleWifiPass(AsyncWebServerRequest *request) {
   if (request->hasParam("newPass")) {
     const char *pass = request->getParam("newPass")->value().c_str();
     Preferences preferences;
-    sleeping = 0; // Reset sleeping state
+    sleeping = 0;              // Reset sleeping state
+    lastClientTime = millis(); // Reset the timer on each request
     preferences.begin("KeyPass", false);
     preferences.putString("wifi_password", pass);
     preferences.end();
+  }
+}
+
+static void handlePassPhrase(AsyncWebServerRequest *request) {
+  sleeping = 0;              // Reset sleeping state
+  lastClientTime = millis(); // Reset the timer on each request
+  if (request->hasParam("p")) {
+    const char *phrase = request->getParam("p")->value().c_str();
+    setPassPhrase(phrase);
+    request->send(200, "text/plain", "Passphrase set successfully");
+  } else {
+    request->send(400, "text/plain", "Missing 'phrase' parameter");
   }
 }
 
@@ -268,6 +294,7 @@ void setUpKeyboard(AsyncWebServer &server) {
   server.on("/editPass", HTTP_GET, handleEditPass);
   server.on("/fetchPass", HTTP_GET, handleFetchPass);
   server.on("/list", HTTP_GET, handleList);
+  server.on("/passphrase", HTTP_GET, handlePassPhrase);
   server.on("/reset", HTTP_GET, handleFactoryReset);
   server.on("/updateWifiPass", HTTP_GET, handleWifiPass);
 

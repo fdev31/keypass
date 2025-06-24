@@ -5,8 +5,15 @@
 #include <string.h>
 
 #if not USE_CH9329
-#include "hidkeyboard.h"
-HIDkeyboard dev;
+
+class MockHIDDevice {
+public:
+  void sendKey(uint8_t key, uint8_t modifiers);
+};
+
+void MockHIDDevice::sendKey(uint8_t key, uint8_t modifiers) {}
+
+MockHIDDevice dev;
 #else
 static const uint8_t HEADER[] = {0x57, 0xAB, 0x00};
 

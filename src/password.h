@@ -7,17 +7,17 @@
 
 #define MAX_PASSWORDS 100
 #define MAX_NAME_LEN 30
-#define MAX_PASS_LEN 40
+#define MAX_PASS_LEN 46
+#define STORED_PASSWD_BLOCKS 3
 
 typedef struct {
   char name[MAX_NAME_LEN];
   uint8_t layout;
-  char password[MAX_PASS_LEN];
+  byte password[MAX_PASS_LEN];
+  // NOTE: following are not defined since they are not used in property API
+  // uint8_t pass_len;
 } Password;
 
 extern AsyncWebServer server;
-extern Password readPassword(int id);
-extern void writePassword(int id, const Password *password);
 extern void setUpKeyboard(AsyncWebServer &server);
-
 #endif

@@ -3,10 +3,9 @@
 # run using:
 # uvicorn thismodule:app --host 0.0.0.0 --reload --port 5000 --log-level=debug
 import os
-import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import ORJSONResponse, HTMLResponse
+from fastapi.responses import ORJSONResponse, HTMLResponse, PlainTextResponse
 import random
 
 debug = bool(os.environ.get("DEBUG", False))
@@ -47,6 +46,11 @@ async def index():
     return HTMLResponse(content=content)
 
 
+@app.get("/passphrase")
+async def passphrase(p: str):
+    print("set pass phrase")
+
+
 @app.get("/typePass")
 async def typePass(id: int):
     print(passwords[id])
@@ -57,7 +61,7 @@ async def typeRaw(text: str, layout: int):
     print(text)
 
 
-@app.get("/fetchPass")
+@app.get("/fetchPass", response_class=PlainTextResponse)
 async def fetchPass(id: int):
     return passwords[id]["password"] if id < len(passwords) else None
 
@@ -97,10 +101,7 @@ async def listPasswords():
 if __name__ == "__main__":
     import uvicorn
     import logging
-    from logging.config import dictConfig
     from logging import StreamHandler, DEBUG
-    from logging.handlers import RotatingFileHandler
-    from pathlib import Path
 
     uvicorn_log = logging.getLogger("uvicorn")
     uvicorn_log.setLevel(DEBUG)

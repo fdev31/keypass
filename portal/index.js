@@ -112,7 +112,7 @@ async function togglePasswordVisibility(visible) {
   passwordInput.type = visible ? "text" : "password";
   if (ui_data.mode == "edit" && passwordInput.value.length == 0) {
     const pass = await fetch(`/fetchPass?id=${positionSelect.value}`);
-    passwordInput.value = JSON.parse(await pass.text());
+    passwordInput.value = await pass.text();
   }
 }
 
@@ -222,11 +222,49 @@ function fillForm(data) {
 }
 
 // MCU Actions
+async function checkPassphrase() {
+  const storedPassphrase = localStorage.getItem("keypass_passphrase");
+
+  if (!storedPassphrase) {
+    // First time setup - prompt for new passphrase
+    const newPassphrase = prompt(
+      "Please set up a passphrase to secure your passwords:",
+    );
+    if (newPassphrase) {
+      localStorage.setItem("keypass_passphrase", newPassphrase);
+      await setPassPhrase(newPassphrase);
+      return true;
+    } else {
+      // User cancelled - might need to retry or restrict access
+      alert("A passphrase is required to use KeyPass.");
+      return await checkPassphrase(); // Prompt again
+    }
+  } else {
+    // Use the stored passphrase
+    await setPassPhrase(storedPassphrase);
+    return true;
+  }
+}
+
+async function setPassPhrase(phrase) {
+  return fetch(`/passphrase?p=${phrase}`).catch(errorHandler);
+}
+
+function resetPassphrase() {
+  if (confirm("Are you sure you want to reset your passphrase?")) {
+    const newPassphrase = prompt("Please enter a new passphrase:");
+    if (newPassphrase) {
+      localStorage.setItem("keypass_passphrase", newPassphrase);
+      setPassPhrase(newPassphrase).then(() =>
+        alert("Passphrase has been reset successfully."),
+      );
+    }
+  }
+}
 function typeOldPass() {
   const uid = positionSelect.value;
   fetch(`/typePass?id=${uid}`).catch(errorHandler);
 }
-
 function typeNewPass() {
   const password = passwordInput.value;
   const escaped = encodeURIComponent(password);
@@ -426,5 +464,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Load passwords on page load
 window.onload = async () => {
+  await checkPassphrase();
   await getPasswords();
 };
