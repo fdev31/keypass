@@ -69,7 +69,8 @@ static void writePassword(int id, const Password &password) {
   preferences.begin(mkEntryName(id), false);
   preferences.putString("name", password.name);
   int pass_len = strlen((char *)password.password);
-  byte encrypted_password[MAX_PASS_LEN] = {0};
+  byte encrypted_password[MAX_PASS_LEN];
+  // initialize encrypted_password with random values
   encryptPassword((char *)password.password, encrypted_password);
   preferences.putBytes("password", encrypted_password, MAX_PASS_LEN);
   preferences.putInt("pass_len", pass_len);
@@ -289,10 +290,11 @@ String hexDump(const uint8_t *data, size_t len) {
 static void handlePassDump(AsyncWebServerRequest *request) {
   sleeping = 0;              // Reset sleeping state
   lastClientTime = millis(); // Reset the timer on each request
-  String output = "#KPDUMP\n";
   char buffer[MAX_PASS_LEN];
   Preferences preferences;
   AsyncResponseStream *response = request->beginResponseStream("text/plain");
+
+  response->print("#KPDUMP\n");
 
   for (int id = 0; id < MAX_PASSWORDS; id++) {
     const char *key = mkEntryName(id);
@@ -306,6 +308,7 @@ static void handlePassDump(AsyncWebServerRequest *request) {
     response->print(hexDump((uint8_t *)buffer, MAX_PASS_LEN));
     response->print("\n");
   }
+  response->print("#/KPDUMP\n");
 
   request->send(response);
 }

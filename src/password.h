@@ -5,7 +5,8 @@
 //
 #include "hid.h"
 
-#define MAX_PASSWORDS 100
+#define MAX_PASSWORDS                                                          \
+  100 // TODO: measure the maximum acceptable number more accurately
 #define MAX_NAME_LEN 30
 #define STORED_PASSWD_BLOCKS 2
 #define MAX_PASS_LEN (16 * STORED_PASSWD_BLOCKS)
