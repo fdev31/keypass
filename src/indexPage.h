@@ -12,6 +12,16 @@ margin: 0;
 padding: 0;
 box-sizing: border-box;
 }
+summary {
+cursor: pointer;
+color: white;
+font-weight: 600;
+font-size: 16px;
+padding: 10px;
+background: rgba(255, 255, 255, 0.1);
+border-radius: 10px;
+transition: background 0.3s ease;
+}
 
 body {
 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -590,12 +600,14 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 
 <div id="passList" class="mainScreen">
 <div class="form-group" id="passListKbLayout">
-<label for="layoutOverrideSelect">Keyboard override:</label>
+<details>
+<summary>Keyboard layout</label></summary>
 <select name="lang" id="layoutOverrideSelect" required>
-<option value=""></option>
+<option value="">Password specific</option>
 <option value="fr">French</option>
 <option value="us">US</option>
 </select>
+</details>
 <input type="hidden" name="layout" id="layoutIndex">
 </div>
 <div class="password-grid">
