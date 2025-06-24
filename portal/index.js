@@ -271,8 +271,15 @@ function typeNewPass() {
   const layout = layoutSelect.value;
   fetch(`/typeRaw?text=${escaped}&layout=${layout}`).catch(errorHandler);
 }
+function passwordClick(event, uid) {
+  // If uid is not provided, try to get it from the event target
+  if (uid === undefined && event) {
+    const card = event.target.closest('.password-card');
+    if (card) {
+      uid = parseInt(card.dataset.passwordId);
+    }
+  }
 
-function passwordClick(uid) {
   switch (ui_data.mode) {
     case "edit":
       fillForm({
@@ -284,11 +291,13 @@ function passwordClick(uid) {
       break;
     default: // "type"
       // Add visual feedback for typing action
-      const card = event.target.closest(".password-card");
-      card.style.transform = "scale(0.95)";
-      setTimeout(() => {
-        card.style.transform = "";
-      }, 150);
+      const card = event ? event.target.closest(".password-card") : document.querySelector(`[data-password-id="${uid}"]`);
+      if (card) {
+        card.style.transform = "scale(0.95)";
+        setTimeout(() => {
+          card.style.transform = "";
+        }, 150);
+      }
       const layout = layoutOverrideSelect.selectedIndex;
       if (layout > 0) {
         fetch(`/typePass?id=${uid}&layout=${layout - 1}`).catch(errorHandler);
@@ -352,13 +361,14 @@ async function getPasswords() {
 
     for (const pass of passwords.passwords) {
       domData.push(`
-    <div onclick="passwordClick(${pass.uid})" class="password-card" role="button">
+    <div class="password-card" role="button" data-password-id="${pass.uid}">
         <div class="password-name">${pass.name}</div>
     </div>
     `);
     }
 
     passList.innerHTML = domData.join("");
+    setupPasswordCardEvents(); // Setup event handlers after updating the DOM
   } catch (error) {
     alert("Error: Unable to fetch passwords. Please try again later." + error);
   }
@@ -461,6 +471,115 @@ document.addEventListener("DOMContentLoaded", function () {
   editFormContent.addEventListener("submit", editFormHandler);
   initToggleButtons();
 });
+// Set up event delegation for password cards to handle both clicks and long presses
+function setupPasswordCardEvents() {
+  const passwordGrid = document.querySelector('.password-grid');
+  let pressTimer;
+  let longPressTriggered = false;
+  let currentCard = null;
+  const longPressDuration = 800; // ms
+
+  // Remove any existing listeners
+  passwordGrid.removeEventListener('mousedown', handleMouseDown);
+  passwordGrid.removeEventListener('mouseup', handleMouseUp);
+  passwordGrid.removeEventListener('mouseleave', handleMouseLeave);
+  passwordGrid.removeEventListener('touchstart', handleTouchStart);
+  passwordGrid.removeEventListener('touchend', handleTouchEnd);
+  passwordGrid.removeEventListener('touchcancel', handleTouchCancel);
+
+  // Add listeners with named functions so they can be removed if needed
+  passwordGrid.addEventListener('mousedown', handleMouseDown);
+  passwordGrid.addEventListener('mouseup', handleMouseUp);
+  passwordGrid.addEventListener('mouseleave', handleMouseLeave);
+
+  // Touch support for mobile devices
+  passwordGrid.addEventListener('touchstart', handleTouchStart);
+  passwordGrid.addEventListener('touchend', handleTouchEnd);
+  passwordGrid.addEventListener('touchcancel', handleTouchCancel);
+
+  function handleMouseDown(e) {
+    const card = e.target.closest('.password-card');
+    if (!card) return;
+
+    currentCard = card;
+    longPressTriggered = false;
+
+    pressTimer = setTimeout(function() {
+      // Long press action
+      const passwordId = parseInt(card.dataset.passwordId);
+      handleLongPress(passwordId);
+      longPressTriggered = true;
+    }, longPressDuration);
+  }
+
+  function handleMouseUp(e) {
+    if (!currentCard) return;
+
+    clearTimeout(pressTimer);
+    if (!longPressTriggered) {
+      // Regular click action
+      passwordClick(e);
+    }
+    currentCard = null;
+  }
+
+  function handleMouseLeave(e) {
+    if (currentCard) {
+      clearTimeout(pressTimer);
+      currentCard = null;
+    }
+  }
+
+  // Touch event handlers for mobile devices
+  function handleTouchStart(e) {
+    const card = e.target.closest('.password-card');
+    if (!card) return;
+
+    currentCard = card;
+    longPressTriggered = false;
+
+    pressTimer = setTimeout(function() {
+      // Long press action
+      const passwordId = parseInt(card.dataset.passwordId);
+      handleLongPress(passwordId);
+      longPressTriggered = true;
+    }, longPressDuration);
+  }
+
+  function handleTouchEnd(e) {
+    if (!currentCard) return;
+
+    clearTimeout(pressTimer);
+    if (!longPressTriggered) {
+      // Regular click action
+      e.preventDefault(); // Prevent mousedown/up from firing as well
+      passwordClick(e);
+    }
+    currentCard = null;
+  }
+
+  function handleTouchCancel(e) {
+    if (currentCard) {
+      clearTimeout(pressTimer);
+      currentCard = null;
+    }
+  }
+}
+
+// Function to handle long press on password card
+function handleLongPress(passwordId) {
+  console.log('Long press detected on password:', passwordId);
+  // For example, directly switch to edit mode for this password
+  if (ui_data.mode !== "edit") {
+    setMode("edit");
+  }
+  fillForm({
+    uid: passwordId,
+    name: ui_data.passwords[passwordId].name,
+    layout: ui_data.passwords[passwordId].layout,
+  });
+  showEditForm(passwordId);
+}
 
 // Load passwords on page load
 window.onload = async () => {
