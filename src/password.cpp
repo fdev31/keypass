@@ -20,16 +20,6 @@ extern char DEBUG_BUFFER2[100];
 #endif
 extern int sleeping;
 
-static void handleTypeRaw(AsyncWebServerRequest *request);
-static void handleTypePass(AsyncWebServerRequest *request);
-static void handleIndex(AsyncWebServerRequest *request);
-static void handleEditPass(AsyncWebServerRequest *request);
-static void handleFetchPass(AsyncWebServerRequest *request);
-static void handleList(AsyncWebServerRequest *request);
-static void handleFactoryReset(AsyncWebServerRequest *request);
-static void handleWifiPass(AsyncWebServerRequest *request);
-static void handlePassPhrase(AsyncWebServerRequest *request);
-
 const char *mkEntryName(int num) {
   static char name[16]; // Static buffer to hold the result
   snprintf(name, sizeof(name), "p%d", num);
