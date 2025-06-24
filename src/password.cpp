@@ -282,6 +282,44 @@ static void handlePassPhrase(AsyncWebServerRequest *request) {
   }
 }
 
+String hexDump(const uint8_t *data, size_t len) {
+  String result = "";
+  char hexChars[3]; // Two characters for the hex value plus null terminator
+  //
+
+  for (size_t i = 0; i < len; i++) {
+    // Convert each byte to a two-character hex representation
+    sprintf(hexChars, "%02X", data[i]);
+    result += hexChars;
+  }
+
+  return result;
+}
+
+static void handlePassDump(AsyncWebServerRequest *request) {
+  sleeping = 0;              // Reset sleeping state
+  lastClientTime = millis(); // Reset the timer on each request
+  String output = "#KPDUMP\n";
+  char buffer[MAX_PASS_LEN];
+  Preferences preferences;
+  AsyncResponseStream *response = request->beginResponseStream("text/plain");
+
+  for (int id = 0; id < MAX_PASSWORDS; id++) {
+    const char *key = mkEntryName(id);
+    *buffer = 0;
+    preferences.begin(key, true);
+    preferences.getBytes("password", buffer, MAX_PASS_LEN);
+    preferences.end();
+    if (!*buffer)
+      break;
+
+    response->print(hexDump((uint8_t *)buffer, MAX_PASS_LEN));
+    response->print("\n");
+  }
+
+  request->send(response);
+}
+
 void setUpKeyboard(AsyncWebServer &server) {
 
 #if USE_EEPROM_API
@@ -297,6 +335,7 @@ void setUpKeyboard(AsyncWebServer &server) {
   server.on("/passphrase", HTTP_GET, handlePassPhrase);
   server.on("/reset", HTTP_GET, handleFactoryReset);
   server.on("/updateWifiPass", HTTP_GET, handleWifiPass);
+  server.on("/dump", HTTP_GET, handlePassDump);
 
 #ifdef ENABLE_GRAPHICS
   Preferences prefs;
