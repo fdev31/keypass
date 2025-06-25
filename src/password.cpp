@@ -6,6 +6,7 @@
 #include "password.h"
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
+#include <StreamString.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -313,6 +314,99 @@ static void handlePassDump(AsyncWebServerRequest *request) {
   request->send(response);
 }
 
+// Parse a hex string back into binary data
+void hexParse(const char *hexStr, uint8_t *binData, size_t maxLen) {
+  size_t len = 0;
+  while (*hexStr && *(hexStr + 1) && len < maxLen) {
+    char highNibble = *hexStr++;
+    char lowNibble = *hexStr++;
+
+    uint8_t value = 0;
+    if (highNibble >= '0' && highNibble <= '9')
+      value = (highNibble - '0') << 4;
+    else if (highNibble >= 'A' && highNibble <= 'F')
+      value = (highNibble - 'A' + 10) << 4;
+    else if (highNibble >= 'a' && highNibble <= 'f')
+      value = (highNibble - 'a' + 10) << 4;
+
+    if (lowNibble >= '0' && lowNibble <= '9')
+      value |= (lowNibble - '0');
+    else if (lowNibble >= 'A' && lowNibble <= 'F')
+      value |= (lowNibble - 'A' + 10);
+    else if (lowNibble >= 'a' && lowNibble <= 'f')
+      value |= (lowNibble - 'a' + 10);
+
+    binData[len++] = value;
+  }
+}
+
+void handleRestore(AsyncWebServerRequest *request) {
+  if (!request->_tempObject) {
+    return request->send(400, "text/plain", "Nothing uploaded");
+  }
+
+  StreamString *buffer = reinterpret_cast<StreamString *>(request->_tempObject);
+  int bodyLength = request->contentLength();
+  int pos = 0;
+  int slot = 0;
+
+  char hexBuffer[MAX_PASS_LEN * 2 + 1];
+  uint8_t binData[MAX_PASS_LEN];
+  Preferences preferences;
+  bool insideKpDump = false;
+
+  // Process each line from the request body
+  while (slot < MAX_PASSWORDS && pos < bodyLength) {
+    int lineEnd = buffer->indexOf('\n', pos);
+    if (lineEnd == -1) {
+      lineEnd = bodyLength;
+    }
+
+    // Skip empty lines
+    if (lineEnd - pos <= 0) {
+      pos = lineEnd + 1; // Move past the newline
+      continue;
+    }
+
+    // Copy line to hexBuffer with bounds checking
+    int lineLen = min(lineEnd - pos, (int)sizeof(hexBuffer) - 1);
+    String currentLine = buffer->substring(pos, pos + lineLen);
+    currentLine.toCharArray(hexBuffer, lineLen + 1);
+
+    // Check for KPDUMP markers
+    if (currentLine == "#KPDUMP") {
+      insideKpDump = true;
+      pos = lineEnd + 1; // Move past the marker
+      continue;
+    } else if (currentLine == "#/KPDUMP") {
+      insideKpDump = false;
+      break; // End of dump data
+    }
+
+    // Only process lines if we're inside a KPDUMP section or if no markers were
+    // used
+    if (insideKpDump || !buffer->indexOf("#KPDUMP") >= 0) {
+      // Convert hex string back to binary data
+      memset(binData, 0, MAX_PASS_LEN);
+      hexParse(hexBuffer, binData, MAX_PASS_LEN);
+
+      // Save the binary data directly to preferences
+      preferences.begin(mkEntryName(slot), false);
+      preferences.putBytes("password", binData, MAX_PASS_LEN);
+      preferences.end();
+
+      slot++;
+    }
+
+    pos = lineEnd + 1; // Move past the newline
+  }
+
+  // Send response
+  String response = "{\"status\":\"success\",\"message\":\"Restored " +
+                    String(slot) + " passwords\"}";
+  request->send(200, "application/json", response);
+}
+
 void setUpKeyboard(AsyncWebServer &server) {
 
 #if USE_EEPROM_API
@@ -329,6 +423,7 @@ void setUpKeyboard(AsyncWebServer &server) {
   server.on("/reset", HTTP_GET, handleFactoryReset);
   server.on("/updateWifiPass", HTTP_GET, handleWifiPass);
   server.on("/dump", HTTP_GET, handlePassDump);
+  server.on("/restore", HTTP_POST, handleRestore);
 
 #ifdef ENABLE_GRAPHICS
   Preferences prefs;
