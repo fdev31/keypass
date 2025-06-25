@@ -1,5 +1,6 @@
 build:
     ./genIndexPage.sh
+    pio run -t compiledb
     pio run
 
 upload:
