@@ -16,4 +16,5 @@ const unsigned long SLEEP_TIME = 500; // sleep period in sleep mode
 #define USE_EEPROM_API 0
 #define USE_CH9329 1
 #define FLIP_SCREEN 1
+#define DEBUG 0
 #endif

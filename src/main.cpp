@@ -46,7 +46,6 @@ void loop() {
     }
 #endif
   }
-  delay(30);
 
   if (!sleeping && should_sleep) {
     Serial.flush(); // Make sure serial output is complete before sleep
@@ -69,15 +68,15 @@ void loop() {
     esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
 #endif
   if (should_sleep || sleeping) {
-    if (0) {
-      // Use timer wakeup to periodically refresh AP state
-      esp_sleep_enable_timer_wakeup(SLEEP_TIME * 1000);
-      esp_light_sleep_start(); // Enter light sleep mode
+#if !DEBUG
+    // Use timer wakeup to periodically refresh AP state
+    esp_sleep_enable_timer_wakeup(SLEEP_TIME * 1000);
+    esp_light_sleep_start(); // Enter light sleep mode
 
-      // Reset some states
-      lastClientTime = millis(); // Reset timer after waking up
-      graphics_initialized = 0;
-      sleeping = 1;
-    }
+    // Reset some states
+    lastClientTime = millis(); // Reset timer after waking up
+    graphics_initialized = 0;
+    sleeping = 1;
   }
+#endif
 }
