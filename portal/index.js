@@ -222,10 +222,10 @@ function fillForm(data) {
 }
 
 // MCU Actions
-async function checkPassphrase() {
+async function checkPassphrase({ force = false }) {
   const storedPassphrase = localStorage.getItem("keypass_passphrase");
 
-  if (!storedPassphrase) {
+  if (!storedPassphrase || force) {
     // First time setup - prompt for new passphrase
     const newPassphrase = prompt(
       "Please set up a passphrase to secure your passwords:",
@@ -274,7 +274,7 @@ function typeNewPass() {
 function passwordClick(event, uid) {
   // If uid is not provided, try to get it from the event target
   if (uid === undefined && event) {
-    const card = event.target.closest('.password-card');
+    const card = event.target.closest(".password-card");
     if (card) {
       uid = parseInt(card.dataset.passwordId);
     }
@@ -291,7 +291,9 @@ function passwordClick(event, uid) {
       break;
     default: // "type"
       // Add visual feedback for typing action
-      const card = event ? event.target.closest(".password-card") : document.querySelector(`[data-password-id="${uid}"]`);
+      const card = event
+        ? event.target.closest(".password-card")
+        : document.querySelector(`[data-password-id="${uid}"]`);
       if (card) {
         card.style.transform = "scale(0.95)";
         setTimeout(() => {
@@ -473,38 +475,38 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 // Set up event delegation for password cards to handle both clicks and long presses
 function setupPasswordCardEvents() {
-  const passwordGrid = document.querySelector('.password-grid');
+  const passwordGrid = document.querySelector(".password-grid");
   let pressTimer;
   let longPressTriggered = false;
   let currentCard = null;
   const longPressDuration = 800; // ms
 
   // Remove any existing listeners
-  passwordGrid.removeEventListener('mousedown', handleMouseDown);
-  passwordGrid.removeEventListener('mouseup', handleMouseUp);
-  passwordGrid.removeEventListener('mouseleave', handleMouseLeave);
-  passwordGrid.removeEventListener('touchstart', handleTouchStart);
-  passwordGrid.removeEventListener('touchend', handleTouchEnd);
-  passwordGrid.removeEventListener('touchcancel', handleTouchCancel);
+  passwordGrid.removeEventListener("mousedown", handleMouseDown);
+  passwordGrid.removeEventListener("mouseup", handleMouseUp);
+  passwordGrid.removeEventListener("mouseleave", handleMouseLeave);
+  passwordGrid.removeEventListener("touchstart", handleTouchStart);
+  passwordGrid.removeEventListener("touchend", handleTouchEnd);
+  passwordGrid.removeEventListener("touchcancel", handleTouchCancel);
 
   // Add listeners with named functions so they can be removed if needed
-  passwordGrid.addEventListener('mousedown', handleMouseDown);
-  passwordGrid.addEventListener('mouseup', handleMouseUp);
-  passwordGrid.addEventListener('mouseleave', handleMouseLeave);
+  passwordGrid.addEventListener("mousedown", handleMouseDown);
+  passwordGrid.addEventListener("mouseup", handleMouseUp);
+  passwordGrid.addEventListener("mouseleave", handleMouseLeave);
 
   // Touch support for mobile devices
-  passwordGrid.addEventListener('touchstart', handleTouchStart);
-  passwordGrid.addEventListener('touchend', handleTouchEnd);
-  passwordGrid.addEventListener('touchcancel', handleTouchCancel);
+  passwordGrid.addEventListener("touchstart", handleTouchStart);
+  passwordGrid.addEventListener("touchend", handleTouchEnd);
+  passwordGrid.addEventListener("touchcancel", handleTouchCancel);
 
   function handleMouseDown(e) {
-    const card = e.target.closest('.password-card');
+    const card = e.target.closest(".password-card");
     if (!card) return;
 
     currentCard = card;
     longPressTriggered = false;
 
-    pressTimer = setTimeout(function() {
+    pressTimer = setTimeout(function () {
       // Long press action
       const passwordId = parseInt(card.dataset.passwordId);
       handleLongPress(passwordId);
@@ -532,13 +534,13 @@ function setupPasswordCardEvents() {
 
   // Touch event handlers for mobile devices
   function handleTouchStart(e) {
-    const card = e.target.closest('.password-card');
+    const card = e.target.closest(".password-card");
     if (!card) return;
 
     currentCard = card;
     longPressTriggered = false;
 
-    pressTimer = setTimeout(function() {
+    pressTimer = setTimeout(function () {
       // Long press action
       const passwordId = parseInt(card.dataset.passwordId);
       handleLongPress(passwordId);
@@ -568,7 +570,7 @@ function setupPasswordCardEvents() {
 
 // Function to handle long press on password card
 function handleLongPress(passwordId) {
-  console.log('Long press detected on password:', passwordId);
+  console.log("Long press detected on password:", passwordId);
   // For example, directly switch to edit mode for this password
   if (ui_data.mode !== "edit") {
     setMode("edit");
