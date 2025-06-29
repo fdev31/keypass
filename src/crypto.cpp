@@ -4,13 +4,15 @@
 Speck speck;
 
 #define BLOCK_SIZE 16
+#define RAND_BYTE_FACTOR RAND_MAX / 255
 byte buffer[MAX_PASS_LEN];
 
 extern char DEBUG_BUFFER2[];
 
-size_t roundPassLength(size_t size) {
-  int blocks = (size + BLOCK_SIZE - 1) / BLOCK_SIZE;
-  return blocks * BLOCK_SIZE;
+void randomizeBuffer(uint8_t *buffer, int size) {
+  for (size_t i = 0; i < size; i++) {
+    buffer[i] = random() % 255;
+  }
 }
 
 void setPassPhrase(const char *passphrase, unsigned long seed) {
@@ -29,12 +31,14 @@ void encryptPassword(const char *password, uint8_t *result) {
   }
 
   uint8_t passBuffer[MAX_PASS_LEN];
-  // initialize the buffer with random values
-  for (size_t i = 0; i < MAX_PASS_LEN; i++) {
-    passBuffer[i] = rand() % 256; // Random byte
+  randomizeBuffer(passBuffer, MAX_PASS_LEN);
+
+  int maxlen = strlen(password) + 1;
+  if (maxlen > MAX_PASS_LEN) {
+    maxlen = MAX_PASS_LEN;
   }
 
-  strlcpy((char *)passBuffer, (char *)password, MAX_PASS_LEN);
+  strlcpy((char *)passBuffer, (char *)password, maxlen);
 
   // Process each 16-byte block
   for (size_t i = 0; i < STORED_PASSWD_BLOCKS; i++) {

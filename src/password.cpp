@@ -15,7 +15,6 @@
 extern unsigned long lastClientTime;
 
 #ifdef ENABLE_GRAPHICS
-extern size_t roundPassLength(size_t size);
 extern char DEBUG_BUFFER[100];
 extern char DEBUG_BUFFER2[100];
 #endif
@@ -70,7 +69,7 @@ static void writePassword(int id, const Password &password) {
   preferences.begin(mkEntryName(id), false);
   preferences.putString("name", password.name);
   int pass_len = strlen((char *)password.password);
-  byte encrypted_password[MAX_PASS_LEN];
+  static byte encrypted_password[MAX_PASS_LEN];
   // initialize encrypted_password with random values
   encryptPassword((char *)password.password, encrypted_password);
   preferences.putBytes("password", encrypted_password, MAX_PASS_LEN);
@@ -165,9 +164,6 @@ static void handleEditPass(AsyncWebServerRequest *request) {
 #endif
   if (request->hasParam("id")) {
     int id = request->getParam("id")->value().toInt();
-
-    // Retrieve the existing password or create a new one
-    memset(&password, 0, sizeof(Password)); // Initialize to zeros
 
     if (id >= 0 && id < MAX_PASSWORDS) {
       password = readPassword(id);

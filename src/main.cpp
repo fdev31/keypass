@@ -16,6 +16,7 @@ int sleeping = 0;
 int graphics_initialized = 1;
 
 void setup() {
+  srand(millis());
 #ifdef ENABLE_GRAPHICS
   graphicsSetup();
 #endif
