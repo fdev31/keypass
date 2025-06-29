@@ -12,7 +12,7 @@
 #include <time.h>
 #include <unistd.h>
 
-extern unsigned long lastClientTime;
+extern void ping();
 
 #ifdef ENABLE_GRAPHICS
 extern char DEBUG_BUFFER[100];
@@ -81,8 +81,7 @@ static void writePassword(int id, const Password &password) {
 
 static void handleTypeRaw(AsyncWebServerRequest *request) {
   if (request->hasParam("text")) {
-    sleeping = 0;              // Reset sleeping state
-    lastClientTime = millis(); // Reset the timer on each request
+    ping();
     const char *text = request->getParam("text")->value().c_str();
     int layout = 0; // Default layout
     if (request->hasParam("layout")) {
@@ -100,11 +99,10 @@ static void handleTypeRaw(AsyncWebServerRequest *request) {
 }
 
 static void handleIndex(AsyncWebServerRequest *request) {
-  sleeping = 0; // Reset sleeping state
+  ping();
 #ifdef ENABLE_GRAPHICS
   strlcpy(DEBUG_BUFFER, "Welcome !", 99);
 #endif
-  lastClientTime = millis(); // Reset the timer on each request
   AsyncWebServerResponse *response =
       request->beginResponse(200, "text/html", index_html);
   response->addHeader("Cache-Control", "public,max-age=1");
@@ -113,8 +111,7 @@ static void handleIndex(AsyncWebServerRequest *request) {
 
 static void handleTypePass(AsyncWebServerRequest *request) {
   Password password;
-  sleeping = 0;              // Reset sleeping state
-  lastClientTime = millis(); // Reset the timer on each request
+  ping();
 #ifdef ENABLE_GRAPHICS
   strlcpy(DEBUG_BUFFER, "Shazzaam", 99);
 #endif
@@ -147,8 +144,7 @@ static void handleTypePass(AsyncWebServerRequest *request) {
 
 static void handleFetchPass(AsyncWebServerRequest *request) {
   Password password;
-  sleeping = 0;              // Reset sleeping state
-  lastClientTime = millis(); // Reset the timer on each request
+  ping();
   if (request->hasParam("id")) {
     int id = request->getParam("id")->value().toInt();
     password = readPassword(id);
@@ -157,8 +153,7 @@ static void handleFetchPass(AsyncWebServerRequest *request) {
 }
 static void handleEditPass(AsyncWebServerRequest *request) {
   Password password;
-  sleeping = 0;              // Reset sleeping state
-  lastClientTime = millis(); // Reset the timer on each request
+  ping();
 #ifdef ENABLE_GRAPHICS
   // strlcpy(DEBUG_BUFFER, "Edited", 99);
 #endif
@@ -197,8 +192,7 @@ static void handleEditPass(AsyncWebServerRequest *request) {
 
 static void handleList(AsyncWebServerRequest *request) {
   Password pwd;
-  sleeping = 0;              // Reset sleeping state
-  lastClientTime = millis(); // Reset the timer on each request
+  ping();
   // Create a dynamic JSON string to hold the list of passwords
   String json = "{\"passwords\":[";
 
@@ -225,8 +219,7 @@ static void handleList(AsyncWebServerRequest *request) {
 }
 
 static void handleFactoryReset(AsyncWebServerRequest *request) {
-  sleeping = 0;              // Reset sleeping state
-  lastClientTime = millis(); // Reset the timer on each request
+  ping();
 #ifdef ENABLE_GRAPHICS
   strlcpy(DEBUG_BUFFER, "Reset", 99);
 #endif
@@ -252,8 +245,7 @@ static void handleWifiPass(AsyncWebServerRequest *request) {
   if (request->hasParam("newPass")) {
     const char *pass = request->getParam("newPass")->value().c_str();
     Preferences preferences;
-    sleeping = 0;              // Reset sleeping state
-    lastClientTime = millis(); // Reset the timer on each request
+    ping();
     preferences.begin("KeyPass", false);
     preferences.putString("wifi_password", pass);
     preferences.end();
@@ -261,9 +253,8 @@ static void handleWifiPass(AsyncWebServerRequest *request) {
 }
 
 static void handlePassPhrase(AsyncWebServerRequest *request) {
-  sleeping = 0;              // Reset sleeping state
-  lastClientTime = millis(); // Reset the timer on each request
   if (request->hasParam("p") && request->hasParam("k")) {
+    ping();
     const char *phrase = request->getParam("p")->value().c_str();
     unsigned long pin = request->getParam("k")->value().toInt();
     setPassPhrase(phrase, pin);
@@ -288,8 +279,7 @@ String hexDump(const uint8_t *data, size_t len) {
 }
 
 static void handlePassDump(AsyncWebServerRequest *request) {
-  sleeping = 0;              // Reset sleeping state
-  lastClientTime = millis(); // Reset the timer on each request
+  ping();
   char buffer[MAX_PASS_LEN];
   Preferences preferences;
   AsyncResponseStream *response = request->beginResponseStream("text/plain");
@@ -343,6 +333,7 @@ void handleRestore(AsyncWebServerRequest *request) {
   if (!request->_tempObject) {
     return request->send(400, "text/plain", "Nothing uploaded");
   }
+  ping();
 
   StreamString *buffer = reinterpret_cast<StreamString *>(request->_tempObject);
   int bodyLength = request->contentLength();

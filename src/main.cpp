@@ -15,6 +15,11 @@ unsigned long lastClientTime;
 int sleeping = 0;
 int graphics_initialized = 1;
 
+void ping() {
+  lastClientTime = millis();
+  sleeping = 0;
+}
+
 void setup() {
   srand(millis());
 #ifdef ENABLE_GRAPHICS
