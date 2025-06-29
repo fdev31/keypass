@@ -387,7 +387,7 @@ void handleRestore(AsyncWebServerRequest *request) {
 
     // Only process lines if we're inside a KPDUMP section or if no markers were
     // used
-    if (insideKpDump || !buffer->indexOf("#KPDUMP") >= 0) {
+    if (insideKpDump) {
       // Convert hex string back to binary data
       memset(binData, 0, MAX_PASS_LEN);
       hexParse(hexBuffer, binData, MAX_PASS_LEN);

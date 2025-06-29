@@ -370,7 +370,6 @@ async function getPasswords() {
     }
 
     passList.innerHTML = domData.join("");
-    setupPasswordCardEvents(); // Setup event handlers after updating the DOM
   } catch (error) {
     alert("Error: Unable to fetch passwords. Please try again later." + error);
   }
@@ -587,4 +586,5 @@ function handleLongPress(passwordId) {
 window.onload = async () => {
   await checkPassphrase();
   await getPasswords();
+  setupPasswordCardEvents();
 };

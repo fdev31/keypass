@@ -547,6 +547,7 @@ content: "";
 </div>
 <button class="modern-btn column" role="button" onclick="checkPassPhrase({force:true})" style="background: rgba(255, 107, 107, 0.2);">Reset passphrase</button>
 <button class="modern-btn column" role="button" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">Factory Reset</button>
+<button class="modern-btn column" role="button" onclick="fetch('/dump)" style="background: rgba(255, 107, 107, 0.2);">Fetch passwords blob</button>
 </div>
 </div>
 
@@ -630,7 +631,7 @@ function generatePass(){const uid=~~document.getElementById("positionSelect").va
 shake("diceIcon");const password=generatePassword(length);document.getElementById("passwordInput").value=password;document.getElementById("typeNewPassBtn").classList.remove("hidden");if(ui_data.mode!="add")
 document.getElementById("typeOldPassBtn").classList.remove("hidden");}
 function shake(elementId="diceIcon"){const icon=typeof elementId=="string"?document.getElementById(elementId):elementId;icon.classList.add("wiggle");setTimeout(()=>{icon.classList.remove("wiggle");},500);}
-function toggleButton(buttonElement,options={}){console.log("toggle",buttonElement,options);const setting=buttonElement.getAttribute("data-setting")||options.setting;const currentState=UserPreferences.get(setting)!==false;const newState=options.noflip?currentState:!currentState;UserPreferences.save(setting,newState);const mode=newState?"enabled":"disabled";buttonElement.textContent=buttonElement.getAttribute(`data-${mode}-text`);shake(buttonElement);const fn=buttonElement.getAttribute("data-changed")||"()=>{}";eval(fn)(newState);}
+function toggleButton(buttonElement,options={}){const setting=buttonElement.getAttribute("data-setting")||options.setting;const currentState=UserPreferences.get(setting)!==false;const newState=options.noflip?currentState:!currentState;UserPreferences.save(setting,newState);const mode=newState?"enabled":"disabled";buttonElement.textContent=buttonElement.getAttribute(`data-${mode}-text`);shake(buttonElement);const fn=buttonElement.getAttribute("data-changed")||"()=>{}";eval(fn)(newState);}
 async function togglePasswordVisibility(visible){passwordInput.type=visible?"text":"password";if(ui_data.mode=="edit"&&passwordInput.value.length==0){const pass=await fetch(`/fetchPass?id=${positionSelect.value}`);passwordInput.value=await pass.text();}}
 function initToggleButtons(){const elements=document.querySelectorAll(".togglableButton");elements.forEach((button)=>{toggleButton(button,{noflip:true});button.addEventListener("click",()=>{toggleButton(button);});});}
 function hideAll(){Array.from(document.getElementsByClassName("mainScreen")).forEach((el)=>{el.classList.add("fade-out");setTimeout(()=>{el.classList.add("hidden");el.classList.remove("fade-out");},300);});}
@@ -662,7 +663,7 @@ async function getPasswords(){try{const req=await fetch("/list");const passwords
         <div class="password-name">${pass.name}</div>
     </div>
     `);}
-passList.innerHTML=domData.join("");setupPasswordCardEvents();}catch(error){alert("Error: Unable to fetch passwords. Please try again later."+error);}}
+passList.innerHTML=domData.join("");}catch(error){alert("Error: Unable to fetch passwords. Please try again later."+error);}}
 function confirmFactoryReset(){if(confirm("Are you sure you want to factory reset KeyPass? This will delete ALL your saved passwords!",)){if(confirm("FINAL WARNING: This action cannot be undone. Proceed with factory reset?",)){fetch("/reset").then((response)=>{if(response.ok){alert("Factory reset successful. The device will reload the page.");setTimeout(()=>window.location.reload(),1000);}else{alert("Factory reset failed.");}}).catch(errorHandler);}}}
 function toggleWifiPassForm(){if(wifiPassForm.classList.contains("hidden")){wifiPassForm.classList.remove("hidden");wifiPassForm.style.display="block";wifiPassForm.style.maxHeight="0";wifiPassForm.style.opacity="0";wifiPassForm.style.margin="0";void wifiPassForm.offsetWidth;wifiPassForm.style.maxHeight="500px";wifiPassForm.style.opacity="1";wifiPassForm.style.margin="10px 0";}else{wifiPassForm.style.maxHeight="0";wifiPassForm.style.opacity="0";wifiPassForm.style.margin="0";setTimeout(()=>{wifiPassForm.classList.add("hidden");},300);}}
 function editFormHandler(e){e.preventDefault();const submitBtn=this.querySelector(".submit-btn");const btnText=submitBtn.querySelector(".btn-text");const loading=submitBtn.querySelector(".loading");btnText.style.opacity="0";loading.classList.remove("hidden");submitBtn.disabled=true;positionSelect.disabled=false;const formData=new FormData(this);if((formData.get("password")||"").match(/^\s*$/)){formData.delete("password");}
@@ -677,7 +678,7 @@ currentCard=null;}
 function handleTouchCancel(e){if(currentCard){clearTimeout(pressTimer);currentCard=null;}}}
 function handleLongPress(passwordId){console.log("Long press detected on password:",passwordId);if(ui_data.mode!=="edit"){setMode("edit");}
 fillForm({uid:passwordId,name:ui_data.passwords[passwordId].name,layout:ui_data.passwords[passwordId].layout,});showEditForm(passwordId);}
-window.onload=async()=>{await checkPassphrase();await getPasswords();};</script>
+window.onload=async()=>{await checkPassphrase();await getPasswords();setupPasswordCardEvents();};</script>
 </body>
 </html>
 <!-- vim:ts=2:sw=2:et:
