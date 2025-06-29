@@ -545,8 +545,8 @@ content: "";
 </button>
 </div>
 </div>
-<button class="modern-btn column" role="button" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">Factory Reset</button>
 <button class="modern-btn column" role="button" onclick="checkPassPhrase({force:true})" style="background: rgba(255, 107, 107, 0.2);">Reset passphrase</button>
+<button class="modern-btn column" role="button" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">Factory Reset</button>
 </div>
 </div>
 
@@ -600,17 +600,21 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 </div>
 
 <div id="passList" class="mainScreen">
-<div class="form-group" id="passListKbLayout">
 <details>
-<summary>Keyboard layout</label></summary>
+<summary>Options</label></summary>
+<div>
+<label for="typePasswordPressEnter">After typing a password:</label>
+<button id="typePasswordPressEnter" class="modern-btn column togglableButton" role="button" data-setting="press_enter" data-enabled-text="Press &crarr;" data-disabled-text="Do not press &crarr;"></button></div>
+<div class="form-group" id="passListKbLayout">
+<label for="layoutOverrideSelect">Keyboard layout override:</label>
 <select name="lang" id="layoutOverrideSelect" required>
 <option value="">Password specific</option>
 <option value="fr">French</option>
 <option value="us">US</option>
 </select>
-</details>
 <input type="hidden" name="layout" id="layoutIndex">
 </div>
+</details>
 <div class="password-grid">
 <!-- Passwords will be loaded here -->
 </div>
@@ -626,7 +630,7 @@ function generatePass(){const uid=~~document.getElementById("positionSelect").va
 shake("diceIcon");const password=generatePassword(length);document.getElementById("passwordInput").value=password;document.getElementById("typeNewPassBtn").classList.remove("hidden");if(ui_data.mode!="add")
 document.getElementById("typeOldPassBtn").classList.remove("hidden");}
 function shake(elementId="diceIcon"){const icon=typeof elementId=="string"?document.getElementById(elementId):elementId;icon.classList.add("wiggle");setTimeout(()=>{icon.classList.remove("wiggle");},500);}
-function toggleButton(buttonElement,options={}){const setting=buttonElement.getAttribute("data-setting")||options.setting;const currentState=UserPreferences.get(setting)!==false;const newState=options.noflip?currentState:!currentState;UserPreferences.save(setting,newState);const mode=newState?"enabled":"disabled";buttonElement.textContent=buttonElement.getAttribute(`data-${mode}-text`);shake(buttonElement);const fn=buttonElement.getAttribute("data-changed")||"()=>{}";eval(fn)(newState);}
+function toggleButton(buttonElement,options={}){console.log("toggle",buttonElement,options);const setting=buttonElement.getAttribute("data-setting")||options.setting;const currentState=UserPreferences.get(setting)!==false;const newState=options.noflip?currentState:!currentState;UserPreferences.save(setting,newState);const mode=newState?"enabled":"disabled";buttonElement.textContent=buttonElement.getAttribute(`data-${mode}-text`);shake(buttonElement);const fn=buttonElement.getAttribute("data-changed")||"()=>{}";eval(fn)(newState);}
 async function togglePasswordVisibility(visible){passwordInput.type=visible?"text":"password";if(ui_data.mode=="edit"&&passwordInput.value.length==0){const pass=await fetch(`/fetchPass?id=${positionSelect.value}`);passwordInput.value=await pass.text();}}
 function initToggleButtons(){const elements=document.querySelectorAll(".togglableButton");elements.forEach((button)=>{toggleButton(button,{noflip:true});button.addEventListener("click",()=>{toggleButton(button);});});}
 function hideAll(){Array.from(document.getElementsByClassName("mainScreen")).forEach((el)=>{el.classList.add("fade-out");setTimeout(()=>{el.classList.add("hidden");el.classList.remove("fade-out");},300);});}
@@ -641,14 +645,14 @@ ui_data.mode=action;ui_data.change_focus(`${action}-button`);switch(action){case
 function showSettings(){if(document.getElementById("settingsForm").classList.contains("hidden")){hideAll();setTimeout(()=>showElement("settingsForm"),300);}}
 function fillForm(data){if(data.layout!=undefined)layoutSelect.selectedIndex=data.layout;if(data.uid!=undefined){positionSelect.value=data.uid;}else{positionSelect.value=-1;}
 if(data.name!=undefined)passLabel.value=data.name;}
-async function checkPassphrase({force=false}){const storedPassphrase=localStorage.getItem("keypass_passphrase");if(!storedPassphrase||force){const newPassphrase=prompt("Please set up a passphrase to secure your passwords:",);if(newPassphrase){localStorage.setItem("keypass_passphrase",newPassphrase);await setPassPhrase(newPassphrase);return true;}else{alert("A passphrase is required to use KeyPass.");return await checkPassphrase();}}else{await setPassPhrase(storedPassphrase);return true;}}
+async function checkPassphrase(opts){const{force}=opts||{};const storedPassphrase=localStorage.getItem("keypass_passphrase");if(!storedPassphrase||force){const newPassphrase=prompt("Please set up a passphrase to secure your passwords:",);if(newPassphrase){localStorage.setItem("keypass_passphrase",newPassphrase);await setPassPhrase(newPassphrase);return true;}else{alert("A passphrase is required to use KeyPass.");return await checkPassphrase();}}else{await setPassPhrase(storedPassphrase);return true;}}
 async function setPassPhrase(phrase){return fetch(`/passphrase?p=${phrase}`).catch(errorHandler);}
 function resetPassphrase(){if(confirm("Are you sure you want to reset your passphrase?")){const newPassphrase=prompt("Please enter a new passphrase:");if(newPassphrase){localStorage.setItem("keypass_passphrase",newPassphrase);setPassPhrase(newPassphrase).then(()=>alert("Passphrase has been reset successfully."),);}}}
 function typeOldPass(){const uid=positionSelect.value;fetch(`/typePass?id=${uid}`).catch(errorHandler);}
 function typeNewPass(){const password=passwordInput.value;const escaped=encodeURIComponent(password);const layout=layoutSelect.value;fetch(`/typeRaw?text=${escaped}&layout=${layout}`).catch(errorHandler);}
 function passwordClick(event,uid){if(uid===undefined&&event){const card=event.target.closest(".password-card");if(card){uid=parseInt(card.dataset.passwordId);}}
 switch(ui_data.mode){case"edit":fillForm({uid:uid,name:ui_data.passwords[uid].name,layout:ui_data.passwords[uid].layout,});showEditForm(uid);break;default:const card=event?event.target.closest(".password-card"):document.querySelector(`[data-password-id="${uid}"]`);if(card){card.style.transform="scale(0.95)";setTimeout(()=>{card.style.transform="";},150);}
-const layout=layoutOverrideSelect.selectedIndex;if(layout>0){fetch(`/typePass?id=${uid}&layout=${layout - 1}`).catch(errorHandler);}else{fetch(`/typePass?id=${uid}`).catch(errorHandler);}}}
+const layout=layoutOverrideSelect.selectedIndex;const press_enter=UserPreferences.get("press_enter");const prefix=`/typePass?id=${uid}&ret=${press_enter}`;const url=layout>0?`${prefix}&layout=${layout - 1}`:prefix;fetch(url).catch(errorHandler);}}
 function updateWifiPass(){const newPass=newWifiPass.value;const confirmPass=confirmWifiPass.value;if(!newPass)return;if(newPass!==confirmPass){alert("Passwords do not match. Please try again.");return;}
 if(newPass.length<8){alert("Password must be at least 8 characters long.");return;}
 fetch(`/updateWifiPass?newPass=${newPass}`).then((response)=>response.text()).catch(errorHandler);const loadingEl=document.querySelector("#wifiPassForm .loading");const btnText=document.querySelector("#wifiPassForm .btn-text");if(loadingEl&&btnText){btnText.classList.add("hidden");loadingEl.classList.remove("hidden");}

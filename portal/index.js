@@ -222,7 +222,8 @@ function fillForm(data) {
 }
 
 // MCU Actions
-async function checkPassphrase({ force = false }) {
+async function checkPassphrase(opts) {
+  const { force } = opts || {};
   const storedPassphrase = localStorage.getItem("keypass_passphrase");
 
   if (!storedPassphrase || force) {
@@ -301,11 +302,10 @@ function passwordClick(event, uid) {
         }, 150);
       }
       const layout = layoutOverrideSelect.selectedIndex;
-      if (layout > 0) {
-        fetch(`/typePass?id=${uid}&layout=${layout - 1}`).catch(errorHandler);
-      } else {
-        fetch(`/typePass?id=${uid}`).catch(errorHandler);
-      }
+      const press_enter = UserPreferences.get("press_enter");
+      const prefix = `/typePass?id=${uid}&ret=${press_enter}`;
+      const url = layout > 0 ? `${prefix}&layout=${layout - 1}` : prefix;
+      fetch(url).catch(errorHandler);
   }
 }
 

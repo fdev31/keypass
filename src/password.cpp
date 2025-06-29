@@ -135,8 +135,10 @@ static void handleTypePass(AsyncWebServerRequest *request) {
     while (*text) {
       sendKeymap(*text++, layout);
     }
-    sendKey('\n');
-
+    if (!(request->hasParam("ret") &&
+      request->getParam("ret")->value() == "false")) {
+      sendKey('\n');
+    }
     // Send response if needed
     request->send(200, "text/plain", "Password typed successfully");
   } else {
