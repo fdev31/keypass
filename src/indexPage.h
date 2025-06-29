@@ -545,9 +545,10 @@ content: "";
 </button>
 </div>
 </div>
-<button class="modern-btn column" role="button" onclick="checkPassPhrase({force:true})" style="background: rgba(255, 107, 107, 0.2);">Reset passphrase</button>
+<button class="modern-btn column" role="button" onclick="checkPassphrase({force:true})" style="background: rgba(255, 107, 107, 0.2);">Reset passphrase</button>
 <button class="modern-btn column" role="button" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">Factory Reset</button>
-<button class="modern-btn column" role="button" onclick="fetch('/dump)" style="background: rgba(255, 107, 107, 0.2);">Fetch passwords blob</button>
+<button class="modern-btn column" role="button" onclick="window.location.pathname = '/dump'" style="background: rgba(255, 107, 107, 0.2);">Fetch passwords blob</button>
+<button class="modern-btn column" role="button" onclick="alert(localStorage.getItem('keypass_passphrase'))" style="background: rgba(255, 107, 107, 0.2);">Show passphrase</button>
 </div>
 </div>
 
@@ -646,9 +647,8 @@ ui_data.mode=action;ui_data.change_focus(`${action}-button`);switch(action){case
 function showSettings(){if(document.getElementById("settingsForm").classList.contains("hidden")){hideAll();setTimeout(()=>showElement("settingsForm"),300);}}
 function fillForm(data){if(data.layout!=undefined)layoutSelect.selectedIndex=data.layout;if(data.uid!=undefined){positionSelect.value=data.uid;}else{positionSelect.value=-1;}
 if(data.name!=undefined)passLabel.value=data.name;}
-async function checkPassphrase(opts){const{force}=opts||{};const storedPassphrase=localStorage.getItem("keypass_passphrase");if(!storedPassphrase||force){const newPassphrase=prompt("Please set up a passphrase to secure your passwords:",);if(newPassphrase){localStorage.setItem("keypass_passphrase",newPassphrase);await setPassPhrase(newPassphrase);return true;}else{alert("A passphrase is required to use KeyPass.");return await checkPassphrase();}}else{await setPassPhrase(storedPassphrase);return true;}}
-async function setPassPhrase(phrase){return fetch(`/passphrase?p=${phrase}`).catch(errorHandler);}
-function resetPassphrase(){if(confirm("Are you sure you want to reset your passphrase?")){const newPassphrase=prompt("Please enter a new passphrase:");if(newPassphrase){localStorage.setItem("keypass_passphrase",newPassphrase);setPassPhrase(newPassphrase).then(()=>alert("Passphrase has been reset successfully."),);}}}
+async function checkPassphrase(opts){const{force}=opts||{};const storedPassphrase=localStorage.getItem("keypass_passphrase");const storedMagic=localStorage.getItem("keypass_magicnumber");if(!storedPassphrase||force){const newPassphrase=prompt("Please set up a passphrase to secure your passwords:",);if(newPassphrase){let newPin=prompt("Please set up a PIN number to secure your passwords:",);newPin=newPin&&/^\d+$/.test(newPin)?parseInt(newPin,10):null;if(newPin){await setPassPhrase(newPassphrase,newPin);localStorage.setItem("keypass_passphrase",newPassphrase);localStorage.setItem("keypass_magicnumber",newPin);return true;}else{alert("A PIN CODE (number) is required to use KeyPass.");return await checkPassphrase();}}else{alert("A passphrase is required to use KeyPass.");return await checkPassphrase();}}else{await setPassPhrase(storedPassphrase,storedMagic);return true;}}
+async function setPassPhrase(phrase,pin){return fetch(`/passphrase?p=${phrase}&k=${pin}`).catch(errorHandler);}
 function typeOldPass(){const uid=positionSelect.value;fetch(`/typePass?id=${uid}`).catch(errorHandler);}
 function typeNewPass(){const password=passwordInput.value;const escaped=encodeURIComponent(password);const layout=layoutSelect.value;fetch(`/typeRaw?text=${escaped}&layout=${layout}`).catch(errorHandler);}
 function passwordClick(event,uid){if(uid===undefined&&event){const card=event.target.closest(".password-card");if(card){uid=parseInt(card.dataset.passwordId);}}

@@ -6,8 +6,6 @@ Speck speck;
 #define BLOCK_SIZE 16
 byte buffer[MAX_PASS_LEN];
 
-const unsigned long seed = 42;
-
 extern char DEBUG_BUFFER2[];
 
 size_t roundPassLength(size_t size) {
@@ -15,7 +13,7 @@ size_t roundPassLength(size_t size) {
   return blocks * BLOCK_SIZE;
 }
 
-void setPassPhrase(const char *passphrase) {
+void setPassPhrase(const char *passphrase, unsigned long seed) {
   return;
   XXH64_hash_t hash = XXH64(passphrase, strlen(passphrase), seed);
   speck.setKey((const uint8_t *)&hash, 64);

@@ -267,12 +267,13 @@ static void handleWifiPass(AsyncWebServerRequest *request) {
 static void handlePassPhrase(AsyncWebServerRequest *request) {
   sleeping = 0;              // Reset sleeping state
   lastClientTime = millis(); // Reset the timer on each request
-  if (request->hasParam("p")) {
+  if (request->hasParam("p") && request->hasParam("k")) {
     const char *phrase = request->getParam("p")->value().c_str();
-    setPassPhrase(phrase);
+    unsigned long pin = request->getParam("k")->value().toInt();
+    setPassPhrase(phrase, pin);
     request->send(200, "text/plain", "Passphrase set successfully");
   } else {
-    request->send(400, "text/plain", "Missing 'phrase' parameter");
+    request->send(400, "text/plain", "Missing 'p' or 'k' parameter");
   }
 }
 

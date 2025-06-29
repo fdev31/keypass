@@ -225,6 +225,7 @@ function fillForm(data) {
 async function checkPassphrase(opts) {
   const { force } = opts || {};
   const storedPassphrase = localStorage.getItem("keypass_passphrase");
+  const storedMagic = localStorage.getItem("keypass_magicnumber");
 
   if (!storedPassphrase || force) {
     // First time setup - prompt for new passphrase
@@ -232,9 +233,20 @@ async function checkPassphrase(opts) {
       "Please set up a passphrase to secure your passwords:",
     );
     if (newPassphrase) {
-      localStorage.setItem("keypass_passphrase", newPassphrase);
-      await setPassPhrase(newPassphrase);
-      return true;
+      let newPin = prompt(
+        "Please set up a PIN number to secure your passwords:",
+      );
+      newPin = newPin && /^\d+$/.test(newPin) ? parseInt(newPin, 10) : null;
+
+      if (newPin) {
+        await setPassPhrase(newPassphrase, newPin);
+        localStorage.setItem("keypass_passphrase", newPassphrase);
+        localStorage.setItem("keypass_magicnumber", newPin);
+        return true;
+      } else {
+        alert("A PIN CODE (number) is required to use KeyPass.");
+        return await checkPassphrase(); // Prompt again
+      }
     } else {
       // User cancelled - might need to retry or restrict access
       alert("A passphrase is required to use KeyPass.");
@@ -242,26 +254,15 @@ async function checkPassphrase(opts) {
     }
   } else {
     // Use the stored passphrase
-    await setPassPhrase(storedPassphrase);
+    await setPassPhrase(storedPassphrase, storedMagic);
     return true;
   }
 }
 
-async function setPassPhrase(phrase) {
-  return fetch(`/passphrase?p=${phrase}`).catch(errorHandler);
+async function setPassPhrase(phrase, pin) {
+  return fetch(`/passphrase?p=${phrase}&k=${pin}`).catch(errorHandler);
 }
 
-function resetPassphrase() {
-  if (confirm("Are you sure you want to reset your passphrase?")) {
-    const newPassphrase = prompt("Please enter a new passphrase:");
-    if (newPassphrase) {
-      localStorage.setItem("keypass_passphrase", newPassphrase);
-      setPassPhrase(newPassphrase).then(() =>
-        alert("Passphrase has been reset successfully."),
-      );
-    }
-  }
-}
 function typeOldPass() {
   const uid = positionSelect.value;
   fetch(`/typePass?id=${uid}`).catch(errorHandler);
