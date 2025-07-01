@@ -72,7 +72,7 @@ static void writePassword(int id, const Password &password) {
   // initialize encrypted_password with random values
   encryptPassword((char *)password.password, encrypted_password);
   preferences.putBytes("password", encrypted_password, MAX_PASS_LEN);
-  preferences.putInt("v", SOFTWARE_VERSION);
+  preferences.putInt("v", FORMAT_VERSION);
   preferences.putInt("layout", password.layout);
   preferences.end();
 #endif

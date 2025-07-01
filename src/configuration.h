@@ -13,9 +13,11 @@ const unsigned long SLEEP_TIME = 500; // sleep period in sleep mode
 #define DEFAULT_WIFI_PASSWORD "12345678" // set to NULL for no password
 
 #define ENABLE_GRAPHICS true
-#define USE_EEPROM_API 0
-#define USE_CH9329 1
 #define FLIP_SCREEN 1
 #define DEBUG 0
-#define SOFTWARE_VERSION 1
+#define FORMAT_VERSION 1
+
+// WARN: deprecated options (non default will break)
+#define USE_EEPROM_API 0
+#define USE_CH9329 1
 #endif
