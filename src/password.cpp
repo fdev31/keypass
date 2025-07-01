@@ -43,18 +43,17 @@ static Password readPassword(int id) {
   Preferences preferences;
   const char *key = mkEntryName(id);
   preferences.begin(key, true);
-  size_t pass_len = preferences.getInt("pass_len");
+  size_t pass_version = preferences.getInt("v");
   strlcpy(password.name, preferences.getString("name").c_str(), MAX_NAME_LEN);
   preferences.getBytes("password", buffer, MAX_PASS_LEN);
   password.layout = preferences.getInt("layout", -1);
   preferences.end();
 
-  if (pass_len) { // encrypted
-    decryptPassword((uint8_t *)buffer, (char *)password.password);
-  } else {
+  if (pass_version == 0) { // unencrypted version 0
     strlcpy((char *)password.password, (char *)buffer, MAX_PASS_LEN);
+  } else { // current version using XXH32 + SPECK
+    decryptPassword((uint8_t *)buffer, (char *)password.password);
   }
-
   return password;
 #endif
 }
@@ -69,12 +68,11 @@ static void writePassword(int id, const Password &password) {
   Preferences preferences;
   preferences.begin(mkEntryName(id), false);
   preferences.putString("name", password.name);
-  int pass_len = strlen((char *)password.password);
   static byte encrypted_password[MAX_PASS_LEN];
   // initialize encrypted_password with random values
   encryptPassword((char *)password.password, encrypted_password);
   preferences.putBytes("password", encrypted_password, MAX_PASS_LEN);
-  preferences.putInt("pass_len", pass_len);
+  preferences.putInt("v", SOFTWARE_VERSION);
   preferences.putInt("layout", password.layout);
   preferences.end();
 #endif
@@ -385,7 +383,6 @@ void handleRestore(AsyncWebServerRequest *request) {
     // used
     if (insideKpDump) {
       // Convert hex string back to binary data
-      memset(binData, 0, MAX_PASS_LEN);
       hexParse(hexBuffer, binData, MAX_PASS_LEN);
 
       // Save the binary data directly to preferences

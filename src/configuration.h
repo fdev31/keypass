@@ -17,4 +17,5 @@ const unsigned long SLEEP_TIME = 500; // sleep period in sleep mode
 #define USE_CH9329 1
 #define FLIP_SCREEN 1
 #define DEBUG 0
+#define SOFTWARE_VERSION 1
 #endif
