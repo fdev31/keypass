@@ -78,6 +78,21 @@ static void writePassword(int id, const Password &password) {
 #endif
 }
 
+static void sendAnyKeymap(const char *text, int layout, int newline) {
+  if (layout == -1) {
+    while (*text) {
+      sendKey(*text++, true);
+    }
+
+  } else {
+    while (*text) {
+      sendKeymap(*text++, layout);
+    }
+  }
+  if (newline) {
+    sendKey('\n', false); // Send newline if requested
+  }
+}
 static void handleTypeRaw(AsyncWebServerRequest *request) {
   if (request->hasParam("text")) {
     ping();
@@ -87,17 +102,9 @@ static void handleTypeRaw(AsyncWebServerRequest *request) {
       layout = request->getParam("layout")->value().toInt();
     }
 
-    if (layout == -1) {
-      while (*text) {
-        sendKey(*text++, true);
-      }
-
-    } else {
-      while (*text) {
-        sendKeymap(*text++, layout);
-      }
-    }
-    sendKey('\n', false);
+    sendAnyKeymap(text, layout,
+                  !(request->hasParam("ret") &&
+                    request->getParam("ret")->value() == "false"));
     request->send(200, "text/plain", "OK");
   } else {
     request->send(400, "text/plain", "Missing 'text' parameter");
@@ -134,13 +141,9 @@ static void handleTypePass(AsyncWebServerRequest *request) {
 
     int layout = password.layout;
 
-    while (*text) {
-      sendKeymap(*text++, layout);
-    }
-    if (!(request->hasParam("ret") &&
-          request->getParam("ret")->value() == "false")) {
-      sendKey('\n', false);
-    }
+    sendAnyKeymap(text, layout,
+                  !(request->hasParam("ret") &&
+                    request->getParam("ret")->value() == "false"));
     // Send response if needed
     request->send(200, "text/plain", "Password typed successfully");
   } else {
