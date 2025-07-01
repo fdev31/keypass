@@ -1,0 +1,40 @@
+# justfile for Android project automation
+
+# Setup initial environment (run once)
+setup:
+    @echo "Setting up Android SDK permissions and accepting licenses..."
+    sudo chown -R $(whoami):$(whoami) /opt/android-sdk
+    yes | sdkmanager --licenses
+    @echo "Ensuring AndroidX is enabled..."
+    echo "android.useAndroidX=true" >> gradle.properties
+    @echo "Setup complete. You might need to run 'just clean' and 'just build' next."
+
+# Clean the build directory
+clean:
+    ./gradlew clean
+
+# Build the debug APK
+build:
+    ./gradlew assembleDebug
+
+# Install the debug APK on a connected device/emulator
+install: build
+    ./gradlew installDebug
+
+# Run the application on a connected device/emulator
+# Requires 'adb' to be in your PATH and a device/emulator connected.
+run: install
+    @echo "Starting the application..."
+    adb shell am start -n com.example.keypass/.MainActivity
+
+# Run unit tests
+test-unit:
+    ./gradlew testDebugUnitTest
+
+# Run connected (instrumented) tests
+# Requires a device/emulator connected.
+test-connected:
+    ./gradlew connectedDebugAndroidTest
+
+# Full build and install (default)
+default: build
