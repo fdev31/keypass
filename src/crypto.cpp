@@ -1,5 +1,5 @@
 // NOTE: uses a single buffer, can only handle one at a time !
-// Consider using BLACKE2 instead of XX
+// Consider using BLACKE2 instead of XX and CHACHA instead of SPECK
 #include "crypto.h"
 #include "constants.h"
 Speck speck;
