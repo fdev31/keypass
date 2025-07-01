@@ -18,8 +18,6 @@ color: white;
 font-weight: 600;
 font-size: 16px;
 padding: 10px;
-background: rgba(255, 255, 255, 0.1);
-border-radius: 10px;
 transition: background 0.3s ease;
 }
 
@@ -606,7 +604,7 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 
 <div id="passList" class="mainScreen">
 <details>
-<summary>Options</label></summary>
+<summary>Advanced options</label></summary>
 <div>
 <label for="typePasswordPressEnter">After typing a password:</label>
 <button id="typePasswordPressEnter" class="modern-btn column togglableButton" role="button" data-setting="press_enter" data-enabled-text="Press &crarr;" data-disabled-text="Do not press &crarr;"></button></div>
@@ -646,7 +644,7 @@ function showEditForm(uid){if(document.getElementById("editForm").classList.cont
 function setMode(action){if(ui_data.mode==action){return;}
 if(action=="type"){passListKbLayout.classList.remove("hidden");}else{passListKbLayout.classList.add("hidden");}
 if(ui_data.mode=="edit"||ui_data.mode=="add"){leaveEditForm();}
-ui_data.mode=action;ui_data.change_focus(`${action}-button`);switch(action){case"edit":showPasswords();break;case"type":showPasswords();break;case"add":const uid=ui_data.passwords.length;fillForm({name:""});showEditForm(uid);break;case"settings":showSettings();break;default:console.error("Invalid action");}}
+ui_data.mode=action;ui_data.change_focus(`${action}-button`);switch(action){case"edit":case"type":showPasswords();break;case"add":const uid=ui_data.passwords.length;fillForm({name:""});showEditForm(uid);break;case"settings":showSettings();break;default:console.error("Invalid action");}}
 function showSettings(){if(document.getElementById("settingsForm").classList.contains("hidden")){hideAll();setTimeout(()=>showElement("settingsForm"),300);}}
 function fillForm(data){if(data.layout!=undefined)layoutSelect.selectedIndex=data.layout+1;if(data.uid!=undefined){positionSelect.value=data.uid;}else{positionSelect.value=-1;}
 if(data.name!=undefined)passLabel.value=data.name;}

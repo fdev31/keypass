@@ -185,8 +185,6 @@ function setMode(action) {
 
   switch (action) {
     case "edit":
-      showPasswords();
-      break;
     case "type":
       showPasswords();
       break;
