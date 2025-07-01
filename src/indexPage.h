@@ -526,7 +526,7 @@ content: "";
 <div class="button-row">
 <button id="type-button" onclick="setMode('type')" class="modern-btn menu-btn active" role="button">Type</button>
 <button id="edit-button" onclick="setMode('edit')" class="modern-btn menu-btn" role="button">Edit</button>
-<button id="add-button" onclick="setMode('add')" class="modern-btn menu-btn" role="button">Add</button>
+<button id="add-button" onclick="setMode('add')" class="modern-btn menu-btn" role="button">Create</button>
 </div>
 <div class="mainScreen hidden" id="settingsForm">
 <div class="glass-panel button-column">
