@@ -465,10 +465,11 @@ function editFormHandler(e) {
 }
 // Enhanced form submission with loading states
 document.addEventListener("DOMContentLoaded", function () {
-  layoutSelect.addEventListener("change", function () {
-    layoutIndex.value = layoutSelect.selectedIndex;
-  });
-  layoutIndex.value = layoutSelect.selectedIndex;
+  const handler = () => {
+    layoutIndex.value = layoutSelect.selectedIndex - 1;
+  };
+  layoutSelect.addEventListener("change", handler);
+  handler();
 
   editFormContent.addEventListener("submit", editFormHandler);
   initToggleButtons();

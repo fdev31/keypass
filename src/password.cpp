@@ -1,4 +1,5 @@
 #include "configuration.h"
+#include "hid.h"
 
 #include "Preferences.h"
 #include "crypto.h"
@@ -88,10 +89,17 @@ static void handleTypeRaw(AsyncWebServerRequest *request) {
       layout = request->getParam("layout")->value().toInt();
     }
 
-    while (*text) {
-      sendKeymap(*text++, layout);
+    if (layout == -1) {
+      while (*text) {
+        sendKey(*text++, true);
+      }
+
+    } else {
+      while (*text) {
+        sendKeymap(*text++, layout);
+      }
     }
-    sendKey('\n');
+    sendKey('\n', false);
     request->send(200, "text/plain", "OK");
   } else {
     request->send(400, "text/plain", "Missing 'text' parameter");
@@ -132,8 +140,8 @@ static void handleTypePass(AsyncWebServerRequest *request) {
       sendKeymap(*text++, layout);
     }
     if (!(request->hasParam("ret") &&
-      request->getParam("ret")->value() == "false")) {
-      sendKey('\n');
+          request->getParam("ret")->value() == "false")) {
+      sendKey('\n', false);
     }
     // Send response if needed
     request->send(200, "text/plain", "Password typed successfully");
