@@ -405,6 +405,7 @@ function uploadBlobFile() {
   // if blobFileInput display: none, then show it, else proceed...
   if (blobFileInput.style.display === "none") {
     blobFileInput.style.display = "block";
+    alert("Once the file is selected, click the same button again to confirm.");
     blobFileInput.click();
     return;
   }

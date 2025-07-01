@@ -668,7 +668,7 @@ async function getPasswords(){try{const req=await fetch("/list");const passwords
     `);}
 passList.innerHTML=domData.join("");}catch(error){alert("Error: Unable to fetch passwords. Please try again later."+error);}}
 function confirmFactoryReset(){if(confirm("Are you sure you want to factory reset KeyPass? This will delete ALL your saved passwords!",)){if(confirm("FINAL WARNING: This action cannot be undone. Proceed with factory reset?",)){fetch("/reset").then((response)=>{if(response.ok){alert("Factory reset successful. The device will reload the page.");setTimeout(()=>window.location.reload(),1000);}else{alert("Factory reset failed.");}}).catch(errorHandler);}}}
-function uploadBlobFile(){if(blobFileInput.style.display==="none"){blobFileInput.style.display="block";blobFileInput.click();return;}
+function uploadBlobFile(){if(blobFileInput.style.display==="none"){blobFileInput.style.display="block";alert("Once the file is selected, click the same button again to confirm.");blobFileInput.click();return;}
 if(blobFileInput.files.length===0){alert("Please select a file first.");return;}
 const file=blobFileInput.files[0];fetch("/restore",{method:"POST",headers:{"Content-Type":"application/octet-stream"},body:file,}).then((response)=>{if(!response.ok){throw new Error(`Server responded with ${response.status}: ${response.statusText}`,);}
 return response.text();}).then((result)=>{blobFileInput.style.display="none";alert(result);}).catch((error)=>{alert(`Error: ${error.message}`);});}
