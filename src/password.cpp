@@ -263,8 +263,11 @@ static void handlePassPhrase(AsyncWebServerRequest *request) {
     ping();
     const char *phrase = request->getParam("p")->value().c_str();
     unsigned long pin = request->getParam("k")->value().toInt();
-    setPassPhrase(phrase, pin);
-    request->send(200, "text/plain", "Passphrase set successfully");
+    if (setPassPhrase(phrase, pin)) {
+      request->send(200, "text/plain", "Passphrase set successfully");
+    } else {
+      request->send(500, "text/plain", "Passphrase couldn't be set");
+    }
   } else {
     request->send(400, "text/plain", "Missing 'p' or 'k' parameter");
   }

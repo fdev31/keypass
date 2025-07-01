@@ -1,6 +1,7 @@
 // NOTE: uses a single buffer, can only handle one at a time !
 // Consider using BLACKE2 instead of XX
 #include "crypto.h"
+#include <stdlib.h>
 Speck speck;
 
 #define BLOCK_SIZE 16
@@ -15,10 +16,9 @@ void randomizeBuffer(uint8_t *buffer, int size) {
   }
 }
 
-void setPassPhrase(const char *passphrase, unsigned long seed) {
-  return;
-  XXH64_hash_t hash = XXH64(passphrase, strlen(passphrase), seed);
-  speck.setKey((const uint8_t *)&hash, 64);
+bool setPassPhrase(const char *passphrase, unsigned long seed) {
+  XXH32_hash_t hash = XXH32(passphrase, strlen(passphrase), seed);
+  return speck.setKey((const uint8_t *)&hash, 32);
 }
 
 void encryptPassword(const char *password, uint8_t *result) {
