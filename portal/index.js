@@ -611,7 +611,6 @@ function setupPasswordCardEvents() {
 
 // Function to handle long press on password card
 function handleLongPress(passwordId) {
-  console.log("Long press detected on password:", passwordId);
   // For example, directly switch to edit mode for this password
   if (ui_data.mode !== "edit") {
     setMode("edit");

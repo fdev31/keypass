@@ -681,7 +681,7 @@ function handleTouchStart(e){const card=e.target.closest(".password-card");if(!c
 function handleTouchEnd(e){if(!currentCard)return;clearTimeout(pressTimer);if(!longPressTriggered){e.preventDefault();passwordClick(e);}
 currentCard=null;}
 function handleTouchCancel(e){if(currentCard){clearTimeout(pressTimer);currentCard=null;}}}
-function handleLongPress(passwordId){console.log("Long press detected on password:",passwordId);if(ui_data.mode!=="edit"){setMode("edit");}
+function handleLongPress(passwordId){if(ui_data.mode!=="edit"){setMode("edit");}
 fillForm({uid:passwordId,name:ui_data.passwords[passwordId].name,layout:ui_data.passwords[passwordId].layout,});showEditForm(passwordId);}
 window.onload=async()=>{await checkPassphrase();await getPasswords();setupPasswordCardEvents();};</script>
 </body>
