@@ -17,8 +17,8 @@ void randomizeBuffer(uint8_t *buffer, int size) {
 }
 
 bool setPassPhrase(const char *passphrase, unsigned long seed) {
-  XXH32_hash_t hash = XXH32(passphrase, strlen(passphrase), seed);
-  return speck.setKey((const uint8_t *)&hash, 32);
+  XXH64_hash_t hash = XXH64(passphrase, strlen(passphrase), seed);
+  return speck.setKey((const uint8_t *)&hash, 64);
 }
 
 void encryptPassword(const char *password, uint8_t *result) {
