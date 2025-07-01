@@ -1,10 +1,10 @@
-#include "configuration.h"
-#include "hid.h"
-
-#include "Preferences.h"
-#include "crypto.h"
-#include "indexPage.h"
 #include "password.h"
+#include "Preferences.h"
+#include "configuration.h"
+#include "constants.h"
+#include "crypto.h"
+#include "hid.h"
+#include "indexPage.h"
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
 #include <StreamString.h>
@@ -39,14 +39,14 @@ static Password readPassword(int id) {
   return password;
 #else
   static Password password;
-  static byte buffer[MAX_PASS_LEN];
+  static uint8_t buffer[MAX_PASS_LEN];
   Preferences preferences;
   const char *key = mkEntryName(id);
   preferences.begin(key, true);
-  size_t pass_version = preferences.getInt("v");
-  strlcpy(password.name, preferences.getString("name").c_str(), MAX_NAME_LEN);
-  preferences.getBytes("password", buffer, MAX_PASS_LEN);
-  password.layout = preferences.getInt("layout", -1);
+  size_t pass_version = preferences.getInt(F_FORMAT, 0);
+  strlcpy(password.name, preferences.getString(F_NAME).c_str(), MAX_NAME_LEN);
+  preferences.getBytes(F_PASSWORD, buffer, MAX_PASS_LEN);
+  password.layout = preferences.getInt(F_LAYOUT, -1);
   preferences.end();
 
   if (pass_version == 0) { // unencrypted version 0
@@ -67,13 +67,13 @@ static void writePassword(int id, const Password &password) {
 #else
   Preferences preferences;
   preferences.begin(mkEntryName(id), false);
-  preferences.putString("name", password.name);
-  static byte encrypted_password[MAX_PASS_LEN];
+  preferences.putString(F_NAME, password.name);
+  static uint8_t encrypted_password[MAX_PASS_LEN];
   // initialize encrypted_password with random values
   encryptPassword((char *)password.password, encrypted_password);
-  preferences.putBytes("password", encrypted_password, MAX_PASS_LEN);
-  preferences.putInt("v", FORMAT_VERSION);
-  preferences.putInt("layout", password.layout);
+  preferences.putBytes(F_PASSWORD, encrypted_password, MAX_PASS_LEN);
+  preferences.putInt(F_FORMAT, FORMAT_VERSION);
+  preferences.putInt(F_LAYOUT, password.layout);
   preferences.end();
 #endif
 }
@@ -241,7 +241,7 @@ static void handleFactoryReset(AsyncWebServerRequest *request) {
   }
 
 #if not USE_EEPROM_API
-  preferences.begin("KeyPass", false);
+  preferences.begin(F_NAMESPACE, false);
   preferences.clear(); // Clear all preferences
   preferences.end();
 #elif
@@ -255,7 +255,7 @@ static void handleWifiPass(AsyncWebServerRequest *request) {
     const char *pass = request->getParam("newPass")->value().c_str();
     Preferences preferences;
     ping();
-    preferences.begin("KeyPass", false);
+    preferences.begin(F_NAMESPACE, false);
     preferences.putString("wifi_password", pass);
     preferences.end();
   }

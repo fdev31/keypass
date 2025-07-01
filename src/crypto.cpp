@@ -1,12 +1,13 @@
 // NOTE: uses a single buffer, can only handle one at a time !
 // Consider using BLACKE2 instead of XX
 #include "crypto.h"
+#include "constants.h"
+#include <stdint.h>
 #include <stdlib.h>
+#include <unistd.h>
 Speck speck;
 
-#define BLOCK_SIZE 16
-#define RAND_BYTE_FACTOR RAND_MAX / 255
-byte buffer[MAX_PASS_LEN];
+uint8_t buffer[MAX_PASS_LEN];
 
 extern char DEBUG_BUFFER2[];
 

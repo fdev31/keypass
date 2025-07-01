@@ -1,6 +1,6 @@
 #ifndef __CRYPTO_H
 #define __CRYPTO_H
-#include "password.h"
+#include "constants.h"
 #include "xxhash.h"
 #include <Crypto.h>
 #include <Speck.h>
