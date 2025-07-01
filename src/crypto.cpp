@@ -4,7 +4,7 @@
 #include "constants.h"
 Speck speck;
 
-uint8_t buffer[MAX_PASS_LEN];
+uint8_t passBuffer[MAX_PASS_LEN];
 
 extern char DEBUG_BUFFER2[];
 
@@ -28,7 +28,6 @@ void encryptPassword(const char *password, uint8_t *result) {
     return;
   }
 
-  uint8_t passBuffer[MAX_PASS_LEN];
   randomizeBuffer(passBuffer, MAX_PASS_LEN);
 
   int maxlen = strlen(password) + 1;
