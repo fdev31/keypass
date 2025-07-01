@@ -401,6 +401,48 @@ function confirmFactoryReset() {
   }
 }
 
+function uploadBlobFile() {
+  // if blobFileInput display: none, then show it, else proceed...
+  if (blobFileInput.style.display === "none") {
+    blobFileInput.style.display = "block";
+    blobFileInput.click();
+    return;
+  }
+  // Check if a file has been selected
+  if (blobFileInput.files.length === 0) {
+    alert("Please select a file first.");
+    return;
+  }
+
+  // Get the first selected file (the File object)
+  const file = blobFileInput.files[0];
+
+  // Use the fetch API to send the file to the server
+  fetch("/restore", {
+    method: "POST",
+    headers: { "Content-Type": "application/octet-stream" },
+    body: file,
+  })
+    .then((response) => {
+      // Check if the request was successful (status code 200-299)
+      if (!response.ok) {
+        throw new Error(
+          `Server responded with ${response.status}: ${response.statusText}`,
+        );
+      }
+      // Assuming the server sends back a text confirmation
+      return response.text();
+    })
+    .then((result) => {
+      blobFileInput.style.display = "none";
+      // Handle the successful response from the server
+      alert(result);
+    })
+    .catch((error) => {
+      alert(`Error: ${error.message}`);
+    });
+}
+
 function toggleWifiPassForm() {
   if (wifiPassForm.classList.contains("hidden")) {
     // Show the form
@@ -410,7 +452,6 @@ function toggleWifiPassForm() {
     wifiPassForm.style.opacity = "0";
     wifiPassForm.style.margin = "0";
 
-    // Force reflow
     void wifiPassForm.offsetWidth;
 
     // Animate to visible state

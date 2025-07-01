@@ -544,7 +544,9 @@
           </div>
           <button class="modern-btn column" role="button" onclick="checkPassphrase({force:true})" style="background: rgba(255, 107, 107, 0.2);">Reset passphrase</button>
           <button class="modern-btn column" role="button" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">Factory Reset</button>
-          <button class="modern-btn column" role="button" onclick="window.location.pathname = '/dump'" style="background: rgba(255, 107, 107, 0.2);">Fetch passwords blob</button>
+          <button class="modern-btn column" role="button" onclick="window.location.pathname = '/dump'" style="background: rgba(255, 107, 107, 0.2);">Backup passwords blob</button>
+          <input type="file" id="blobFileInput" style="display: none;" />
+          <button class="modern-btn column" role="button" onclick="uploadBlobFile()" style="background: rgba(255, 107, 107, 0.2);">Recover passwords from blob</button>
           <button class="modern-btn column" role="button" onclick="alert(localStorage.getItem('keypass_passphrase'))" style="background: rgba(255, 107, 107, 0.2);">Show passphrase</button>
         </div>
       </div>
