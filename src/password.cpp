@@ -418,7 +418,39 @@ void setUpKeyboard(AsyncWebServer &server) {
   server.on("/reset", HTTP_GET, handleFactoryReset);
   server.on("/updateWifiPass", HTTP_GET, handleWifiPass);
   server.on("/dump", HTTP_GET, handlePassDump);
-  server.on("/restore", HTTP_POST, handleRestore);
+  // http post http://4.3.2.1/restore  < /tmp/dump
+  server.on(
+      "/restore", HTTP_POST,
+      [](AsyncWebServerRequest *request) {
+        // This function is called when the request completes
+        // If we get here without the handler sending a response, send one now
+        if (!request->_tempObject) {
+          request->send(400, "text/plain", "No data received");
+        }
+      },
+      nullptr, // We're not using the normal handler here
+      [](AsyncWebServerRequest *request, uint8_t *data, size_t len,
+         size_t index, size_t total) {
+        // This is the body handler for non-multipart uploads
+        if (index == 0) {
+          // First chunk - initialize the buffer
+          request->_tempObject = new StreamString();
+        }
+
+        if (request->_tempObject) {
+          StreamString *buffer =
+              reinterpret_cast<StreamString *>(request->_tempObject);
+          // Add this chunk to the buffer
+          buffer->write(data, len);
+
+          if (index + len == total) {
+            // This is the last chunk, process the complete data
+            handleRestore(request);
+          }
+        } else {
+          request->send(500, "text/plain", "Failed to allocate buffer");
+        }
+      });
 
 #ifdef ENABLE_GRAPHICS
   Preferences prefs;
