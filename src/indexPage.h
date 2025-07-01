@@ -389,6 +389,10 @@ font-size: 18px;
 margin-bottom: 5px;
 text-align: center;
 }
+#passwordInput, #newWifiPass, #confirmWifiPass {
+/* use a monospace font */
+font-family: 'Courier New', Courier, monospace;
+}
 
 .hidden {
 display: none !important;
@@ -532,10 +536,10 @@ content: "";
 <div id="wifiPassForm" class="hidden" style="overflow: hidden; transition: all 0.3s ease-out;">
 <div class="glass-panel" style="margin-top: 10px;">
 <div class="form-group">
-<input type="password" id="newWifiPass" placeholder="New Wi-Fi password" minlength="8" required>
+<input class="passwordLength" type="password" id="newWifiPass" placeholder="New Wi-Fi password" minlength="8" maxlength="31" required>
 </div>
 <div class="form-group">
-<input type="password" id="confirmWifiPass" placeholder="Confirm password" minlength="8" required>
+<input class="passwordLength" type="password" id="confirmWifiPass" placeholder="Confirm password" minlength="8" maxlength="31" required>
 </div>
 <button type="button" onclick="updateWifiPass()" class="submit-btn">
 <span class="btn-text">Update Password</span>
@@ -559,14 +563,14 @@ content: "";
 
 <div class="form-group">
 <label for="passLabel">Name</label>
-<input id="passLabel" name="name" type="text" required placeholder="Enter password name" maxlength="15">
+<input class="passwordLength" id="passLabel" name="name" type="text" required placeholder="Enter password name" maxlength="15">
 </div>
 
 <div class="form-group">
 
 <label for="passwordInput">Password</label>
 <div style="display: flex; gap: 10px;">
-<input id="passwordInput" type="password" name="password" placeholder="Enter password...">
+<input class="passwordLength" id="passwordInput" type="password" name="password" placeholder="Enter password..." maxlength="31">
 
 <button id="toggleVisibilityIcon" type="button" class="modern-btn togglableButton"
 data-setting="password_visibility"
@@ -592,8 +596,6 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 </select>
 <input type="hidden" name="layout" id="layoutIndex">
 </div>
-
-
 <button type="submit" class="submit-btn">
 <span class="btn-text">Save Password</span>
 <span class="loading hidden"></span>
@@ -625,12 +627,12 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 </div>
 <script>
 <!-- WARN: The following line must not be changed and is replaced with index.js content automatically -->
-const UserPreferences={defaults:{confirm_actions:true,password_visibility:false,password_length:12,},save:function(key,value){localStorage.setItem(`userPref_${key}`,JSON.stringify(value));},get:function(key){const stored=localStorage.getItem(`userPref_${key}`);return stored?JSON.parse(stored):this.defaults[key];},reset:function(){Object.keys(this.defaults).forEach((key)=>{this.save(key,this.defaults[key]);});},};const ui_data={mode:"type",current_focus:"type-button",passwords:[],change_focus(elementId){document.querySelectorAll(".modern-btn").forEach((btn)=>{btn.classList.remove("active");});const newFocus=document.getElementById(elementId);newFocus.classList.add("active");this.current_focus=elementId;},};function errorHandler(error){alert("Error: "+error);}
+const MAX_PASSWORD_LENGTH=31;const UserPreferences={defaults:{confirm_actions:true,password_visibility:false,password_length:12,},save:function(key,value){localStorage.setItem(`userPref_${key}`,JSON.stringify(value));},get:function(key){const stored=localStorage.getItem(`userPref_${key}`);return stored?JSON.parse(stored):this.defaults[key];},reset:function(){Object.keys(this.defaults).forEach((key)=>{this.save(key,this.defaults[key]);});},};const ui_data={mode:"type",current_focus:"type-button",passwords:[],change_focus(elementId){document.querySelectorAll(".modern-btn").forEach((btn)=>{btn.classList.remove("active");});const newFocus=document.getElementById(elementId);newFocus.classList.add("active");this.current_focus=elementId;},};function errorHandler(error){alert("Error: "+error);}
 function getRandomChar(){const charset="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0"+"123456789!@#$%^&*()_+-=[]{}|;:,.<>?";const charsetSize=charset.length;return charset[Math.floor(Math.random()*charsetSize)];}
 function generatePassword(length){let password="";for(let i=0;i<length;++i){password+=getRandomChar();}
 return password;}
-function generatePass(){const uid=~~document.getElementById("positionSelect").value;const length=document.getElementById("passwordInput").value.length||ui_data.passwords[uid]?.len||prompt("How many characters ?",18);if(!length||isNaN(length)||length<4){return;}
-shake("diceIcon");const password=generatePassword(length);document.getElementById("passwordInput").value=password;document.getElementById("typeNewPassBtn").classList.remove("hidden");if(ui_data.mode!="add")
+function generatePass(){const uid=~~document.getElementById("positionSelect").value;const length=document.getElementById("passwordInput").value.length||ui_data.passwords[uid]?.len||prompt("How many characters ?",18);if(!length||isNaN(length)||length<2){return;}
+if(length>MAX_PASSWORD_LENGTH)length=MAX_PASSWORD_LENGTH;shake("diceIcon");const password=generatePassword(length);document.getElementById("passwordInput").value=password;document.getElementById("typeNewPassBtn").classList.remove("hidden");if(ui_data.mode!="add")
 document.getElementById("typeOldPassBtn").classList.remove("hidden");}
 function shake(elementId="diceIcon"){const icon=typeof elementId=="string"?document.getElementById(elementId):elementId;icon.classList.add("wiggle");setTimeout(()=>{icon.classList.remove("wiggle");},500);}
 function toggleButton(buttonElement,options={}){const setting=buttonElement.getAttribute("data-setting")||options.setting;const currentState=UserPreferences.get(setting)!==false;const newState=options.noflip?currentState:!currentState;UserPreferences.save(setting,newState);const mode=newState?"enabled":"disabled";buttonElement.textContent=buttonElement.getAttribute(`data-${mode}-text`);shake(buttonElement);const fn=buttonElement.getAttribute("data-changed")||"()=>{}";eval(fn)(newState);}
@@ -683,7 +685,7 @@ currentCard=null;}
 function handleTouchCancel(e){if(currentCard){clearTimeout(pressTimer);currentCard=null;}}}
 function handleLongPress(passwordId){if(ui_data.mode!=="edit"){setMode("edit");}
 fillForm({uid:passwordId,name:ui_data.passwords[passwordId].name,layout:ui_data.passwords[passwordId].layout,});showEditForm(passwordId);}
-window.onload=async()=>{await checkPassphrase();await getPasswords();setupPasswordCardEvents();};</script>
+window.onload=async()=>{await checkPassphrase();await getPasswords();setupPasswordCardEvents();document.querySelectorAll(".passwordLength").forEach((el)=>{el.setAttribute("maxlength",MAX_PASSWORD_LENGTH);});};</script>
 </body>
 </html>
 <!-- vim:ts=2:sw=2:et:

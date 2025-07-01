@@ -386,6 +386,10 @@
       margin-bottom: 5px;
       text-align: center;
     }
+    #passwordInput, #newWifiPass, #confirmWifiPass {
+      /* use a monospace font */
+      font-family: 'Courier New', Courier, monospace;
+    }
 
     .hidden {
       display: none !important;
@@ -529,10 +533,10 @@
           <div id="wifiPassForm" class="hidden" style="overflow: hidden; transition: all 0.3s ease-out;">
             <div class="glass-panel" style="margin-top: 10px;">
               <div class="form-group">
-                <input type="password" id="newWifiPass" placeholder="New Wi-Fi password" minlength="8" maxlength="31" required>
+                <input class="passwordLength" type="password" id="newWifiPass" placeholder="New Wi-Fi password" minlength="8" maxlength="31" required>
               </div>
               <div class="form-group">
-                <input type="password" id="confirmWifiPass" placeholder="Confirm password" minlength="8" maxlength="31" required>
+                <input class="passwordLength" type="password" id="confirmWifiPass" placeholder="Confirm password" minlength="8" maxlength="31" required>
               </div>
               <button type="button" onclick="updateWifiPass()" class="submit-btn">
                 <span class="btn-text">Update Password</span>
@@ -556,14 +560,14 @@
 
             <div class="form-group">
               <label for="passLabel">Name</label>
-              <input id="passLabel" name="name" type="text" required placeholder="Enter password name" maxlength="15">
+              <input class="passwordLength" id="passLabel" name="name" type="text" required placeholder="Enter password name" maxlength="15">
             </div>
 
             <div class="form-group">
 
               <label for="passwordInput">Password</label>
               <div style="display: flex; gap: 10px;">
-                <input id="passwordInput" type="password" name="password" placeholder="Enter password..." maxlength="31">
+                <input class="passwordLength" id="passwordInput" type="password" name="password" placeholder="Enter password..." maxlength="31">
 
                 <button id="toggleVisibilityIcon" type="button" class="modern-btn togglableButton"
                   data-setting="password_visibility"
@@ -589,8 +593,6 @@
               </select>
               <input type="hidden" name="layout" id="layoutIndex">
             </div>
-
-
             <button type="submit" class="submit-btn">
               <span class="btn-text">Save Password</span>
               <span class="loading hidden"></span>

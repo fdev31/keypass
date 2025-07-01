@@ -1,3 +1,5 @@
+const MAX_PASSWORD_LENGTH = 31; // WARN: Adapt to number of blocks in use!
+
 const UserPreferences = {
   // Default preferences
   defaults: {
@@ -74,7 +76,7 @@ function generatePass() {
   if (!length || isNaN(length) || length < 2) {
     return;
   }
-  if (length > 31) length = 31; // Limit to 31 characters for compatibility
+  if (length > MAX_PASSWORD_LENGTH) length = MAX_PASSWORD_LENGTH; // Limit to 31 characters for compatibility
 
   shake("diceIcon");
   const password = generatePassword(length);
@@ -630,4 +632,7 @@ window.onload = async () => {
   await checkPassphrase();
   await getPasswords();
   setupPasswordCardEvents();
+  document.querySelectorAll(".passwordLength").forEach((el) => {
+    el.setAttribute("maxlength", MAX_PASSWORD_LENGTH);
+  });
 };
