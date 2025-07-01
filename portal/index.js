@@ -211,7 +211,7 @@ function showSettings() {
 }
 
 function fillForm(data) {
-  if (data.layout != undefined) layoutSelect.selectedIndex = data.layout;
+  if (data.layout != undefined) layoutSelect.selectedIndex = data.layout + 1;
   if (data.uid != undefined) {
     positionSelect.value = data.uid;
   } else {
