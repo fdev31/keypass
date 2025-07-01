@@ -71,9 +71,11 @@ function generatePass() {
     ui_data.passwords[uid]?.len ||
     prompt("How many characters ?", 18);
 
-  if (!length || isNaN(length) || length < 4) {
+  if (!length || isNaN(length) || length < 2) {
     return;
   }
+  if (length > 31) length = 31; // Limit to 31 characters for compatibility
+
   shake("diceIcon");
   const password = generatePassword(length);
   document.getElementById("passwordInput").value = password;
