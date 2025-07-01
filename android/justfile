@@ -38,3 +38,8 @@ test-connected:
 
 # Full build and install (default)
 default: build
+
+serve:
+    cd app/build/outputs/apk/debug && python -m http.server 9090
+
+
