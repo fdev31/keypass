@@ -2,9 +2,6 @@
 // Consider using BLACKE2 instead of XX
 #include "crypto.h"
 #include "constants.h"
-#include <stdint.h>
-#include <stdlib.h>
-#include <unistd.h>
 Speck speck;
 
 uint8_t buffer[MAX_PASS_LEN];
