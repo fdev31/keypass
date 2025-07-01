@@ -605,12 +605,15 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 </div>
 
 <div id="passList" class="mainScreen">
-<details>
+<details style="padding: 1ex">
 <summary>Advanced options</label></summary>
 <div>
+<p style="padding: 1ex">
 <label for="typePasswordPressEnter">After typing a password:</label>
 <button id="typePasswordPressEnter" class="modern-btn column togglableButton" role="button" data-setting="press_enter" data-enabled-text="Press &crarr;" data-disabled-text="Do not press &crarr;"></button></div>
+</p>
 <div class="form-group" id="passListKbLayout">
+<p style="padding: 1ex">
 <label for="layoutOverrideSelect">Keyboard layout override:</label>
 <select name="lang" id="layoutOverrideSelect" required>
 <option value="">Password specific</option>
@@ -618,7 +621,9 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 <option value="us">US</option>
 </select>
 <input type="hidden" name="layout" id="layoutIndex">
+</p>
 </div>
+<p>&nbsp;</p>
 </details>
 <div class="password-grid">
 <!-- Passwords will be loaded here -->

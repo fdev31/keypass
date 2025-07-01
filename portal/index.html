@@ -602,20 +602,25 @@
       </div>
 
       <div id="passList" class="mainScreen">
-        <details>
+        <details style="padding: 1ex">
           <summary>Advanced options</label></summary>
           <div>
-          <label for="typePasswordPressEnter">After typing a password:</label>
-          <button id="typePasswordPressEnter" class="modern-btn column togglableButton" role="button" data-setting="press_enter" data-enabled-text="Press &crarr;" data-disabled-text="Do not press &crarr;"></button></div>
+            <p style="padding: 1ex">
+              <label for="typePasswordPressEnter">After typing a password:</label>
+              <button id="typePasswordPressEnter" class="modern-btn column togglableButton" role="button" data-setting="press_enter" data-enabled-text="Press &crarr;" data-disabled-text="Do not press &crarr;"></button></div>
+          </p>
           <div class="form-group" id="passListKbLayout">
-            <label for="layoutOverrideSelect">Keyboard layout override:</label>
-            <select name="lang" id="layoutOverrideSelect" required>
-              <option value="">Password specific</option>
-              <option value="fr">French</option>
-              <option value="us">US</option>
-            </select>
-            <input type="hidden" name="layout" id="layoutIndex">
+            <p style="padding: 1ex">
+              <label for="layoutOverrideSelect">Keyboard layout override:</label>
+              <select name="lang" id="layoutOverrideSelect" required>
+                <option value="">Password specific</option>
+                <option value="fr">French</option>
+                <option value="us">US</option>
+              </select>
+              <input type="hidden" name="layout" id="layoutIndex">
+            </p>
           </div>
+          <p>&nbsp;</p>
         </details>
         <div class="password-grid">
           <!-- Passwords will be loaded here -->
