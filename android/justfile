@@ -42,4 +42,5 @@ default: build
 serve:
     cd app/build/outputs/apk/debug && python -m http.server 9090
 
-
+logs:
+    adb logcat -v long

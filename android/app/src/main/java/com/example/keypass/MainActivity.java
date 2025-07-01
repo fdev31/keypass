@@ -71,13 +71,30 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private boolean hasAllRequiredPermissions() {
+        return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
+               checkSelfPermission(Manifest.permission.ACCESS_WIFI_STATE) == PackageManager.PERMISSION_GRANTED &&
+               checkSelfPermission(Manifest.permission.CHANGE_WIFI_STATE) == PackageManager.PERMISSION_GRANTED;
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSIONS_REQUEST_CODE && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startNetworkRequest();
-        } else {
-            Toast.makeText(this, "Location permission required for WiFi scanning", Toast.LENGTH_LONG).show();
+        if (requestCode == PERMISSIONS_REQUEST_CODE) {
+            boolean allGranted = grantResults.length > 0;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allGranted = false;
+                    break;
+                }
+            }
+            if (allGranted) {
+                Log.d(TAG, "All permissions granted after request");
+                startNetworkRequest();
+            } else {
+                Log.e(TAG, "Not all permissions granted");
+                Toast.makeText(this, "All permissions required for WiFi scanning", Toast.LENGTH_LONG).show();
+            }
         }
     }
 
@@ -153,8 +170,9 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "NetworkCallback created");
 
             // Request the network - this should trigger system WiFi connection dialog
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                Log.e(TAG, "Location permission not granted!");
+            if (!hasAllRequiredPermissions()) {
+                Log.e(TAG, "Not all permissions granted!");
+                Toast.makeText(this, "Missing required permissions", Toast.LENGTH_LONG).show();
                 return;
             }
             
