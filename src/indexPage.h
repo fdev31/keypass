@@ -237,14 +237,20 @@ margin-bottom: 20px;
 animation: fadeInLeft 0.6s ease-out;
 }
 
-.form-group:nth-child(2) { animation-delay: 0.1s; }
-.form-group:nth-child(3) { animation-delay: 0.2s; }
-.form-group:nth-child(4) { animation-delay: 0.3s; }
-
 @keyframes fadeInLeft {
 from {
 opacity: 0;
 transform: translateX(-20px);
+}
+to {
+opacity: 1;
+transform: translateX(0);
+}
+}
+@keyframes fadeInRight {
+from {
+opacity: 0;
+transform: translateX(20px);
 }
 to {
 opacity: 1;
@@ -343,11 +349,11 @@ cursor: pointer;
 transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 position: relative;
 overflow: hidden;
-animation: fadeInScale 0.5s ease-out;
+
 }
 
-.password-card:nth-child(odd) { animation-delay: 0.1s; }
-.password-card:nth-child(even) { animation-delay: 0.2s; }
+.password-card:nth-child(odd) { animation: fadeInLeft 0.5s ease-out; }
+.password-card:nth-child(even) { animation: fadeInRight 0.5s ease-out; }
 
 @keyframes fadeInScale {
 from {
@@ -537,14 +543,12 @@ content: "";
 <div class="glass-panel" style="margin-top: 10px;">
 <div class="form-group">
 <input class="passwordLength" type="password" id="newWifiPass" placeholder="New Wi-Fi password" minlength="8" maxlength="31" required>
-</div>
-<div class="form-group">
 <input class="passwordLength" type="password" id="confirmWifiPass" placeholder="Confirm password" minlength="8" maxlength="31" required>
-</div>
 <button type="button" onclick="updateWifiPass()" class="submit-btn">
 <span class="btn-text">Update Password</span>
 <span class="loading hidden"></span>
 </button>
+</div>
 </div>
 </div>
 <button class="modern-btn column" role="button" onclick="checkPassphrase({force:true})" style="background: rgba(255, 107, 107, 0.2);">Reset passphrase</button>
@@ -564,9 +568,6 @@ content: "";
 <div class="form-group">
 <label for="passLabel">Name</label>
 <input class="passwordLength" id="passLabel" name="name" type="text" required placeholder="Enter password name" maxlength="15">
-</div>
-
-<div class="form-group">
 
 <label for="passwordInput">Password</label>
 <div style="display: flex; gap: 10px;">
@@ -605,14 +606,14 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 </div>
 
 <div id="passList" class="mainScreen">
-<details style="padding: 1ex">
+<details id="advancedTypingOptions" style="padding: 1ex">
 <summary>Advanced options</label></summary>
-<div>
+<div class="form-group">
 <p style="padding: 1ex">
+<div>
 <label for="typePasswordPressEnter">After typing a password:</label>
 <button id="typePasswordPressEnter" class="modern-btn column togglableButton" role="button" data-setting="press_enter" data-enabled-text="Press &crarr;" data-disabled-text="Do not press &crarr;"></button></div>
 </p>
-<div class="form-group" id="passListKbLayout">
 <p style="padding: 1ex">
 <label for="layoutOverrideSelect">Keyboard layout override:</label>
 <select name="lang" id="layoutOverrideSelect" required>
@@ -642,15 +643,16 @@ function shake(elementId="diceIcon"){const icon=typeof elementId=="string"?docum
 function toggleButton(buttonElement,options={}){const setting=buttonElement.getAttribute("data-setting")||options.setting;const currentState=UserPreferences.get(setting)!==false;const newState=options.noflip?currentState:!currentState;UserPreferences.save(setting,newState);const mode=newState?"enabled":"disabled";buttonElement.textContent=buttonElement.getAttribute(`data-${mode}-text`);shake(buttonElement);const fn=buttonElement.getAttribute("data-changed")||"()=>{}";eval(fn)(newState);}
 async function togglePasswordVisibility(visible){passwordInput.type=visible?"text":"password";if(ui_data.mode=="edit"&&passwordInput.value.length==0){const pass=await fetch(`/fetchPass?id=${positionSelect.value}`);passwordInput.value=await pass.text();}}
 function initToggleButtons(){const elements=document.querySelectorAll(".togglableButton");elements.forEach((button)=>{toggleButton(button,{noflip:true});button.addEventListener("click",()=>{toggleButton(button);});});}
-function hideAll(){Array.from(document.getElementsByClassName("mainScreen")).forEach((el)=>{el.classList.add("fade-out");setTimeout(()=>{el.classList.add("hidden");el.classList.remove("fade-out");},300);});}
-function showElement(elementId){const el=document.getElementById(elementId);el.classList.remove("hidden");el.classList.add("fade-in");setTimeout(()=>{el.classList.remove("fade-in");},300);}
-function showPasswords(){if(document.getElementById("passList").classList.contains("hidden")){hideAll();setTimeout(()=>showElement("passList"),300);}}
-function leaveEditForm(uid){passwordInput.value="";typeNewPassBtn.classList.add("hidden");typeOldPassBtn.classList.add("hidden");}
+function hideAll(){Array.from(document.getElementsByClassName("mainScreen")).forEach(hideElement,);}
+function hideElement(elementId){const el=typeof elementId=="string"?document.getElementById(elementId):elementId;if(!el.classList.contains("hidden")){el.classList.add("hidden");}}
+function showElement(elementId){const el=typeof elementId=="string"?document.getElementById(elementId):elementId;if(el.classList.contains("hidden")){el.classList.remove("hidden");}}
+function showPasswords(){if(document.getElementById("passList").classList.contains("hidden")){hideAll();setTimeout(()=>showElement("passList"),100);}}
+function leaveEditForm(uid){layoutSelect.selectedIndex=1;passwordInput.value="";}
 function showEditForm(uid){if(document.getElementById("editForm").classList.contains("hidden")){positionSelect.value=uid;positionSelect.disabled=true;hideAll();setTimeout(()=>showElement("editForm"),300);}}
 function setMode(action){if(ui_data.mode==action){return;}
-if(action=="type"){passListKbLayout.classList.remove("hidden");}else{passListKbLayout.classList.add("hidden");}
 if(ui_data.mode=="edit"||ui_data.mode=="add"){leaveEditForm();}
-ui_data.mode=action;ui_data.change_focus(`${action}-button`);switch(action){case"edit":case"type":showPasswords();break;case"add":const uid=ui_data.passwords.length;fillForm({name:""});showEditForm(uid);break;case"settings":showSettings();break;default:console.error("Invalid action");}}
+if(ui_data.mode=="type"){hideElement(advancedTypingOptions);}
+ui_data.mode=action;ui_data.change_focus(`${action}-button`);switch(action){case"edit":showPasswords();break;case"type":showElement("advancedTypingOptions");showPasswords();break;case"add":const uid=ui_data.passwords.length;fillForm({name:""});showEditForm(uid);break;case"settings":showSettings();break;default:console.error("Invalid action");}}
 function showSettings(){if(document.getElementById("settingsForm").classList.contains("hidden")){hideAll();setTimeout(()=>showElement("settingsForm"),300);}}
 function fillForm(data){if(data.layout!=undefined)layoutSelect.selectedIndex=data.layout+1;if(data.uid!=undefined){positionSelect.value=data.uid;}else{positionSelect.value=-1;}
 if(data.name!=undefined)passLabel.value=data.name;}

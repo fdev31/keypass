@@ -131,37 +131,51 @@ function initToggleButtons() {
 }
 
 function hideAll() {
-  Array.from(document.getElementsByClassName("mainScreen")).forEach((el) => {
-    el.classList.add("fade-out");
-    setTimeout(() => {
-      el.classList.add("hidden");
-      el.classList.remove("fade-out");
-    }, 300);
-  });
+  Array.from(document.getElementsByClassName("mainScreen")).forEach(
+    hideElement,
+  );
 }
 
+function hideElement(elementId) {
+  const el =
+    typeof elementId == "string"
+      ? document.getElementById(elementId)
+      : elementId;
+  if (!el.classList.contains("hidden")) {
+    el.classList.add("hidden");
+    // el.classList.add("fade-out");
+    // setTimeout(() => {
+    //   el.classList.add("hidden");
+    //   // el.classList.remove("fade-out");
+    // }, 300);
+  }
+}
 function showElement(elementId) {
-  const el = document.getElementById(elementId);
-  el.classList.remove("hidden");
-  el.classList.add("fade-in");
-  setTimeout(() => {
-    el.classList.remove("fade-in");
-  }, 300);
+  const el =
+    typeof elementId == "string"
+      ? document.getElementById(elementId)
+      : elementId;
+
+  if (el.classList.contains("hidden")) {
+    el.classList.remove("hidden");
+    // el.classList.add("fade-in");
+    // setTimeout(() => {
+    //   el.classList.remove("fade-in");
+    // }, 400);
+  }
 }
 
 function showPasswords() {
   // check if visible
   if (document.getElementById("passList").classList.contains("hidden")) {
     hideAll();
-    setTimeout(() => showElement("passList"), 300);
+    setTimeout(() => showElement("passList"), 100);
   }
 }
 
 function leaveEditForm(uid) {
   layoutSelect.selectedIndex = 1;
   passwordInput.value = "";
-  typeNewPassBtn.classList.add("hidden");
-  typeOldPassBtn.classList.add("hidden");
 }
 
 function showEditForm(uid) {
@@ -177,20 +191,21 @@ function setMode(action) {
   if (ui_data.mode == action) {
     return;
   }
-  if (action == "type") {
-    passListKbLayout.classList.remove("hidden");
-  } else {
-    passListKbLayout.classList.add("hidden");
-  }
   if (ui_data.mode == "edit" || ui_data.mode == "add") {
     leaveEditForm();
+  }
+  if (ui_data.mode == "type") {
+    hideElement(advancedTypingOptions);
   }
   ui_data.mode = action;
   ui_data.change_focus(`${action}-button`);
 
   switch (action) {
     case "edit":
+      showPasswords();
+      break;
     case "type":
+      showElement("advancedTypingOptions");
       showPasswords();
       break;
     case "add":

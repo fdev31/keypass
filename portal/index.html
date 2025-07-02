@@ -234,14 +234,20 @@
       animation: fadeInLeft 0.6s ease-out;
     }
 
-    .form-group:nth-child(2) { animation-delay: 0.1s; }
-    .form-group:nth-child(3) { animation-delay: 0.2s; }
-    .form-group:nth-child(4) { animation-delay: 0.3s; }
-
     @keyframes fadeInLeft {
     from {
       opacity: 0;
       transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    }
+    @keyframes fadeInRight {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
     }
     to {
       opacity: 1;
@@ -340,11 +346,11 @@
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
-      animation: fadeInScale 0.5s ease-out;
+
     }
 
-    .password-card:nth-child(odd) { animation-delay: 0.1s; }
-    .password-card:nth-child(even) { animation-delay: 0.2s; }
+    .password-card:nth-child(odd) { animation: fadeInLeft 0.5s ease-out; }
+    .password-card:nth-child(even) { animation: fadeInRight 0.5s ease-out; }
 
     @keyframes fadeInScale {
     from {
@@ -534,14 +540,12 @@
             <div class="glass-panel" style="margin-top: 10px;">
               <div class="form-group">
                 <input class="passwordLength" type="password" id="newWifiPass" placeholder="New Wi-Fi password" minlength="8" maxlength="31" required>
-              </div>
-              <div class="form-group">
                 <input class="passwordLength" type="password" id="confirmWifiPass" placeholder="Confirm password" minlength="8" maxlength="31" required>
-              </div>
               <button type="button" onclick="updateWifiPass()" class="submit-btn">
                 <span class="btn-text">Update Password</span>
                 <span class="loading hidden"></span>
               </button>
+              </div>
             </div>
           </div>
           <button class="modern-btn column" role="button" onclick="checkPassphrase({force:true})" style="background: rgba(255, 107, 107, 0.2);">Reset passphrase</button>
@@ -561,9 +565,6 @@
             <div class="form-group">
               <label for="passLabel">Name</label>
               <input class="passwordLength" id="passLabel" name="name" type="text" required placeholder="Enter password name" maxlength="15">
-            </div>
-
-            <div class="form-group">
 
               <label for="passwordInput">Password</label>
               <div style="display: flex; gap: 10px;">
@@ -602,14 +603,14 @@
       </div>
 
       <div id="passList" class="mainScreen">
-        <details style="padding: 1ex">
+        <details id="advancedTypingOptions" style="padding: 1ex">
           <summary>Advanced options</label></summary>
+          <div class="form-group">
+          <p style="padding: 1ex">
           <div>
-            <p style="padding: 1ex">
-              <label for="typePasswordPressEnter">After typing a password:</label>
-              <button id="typePasswordPressEnter" class="modern-btn column togglableButton" role="button" data-setting="press_enter" data-enabled-text="Press &crarr;" data-disabled-text="Do not press &crarr;"></button></div>
+            <label for="typePasswordPressEnter">After typing a password:</label>
+            <button id="typePasswordPressEnter" class="modern-btn column togglableButton" role="button" data-setting="press_enter" data-enabled-text="Press &crarr;" data-disabled-text="Do not press &crarr;"></button></div>
           </p>
-          <div class="form-group" id="passListKbLayout">
             <p style="padding: 1ex">
               <label for="layoutOverrideSelect">Keyboard layout override:</label>
               <select name="lang" id="layoutOverrideSelect" required>
