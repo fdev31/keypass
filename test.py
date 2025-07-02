@@ -84,7 +84,7 @@ async def editPass(
         if v is not None
     }
     if id < len(passwords):
-        passwords[id].update()
+        passwords[id].update(obj)
     else:
         obj["uid"] = len(passwords)
         passwords.append(obj)
