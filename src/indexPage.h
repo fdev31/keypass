@@ -620,7 +620,6 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 <option value="fr">French</option>
 <option value="us">US</option>
 </select>
-<input type="hidden" name="layout" id="layoutIndex">
 </p>
 </div>
 <p>&nbsp;</p>
