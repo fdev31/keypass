@@ -36,9 +36,11 @@ const ui_data = {
     document.querySelectorAll(".modern-btn").forEach((btn) => {
       btn.classList.remove("active");
     });
+    const newFocus = document.getElementById(elementId);
+
+    if (!newFocus) return false;
 
     // Add active class to selected button
-    const newFocus = document.getElementById(elementId);
     newFocus.classList.add("active");
     this.current_focus = elementId;
   },
@@ -368,6 +370,21 @@ function updateWifiPass() {
   }, 1000);
 }
 
+function toggleCreatePassForm() {
+  if (ui_data.mode === "add") {
+    setMode("type");
+  } else {
+    setMode("add");
+  }
+}
+function toggleSettings() {
+  if (ui_data.mode === "settings") {
+    setMode("type");
+  } else {
+    setMode("settings");
+  }
+}
+
 async function getPasswords() {
   try {
     const req = await fetch("/list");
@@ -376,6 +393,10 @@ async function getPasswords() {
     const count = passwords.passwords.length;
     const total = passwords.free + count;
     subtitle.innerText = `Stored ${count} over ${total}`;
+
+    if (passwords.passwords.length === 0) {
+      return setMode("add");
+    }
 
     const passList = document.querySelector("#passList .password-grid");
     const domData = [];

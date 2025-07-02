@@ -522,14 +522,11 @@
       <div class="header">
         <h1>KeyPass</h1>
         <p id="subtitle" class="subtitle">Password Management System</p>
-        <button id="settings-button" onclick="shake('settings-button'); setMode('settings')" class="modern-btn menu-btn" role="button" style="position: absolute; top: 20px; right: 20px; padding: 0; font-size: 200%; width: 50px; height: 50px; z-index: 10;">
+
+        <button id="add-button" onclick="shake('add-button'); toggleCreatePassForm()" class="modern-btn menu-btn" role="button" style="position: absolute; top: 20px; left: 20px; padding: 0; font-size: 200%; width: 50px; height: 50px; z-index: 10;">+</button>
+        <button id="settings-button" onclick="shake('settings-button'); toggleSettings()" class="modern-btn menu-btn" role="button" style="position: absolute; top: 20px; right: 20px; padding: 0; font-size: 200%; width: 50px; height: 50px; z-index: 10;">
           &#x1F4AB;
         </button>
-      </div>
-      <div class="button-row">
-        <button id="type-button" onclick="setMode('type')" class="modern-btn menu-btn active" role="button">Type</button>
-        <button id="edit-button" onclick="setMode('edit')" class="modern-btn menu-btn" role="button">Edit</button>
-        <button id="add-button" onclick="setMode('add')" class="modern-btn menu-btn" role="button">Create</button>
       </div>
       <div class="mainScreen hidden" id="settingsForm">
         <div class="glass-panel button-column">
@@ -583,9 +580,6 @@
                 <button id="typeOldPassBtn" type="button" onclick="typeOldPass()" class="modern-btn hidden" style="width: auto; flex: auto;">&#x2328;&nbsp;&nbsp;Type old (saved) pass</button>
                 <button id="typeNewPassBtn" type="button" onclick="typeNewPass()" class="modern-btn hidden" style="width: auto; flex: auto;">&#x2328;&nbsp;&nbsp;Type new pass</button>
               </div>
-            </div>
-
-            <div class="form-group">
               <label for="layoutSelect">Keyboard layout</label>
               <select name="lang" id="layoutSelect" required>
                 <option value="bitlocker">F1-F12 (bitlocker)</option>
@@ -603,6 +597,9 @@
       </div>
 
       <div id="passList" class="mainScreen">
+        <div class="password-grid">
+          <!-- Passwords will be loaded here -->
+        </div>
         <details id="advancedTypingOptions" style="padding: 1ex">
           <summary>Advanced options</label></summary>
           <div class="form-group">
@@ -610,7 +607,6 @@
           <div>
             <label for="typePasswordPressEnter">After typing a password:</label>
             <button id="typePasswordPressEnter" class="modern-btn column togglableButton" role="button" data-setting="press_enter" data-enabled-text="Press &crarr;" data-disabled-text="Do not press &crarr;"></button></div>
-          </p>
             <p style="padding: 1ex">
               <label for="layoutOverrideSelect">Keyboard layout override:</label>
               <select name="lang" id="layoutOverrideSelect" required>
@@ -622,9 +618,6 @@
           </div>
           <p>&nbsp;</p>
         </details>
-        <div class="password-grid">
-          <!-- Passwords will be loaded here -->
-        </div>
       </div>
     </div>
     <script>

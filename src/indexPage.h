@@ -525,14 +525,11 @@ content: "";
 <div class="header">
 <h1>KeyPass</h1>
 <p id="subtitle" class="subtitle">Password Management System</p>
-<button id="settings-button" onclick="shake('settings-button'); setMode('settings')" class="modern-btn menu-btn" role="button" style="position: absolute; top: 20px; right: 20px; padding: 0; font-size: 200%; width: 50px; height: 50px; z-index: 10;">
+
+<button id="add-button" onclick="shake('add-button'); toggleCreatePassForm()" class="modern-btn menu-btn" role="button" style="position: absolute; top: 20px; left: 20px; padding: 0; font-size: 200%; width: 50px; height: 50px; z-index: 10;">+</button>
+<button id="settings-button" onclick="shake('settings-button'); toggleSettings()" class="modern-btn menu-btn" role="button" style="position: absolute; top: 20px; right: 20px; padding: 0; font-size: 200%; width: 50px; height: 50px; z-index: 10;">
 &#x1F4AB;
 </button>
-</div>
-<div class="button-row">
-<button id="type-button" onclick="setMode('type')" class="modern-btn menu-btn active" role="button">Type</button>
-<button id="edit-button" onclick="setMode('edit')" class="modern-btn menu-btn" role="button">Edit</button>
-<button id="add-button" onclick="setMode('add')" class="modern-btn menu-btn" role="button">Create</button>
 </div>
 <div class="mainScreen hidden" id="settingsForm">
 <div class="glass-panel button-column">
@@ -586,9 +583,6 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 <button id="typeOldPassBtn" type="button" onclick="typeOldPass()" class="modern-btn hidden" style="width: auto; flex: auto;">&#x2328;&nbsp;&nbsp;Type old (saved) pass</button>
 <button id="typeNewPassBtn" type="button" onclick="typeNewPass()" class="modern-btn hidden" style="width: auto; flex: auto;">&#x2328;&nbsp;&nbsp;Type new pass</button>
 </div>
-</div>
-
-<div class="form-group">
 <label for="layoutSelect">Keyboard layout</label>
 <select name="lang" id="layoutSelect" required>
 <option value="bitlocker">F1-F12 (bitlocker)</option>
@@ -606,6 +600,9 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 </div>
 
 <div id="passList" class="mainScreen">
+<div class="password-grid">
+<!-- Passwords will be loaded here -->
+</div>
 <details id="advancedTypingOptions" style="padding: 1ex">
 <summary>Advanced options</label></summary>
 <div class="form-group">
@@ -613,7 +610,6 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 <div>
 <label for="typePasswordPressEnter">After typing a password:</label>
 <button id="typePasswordPressEnter" class="modern-btn column togglableButton" role="button" data-setting="press_enter" data-enabled-text="Press &crarr;" data-disabled-text="Do not press &crarr;"></button></div>
-</p>
 <p style="padding: 1ex">
 <label for="layoutOverrideSelect">Keyboard layout override:</label>
 <select name="lang" id="layoutOverrideSelect" required>
@@ -625,14 +621,11 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 </div>
 <p>&nbsp;</p>
 </details>
-<div class="password-grid">
-<!-- Passwords will be loaded here -->
-</div>
 </div>
 </div>
 <script>
 <!-- WARN: The following line must not be changed and is replaced with index.js content automatically -->
-const MAX_PASSWORD_LENGTH=31;const UserPreferences={defaults:{confirm_actions:true,password_visibility:false,password_length:12,},save:function(key,value){localStorage.setItem(`userPref_${key}`,JSON.stringify(value));},get:function(key){const stored=localStorage.getItem(`userPref_${key}`);return stored?JSON.parse(stored):this.defaults[key];},reset:function(){Object.keys(this.defaults).forEach((key)=>{this.save(key,this.defaults[key]);});},};const ui_data={mode:"type",current_focus:"type-button",passwords:[],change_focus(elementId){document.querySelectorAll(".modern-btn").forEach((btn)=>{btn.classList.remove("active");});const newFocus=document.getElementById(elementId);newFocus.classList.add("active");this.current_focus=elementId;},};function errorHandler(error){alert("Error: "+error);}
+const MAX_PASSWORD_LENGTH=31;const UserPreferences={defaults:{confirm_actions:true,password_visibility:false,password_length:12,},save:function(key,value){localStorage.setItem(`userPref_${key}`,JSON.stringify(value));},get:function(key){const stored=localStorage.getItem(`userPref_${key}`);return stored?JSON.parse(stored):this.defaults[key];},reset:function(){Object.keys(this.defaults).forEach((key)=>{this.save(key,this.defaults[key]);});},};const ui_data={mode:"type",current_focus:"type-button",passwords:[],change_focus(elementId){document.querySelectorAll(".modern-btn").forEach((btn)=>{btn.classList.remove("active");});const newFocus=document.getElementById(elementId);if(!newFocus)return false;newFocus.classList.add("active");this.current_focus=elementId;},};function errorHandler(error){alert("Error: "+error);}
 function getRandomChar(){const charset="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0"+"123456789!@#$%^&*()_+-=[]{}|;:,.<>?";const charsetSize=charset.length;return charset[Math.floor(Math.random()*charsetSize)];}
 function generatePassword(length){let password="";for(let i=0;i<length;++i){password+=getRandomChar();}
 return password;}
@@ -667,7 +660,10 @@ function updateWifiPass(){const newPass=newWifiPass.value;const confirmPass=conf
 if(newPass.length<8){alert("Password must be at least 8 characters long.");return;}
 fetch(`/updateWifiPass?newPass=${newPass}`).then((response)=>response.text()).catch(errorHandler);const loadingEl=document.querySelector("#wifiPassForm .loading");const btnText=document.querySelector("#wifiPassForm .btn-text");if(loadingEl&&btnText){btnText.classList.add("hidden");loadingEl.classList.remove("hidden");}
 setTimeout(()=>{toggleWifiPassForm();newWifiPass.value="";confirmWifiPass.value="";if(loadingEl&&btnText){btnText.classList.remove("hidden");loadingEl.classList.add("hidden");}},1000);}
-async function getPasswords(){try{const req=await fetch("/list");const passwords=await req.json();ui_data.passwords=passwords.passwords;const count=passwords.passwords.length;const total=passwords.free+count;subtitle.innerText=`Stored ${count} over ${total}`;const passList=document.querySelector("#passList .password-grid");const domData=[];for(const pass of passwords.passwords){domData.push(`
+function toggleCreatePassForm(){if(ui_data.mode==="add"){setMode("type");}else{setMode("add");}}
+function toggleSettings(){if(ui_data.mode==="settings"){setMode("type");}else{setMode("settings");}}
+async function getPasswords(){try{const req=await fetch("/list");const passwords=await req.json();ui_data.passwords=passwords.passwords;const count=passwords.passwords.length;const total=passwords.free+count;subtitle.innerText=`Stored ${count} over ${total}`;if(passwords.passwords.length===0){return setMode("add");}
+const passList=document.querySelector("#passList .password-grid");const domData=[];for(const pass of passwords.passwords){domData.push(`
     <div class="password-card" role="button" data-password-id="${pass.uid}">
         <div class="password-name">${pass.name}</div>
     </div>
