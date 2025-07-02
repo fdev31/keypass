@@ -538,6 +538,7 @@ content: "";
 <div class="glass-panel button-column">
 <button class="modern-btn column togglableButton" role="button" data-setting="confirm_actions" data-enabled-text="Confirm actions" data-disabled-text="Just run actions">Ask for confirmations</button>
 <button class="modern-btn column togglableButton" role="button" data-setting="password_visibility" data-enabled-text="Show passwords" data-disabled-text="Hide passwords">Ask for confirmations</button>
+<button class="modern-btn column" role="button" onclick="window.location.pathname = '/dump'" style="background: rgba(107, 255, 107, 0.2);">Backup passwords blob</button>
 <button class="modern-btn column" role="button" onclick="toggleWifiPassForm()">Change Wi-Fi password</button>
 <div id="wifiPassForm" class="hidden" style="overflow: hidden; transition: all 0.3s ease-out;">
 <div class="glass-panel" style="margin-top: 10px;">
@@ -553,10 +554,9 @@ content: "";
 </div>
 <button class="modern-btn column" role="button" onclick="checkPassphrase({force:true})" style="background: rgba(255, 107, 107, 0.2);">Reset passphrase</button>
 <button class="modern-btn column" role="button" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">Factory Reset</button>
-<button class="modern-btn column" role="button" onclick="window.location.pathname = '/dump'" style="background: rgba(255, 107, 107, 0.2);">Backup passwords blob</button>
 <input type="file" id="blobFileInput" style="display: none;" />
-<button class="modern-btn column" role="button" onclick="uploadBlobFile()" style="background: rgba(255, 107, 107, 0.2);">Recover passwords from blob</button>
-<button class="modern-btn column" role="button" onclick="alert(localStorage.getItem('keypass_passphrase'))" style="background: rgba(255, 107, 107, 0.2);">Show passphrase</button>
+<button class="modern-btn column" role="button" onclick="uploadBlobFile()">Recover passwords from blob</button>
+<button class="modern-btn column" role="button" onclick="alert(localStorage.getItem('keypass_passphrase'))">Show passphrase</button>
 </div>
 </div>
 
