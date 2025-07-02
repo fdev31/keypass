@@ -158,6 +158,7 @@ function showPasswords() {
 }
 
 function leaveEditForm(uid) {
+  layoutSelect.selectedIndex = 1;
   passwordInput.value = "";
   typeNewPassBtn.classList.add("hidden");
   typeOldPassBtn.classList.add("hidden");
