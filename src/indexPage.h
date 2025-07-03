@@ -580,8 +580,8 @@ style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</but
 
 </div>
 <div style="display: flex; gap: 10px; margin-top: 10px;">
-<button id="typeOldPassBtn" type="button" onclick="typeOldPass()" class="modern-btn hidden" style="width: auto; flex: auto;">&#x2328;&nbsp;&nbsp;Type old (saved) pass</button>
-<button id="typeNewPassBtn" type="button" onclick="typeNewPass()" class="modern-btn hidden" style="width: auto; flex: auto;">&#x2328;&nbsp;&nbsp;Type new pass</button>
+<button id="typeNewPassBtn" type="button" onclick="typeNewPass()" class="modern-btn hidden" style="width: auto; flex: auto;"><span style="vertical-align: -15% ; font-size: 200%"> &#x2328;</span>&nbsp;&nbsp;Type</button>
+<button id="typeOldPassBtn" type="button" onclick="typeOldPass()" class="modern-btn hidden" style="width: auto; flex: auto;"><span style="vertical-align: -15% ; font-size: 200%">&#x2328;</span>&nbsp;&nbsp;Type current (already registered)</button>
 </div>
 <label for="layoutSelect">Keyboard layout</label>
 <select name="lang" id="layoutSelect" required>
