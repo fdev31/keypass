@@ -556,12 +556,17 @@ document.addEventListener("DOMContentLoaded", function () {
   initToggleButtons();
 });
 // Set up event delegation for password cards to handle both clicks and long presses
+
 function setupPasswordCardEvents() {
   const passwordGrid = document.querySelector(".password-grid");
   let pressTimer;
   let longPressTriggered = false;
   let currentCard = null;
+  let touchStartY = 0;
+  let touchStartX = 0;
   const longPressDuration = 800; // ms
+  const scrollThreshold = 10; // pixels of movement to consider it a scroll
+  let isScrolling = false;
 
   // Remove any existing listeners
   passwordGrid.removeEventListener("mousedown", handleMouseDown);
@@ -569,6 +574,7 @@ function setupPasswordCardEvents() {
   passwordGrid.removeEventListener("mouseleave", handleMouseLeave);
   passwordGrid.removeEventListener("touchstart", handleTouchStart);
   passwordGrid.removeEventListener("touchend", handleTouchEnd);
+  passwordGrid.removeEventListener("touchmove", handleTouchMove);
   passwordGrid.removeEventListener("touchcancel", handleTouchCancel);
 
   // Add listeners with named functions so they can be removed if needed
@@ -578,10 +584,12 @@ function setupPasswordCardEvents() {
 
   // Touch support for mobile devices
   passwordGrid.addEventListener("touchstart", handleTouchStart);
+  passwordGrid.addEventListener("touchmove", handleTouchMove);
   passwordGrid.addEventListener("touchend", handleTouchEnd);
   passwordGrid.addEventListener("touchcancel", handleTouchCancel);
 
   function handleMouseDown(e) {
+    // Mouse handling code remains the same
     const card = e.target.closest(".password-card");
     if (!card) return;
 
@@ -619,37 +627,61 @@ function setupPasswordCardEvents() {
     const card = e.target.closest(".password-card");
     if (!card) return;
 
+    // Record initial touch position
+    const touch = e.touches[0];
+    touchStartY = touch.clientY;
+    touchStartX = touch.clientX;
+    isScrolling = false;
+
     currentCard = card;
     longPressTriggered = false;
 
     pressTimer = setTimeout(function () {
-      // Long press action
-      const passwordId = parseInt(card.dataset.passwordId);
-      handleLongPress(passwordId);
-      longPressTriggered = true;
+      if (!isScrolling) {
+        // Long press action
+        const passwordId = parseInt(card.dataset.passwordId);
+        handleLongPress(passwordId);
+        longPressTriggered = true;
+      }
     }, longPressDuration);
+  }
+
+  function handleTouchMove(e) {
+    if (!currentCard) return;
+
+    const touch = e.touches[0];
+    const moveY = Math.abs(touch.clientY - touchStartY);
+    const moveX = Math.abs(touch.clientX - touchStartX);
+
+    // If user has moved their finger more than the threshold, they're scrolling
+    if (moveY > scrollThreshold || moveX > scrollThreshold) {
+      isScrolling = true;
+      clearTimeout(pressTimer);
+    }
   }
 
   function handleTouchEnd(e) {
     if (!currentCard) return;
 
     clearTimeout(pressTimer);
-    if (!longPressTriggered) {
-      // Regular click action
+    if (!longPressTriggered && !isScrolling) {
+      // Only trigger click if not scrolling and not a long press
       e.preventDefault(); // Prevent mousedown/up from firing as well
       passwordClick(e);
     }
+
     currentCard = null;
+    isScrolling = false;
   }
 
   function handleTouchCancel(e) {
     if (currentCard) {
       clearTimeout(pressTimer);
       currentCard = null;
+      isScrolling = false;
     }
   }
 }
-
 // Function to handle long press on password card
 function handleLongPress(passwordId) {
   // For example, directly switch to edit mode for this password
