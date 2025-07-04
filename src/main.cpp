@@ -1,3 +1,4 @@
+#include "bluetooth.h"
 #include "configuration.h"
 
 #include "captive.h"
@@ -31,6 +32,7 @@ void setup() {
   Serial.begin(115200);
 #endif
   captiveSetup();
+  bluetoothSetup();
   setUpKeyboard(server);
   lastClientTime = millis();
 }
@@ -42,24 +44,32 @@ void loop() {
 
   if (!should_sleep) {
     captiveLoop();
+    yield();
+    bluetoothLoop(); // Handle Bluetooth commands if needed
+    yield();
 #ifdef ENABLE_GRAPHICS
     if (!sleeping) {
       if (!graphics_initialized) {
         graphicsSetup(); // Reinitialize graphics if needed
         graphics_initialized = 1;
+        yield();
       }
       graphicsLoop();
+      yield();
     }
 #endif
   }
 
   if (!sleeping && should_sleep) {
     Serial.flush(); // Make sure serial output is complete before sleep
+    yield();
 #ifdef ENABLE_GRAPHICS
     shutdownGraphics();
+    yield();
 #endif
     wifi_ps_type_t ps_type = WIFI_PS_NONE;
     esp_wifi_set_ps(ps_type);
+    yield();
   }
 
 #if 0
@@ -77,6 +87,8 @@ void loop() {
 #if !DEBUG
     // Use timer wakeup to periodically refresh AP state
     esp_sleep_enable_timer_wakeup(SLEEP_TIME * 1000);
+    delay(1);
+    yield();
     esp_light_sleep_start(); // Enter light sleep mode
 
     // Reset some states

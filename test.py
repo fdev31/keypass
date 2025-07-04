@@ -107,4 +107,4 @@ if __name__ == "__main__":
     uvicorn_log.setLevel(DEBUG)
     uvicorn_log.addHandler(StreamHandler())
     # run the app
-    uvicorn.run(app, host="localhost")
+    uvicorn.run(app, host="0.0.0.0")
