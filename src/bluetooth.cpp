@@ -12,6 +12,19 @@ extern void ping();
 #define EDIT_CHAR_UUID "12345678-1234-1234-1234-123456789abf"
 #define TYPE_CHAR_UUID "12345678-1234-1234-1234-123456789ac0"
 
+static bool deviceConnected = false;
+
+class ServerCallbacks : public NimBLEServerCallbacks {
+  void onConnect(NimBLEServer *pServer) {
+    deviceConnected = true;
+    ping();
+  };
+
+  void onDisconnect(NimBLEServer *pServer) {
+    deviceConnected = false;
+  }
+};
+
 class ListCallback : public NimBLECharacteristicCallbacks {
   void onRead(NimBLECharacteristic *pCharacteristic) {
     ping();
@@ -24,9 +37,10 @@ class FetchCallback : public NimBLECharacteristicCallbacks {
   void onWrite(NimBLECharacteristic *pCharacteristic) {
     ping();
     std::string value = pCharacteristic->getValue();
-    if (value.length() > 0) {
+    if (value.length() > 0 && deviceConnected) {
       int id = atoi(value.c_str());
       const char *password = fetchPassword(id);
+      vTaskDelay(10 / portTICK_PERIOD_MS); // Small delay
       if (password) {
         pCharacteristic->setValue(password);
         pCharacteristic->notify();
@@ -43,17 +57,19 @@ class EditCallback : public NimBLECharacteristicCallbacks {
     ping();
     std::string value = pCharacteristic->getValue();
     // Expecting "id,name,password,layout"
-    // Simplified parsing, assuming well-formed input
-    int id = atoi(strtok((char *)value.c_str(), ","));
-    char *name = strtok(NULL, ",");
-    char *password = strtok(NULL, ",");
-    int layout = atoi(strtok(NULL, ","));
-    if (editPassword(id, name, password, layout)) {
-      pCharacteristic->setValue("OK");
-      pCharacteristic->notify();
-    } else {
-      pCharacteristic->setValue("Error");
-      pCharacteristic->notify();
+    if (value.length() > 0 && deviceConnected) {
+      int id = atoi(strtok((char *)value.c_str(), ","));
+      char *name = strtok(NULL, ",");
+      char *password = strtok(NULL, ",");
+      int layout = atoi(strtok(NULL, ","));
+      vTaskDelay(10 / portTICK_PERIOD_MS); // Small delay
+      if (editPassword(id, name, password, layout)) {
+        pCharacteristic->setValue("OK");
+        pCharacteristic->notify();
+      } else {
+        pCharacteristic->setValue("Error");
+        pCharacteristic->notify();
+      }
     }
   }
 };
@@ -62,8 +78,9 @@ class TypeCallback : public NimBLECharacteristicCallbacks {
   void onWrite(NimBLECharacteristic *pCharacteristic) {
     ping();
     std::string value = pCharacteristic->getValue();
-    if (value.length() > 0) {
+    if (value.length() > 0 && deviceConnected) {
       int id = atoi(value.c_str());
+      vTaskDelay(10 / portTICK_PERIOD_MS); // Small delay
       if (typePassword(id, -1, true)) {
         pCharacteristic->setValue("OK");
         pCharacteristic->notify();
@@ -78,6 +95,8 @@ class TypeCallback : public NimBLECharacteristicCallbacks {
 void bluetoothSetup() {
   BLEDevice::init("KeyPass");
   BLEServer *pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new ServerCallbacks());
+
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
   // List Passwords
@@ -126,3 +145,4 @@ void bluetoothLoop() {
 }
 
 #endif // ENABLE_BLUETOOTH
+
