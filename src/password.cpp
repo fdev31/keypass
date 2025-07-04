@@ -19,7 +19,8 @@ extern void ping();
 extern char DEBUG_BUFFER[100];
 extern char DEBUG_BUFFER2[100];
 #endif
-extern int sleeping;
+
+// Core business logic functions (independent of AsyncWebServerRequest)
 
 const char *mkEntryName(int num) {
   static char name[16]; // Static buffer to hold the result
@@ -58,7 +59,6 @@ static Password readPassword(int id) {
 #endif
 }
 
-// Function to write a password to EEPROM
 static void writePassword(int id, const Password &password) {
 #if USE_EEPROM_API
   int address = id * sizeof(Password);
@@ -93,115 +93,79 @@ static void sendAnyKeymap(const char *text, int layout, int newline) {
     sendKey('\n', false); // Send newline if requested
   }
 }
-static void handleTypeRaw(AsyncWebServerRequest *request) {
-  if (request->hasParam("text")) {
-    ping();
-    const char *text = request->getParam("text")->value().c_str();
-    int layout = 0; // Default layout
-    if (request->hasParam("layout")) {
-      layout = request->getParam("layout")->value().toInt();
-    }
 
-    sendAnyKeymap(text, layout,
-                  !(request->hasParam("ret") &&
-                    request->getParam("ret")->value() == "false"));
-    request->send(200, "text/plain", "OK");
-  } else {
-    request->send(400, "text/plain", "Missing 'text' parameter");
-  }
-}
+// Service functions (independent of AsyncWebServerRequest)
 
-static void handleIndex(AsyncWebServerRequest *request) {
+bool typeRawText(const char *text, int layout, bool sendNewline) {
+  if (text == nullptr)
+    return false;
+
   ping();
-#ifdef ENABLE_GRAPHICS
-  strlcpy(DEBUG_BUFFER, "Welcome !", 99);
-#endif
-  AsyncWebServerResponse *response =
-      request->beginResponse(200, "text/html", index_html);
-  response->addHeader("Cache-Control", "public,max-age=1");
-  request->send(response);
+  sendAnyKeymap(text, layout, sendNewline);
+  return true;
 }
 
-static void handleTypePass(AsyncWebServerRequest *request) {
-  Password password;
+bool typePassword(int id, int layout, bool sendNewline) {
+  if (id < 0 || id >= MAX_PASSWORDS)
+    return false;
+
   ping();
 #ifdef ENABLE_GRAPHICS
   strlcpy(DEBUG_BUFFER, "Shazzaam", 99);
 #endif
-  if (request->hasParam("id")) {
-    int id = request->getParam("id")->value().toInt();
 
-    // Retrieve the password based on the provided id
-    password = readPassword(id);
-    char *text = (char *)password.password;
+  Password password = readPassword(id);
+  char *text = (char *)password.password;
 
-    if (request->hasParam("layout")) {
-      password.layout = request->getParam("layout")->value().toInt();
-    }
+  // If layout is specified, use it; otherwise use the stored layout
+  int effectiveLayout = (layout != -1) ? layout : password.layout;
 
-    int layout = password.layout;
-
-    sendAnyKeymap(text, layout,
-                  !(request->hasParam("ret") &&
-                    request->getParam("ret")->value() == "false"));
-    // Send response if needed
-    request->send(200, "text/plain", "Password typed successfully");
-  } else {
-    request->send(400, "text/plain", "Missing 'id' parameter");
-  }
+  sendAnyKeymap(text, effectiveLayout, sendNewline);
+  return true;
 }
 
-static void handleFetchPass(AsyncWebServerRequest *request) {
-  Password password;
+const char *fetchPassword(int id) {
+  if (id < 0 || id >= MAX_PASSWORDS)
+    return nullptr;
+
   ping();
-  if (request->hasParam("id")) {
-    int id = request->getParam("id")->value().toInt();
-    password = readPassword(id);
-    return request->send(200, "text/plain", (char *)password.password);
-  }
+  Password password = readPassword(id);
+  return (char *)password.password;
 }
-static void handleEditPass(AsyncWebServerRequest *request) {
-  Password password;
+
+bool editPassword(int id, const char *name, const char *password, int layout) {
+  if (id < 0 || id >= MAX_PASSWORDS)
+    return false;
+
   ping();
 #ifdef ENABLE_GRAPHICS
   // strlcpy(DEBUG_BUFFER, "Edited", 99);
 #endif
-  if (request->hasParam("id")) {
-    int id = request->getParam("id")->value().toInt();
 
-    if (id >= 0 && id < MAX_PASSWORDS) {
-      password = readPassword(id);
-    } else {
-      request->send(400, "text/plain", "Invalid 'id' parameter");
-      return;
-    }
+  Password pwd = readPassword(id);
 
-    // Check and update other optional parameters if present
-    if (request->hasParam("layout")) {
-      password.layout = request->getParam("layout")->value().toInt();
-    }
-    if (request->hasParam("name")) {
-      const char *source = request->getParam("name")->value().c_str();
-      strlcpy(password.name, source, MAX_NAME_LEN);
-    }
-    if (request->hasParam("password")) {
-      const char *tmp = request->getParam("password")->value().c_str();
-      strlcpy((char *)password.password, tmp, MAX_PASS_LEN);
-    }
-
-    // Save the updated password
-    writePassword(id, password);
-
-    // Send response if needed
-    request->send(200, "text/plain", "Password edited successfully");
-  } else {
-    request->send(400, "text/plain", "Missing 'id' parameter");
+  // Update fields if provided
+  if (layout != -2) { // -2 means "don't change"
+    pwd.layout = layout;
   }
+
+  if (name != nullptr) {
+    strlcpy(pwd.name, name, MAX_NAME_LEN);
+  }
+
+  if (password != nullptr) {
+    strlcpy((char *)pwd.password, password, MAX_PASS_LEN);
+  }
+
+  // Save the updated password
+  writePassword(id, pwd);
+  return true;
 }
 
-static void handleList(AsyncWebServerRequest *request) {
+String listPasswords() {
   Password pwd;
   ping();
+
   // Create a dynamic JSON string to hold the list of passwords
   String json = "{\"passwords\":[";
 
@@ -224,10 +188,11 @@ static void handleList(AsyncWebServerRequest *request) {
   Preferences prefs;
   size_t entries_left = prefs.freeEntries();
   json += String("], \"free\":") + entries_left + "}";
-  request->send(200, "application/json", json);
+
+  return json;
 }
 
-static void handleFactoryReset(AsyncWebServerRequest *request) {
+void factoryReset() {
   ping();
 #ifdef ENABLE_GRAPHICS
   strlcpy(DEBUG_BUFFER, "Reset", 99);
@@ -250,36 +215,28 @@ static void handleFactoryReset(AsyncWebServerRequest *request) {
 #endif
 }
 
-static void handleWifiPass(AsyncWebServerRequest *request) {
-  if (request->hasParam("newPass")) {
-    const char *pass = request->getParam("newPass")->value().c_str();
-    Preferences preferences;
-    ping();
-    preferences.begin(F_NAMESPACE, false);
-    preferences.putString("wifi_password", pass);
-    preferences.end();
-  }
+bool setWifiPassword(const char *pass) {
+  if (pass == nullptr)
+    return false;
+
+  ping();
+  Preferences preferences;
+  preferences.begin(F_NAMESPACE, false);
+  preferences.putString("wifi_password", pass);
+  preferences.end();
+  return true;
 }
 
-static void handlePassPhrase(AsyncWebServerRequest *request) {
-  if (request->hasParam("p") && request->hasParam("k")) {
-    ping();
-    const char *phrase = request->getParam("p")->value().c_str();
-    unsigned long pin = request->getParam("k")->value().toInt();
-    if (setPassPhrase(phrase, pin)) {
-      request->send(200, "text/plain", "Passphrase set successfully");
-    } else {
-      request->send(500, "text/plain", "Passphrase couldn't be set");
-    }
-  } else {
-    request->send(400, "text/plain", "Missing 'p' or 'k' parameter");
-  }
+bool setupPassphrase(const char *phrase, unsigned long pin) {
+  if (phrase == nullptr)
+    return false;
+  ping();
+  return setPassPhrase(phrase, pin);
 }
 
 String hexDump(const uint8_t *data, size_t len) {
   String result = "";
   char hexChars[3]; // Two characters for the hex value plus null terminator
-  //
 
   for (size_t i = 0; i < len; i++) {
     // Convert each byte to a two-character hex representation
@@ -290,13 +247,11 @@ String hexDump(const uint8_t *data, size_t len) {
   return result;
 }
 
-static void handlePassDump(AsyncWebServerRequest *request) {
+String dumpPasswords() {
   ping();
   char buffer[MAX_PASS_LEN];
   Preferences preferences;
-  AsyncResponseStream *response = request->beginResponseStream("text/plain");
-
-  response->print("#KPDUMP\n");
+  String result = "#KPDUMP\n";
 
   for (int id = 0; id < MAX_PASSWORDS; id++) {
     const char *key = mkEntryName(id);
@@ -307,12 +262,12 @@ static void handlePassDump(AsyncWebServerRequest *request) {
     if (!*buffer)
       break;
 
-    response->print(hexDump((uint8_t *)buffer, MAX_PASS_LEN));
-    response->print("\n");
+    result += hexDump((uint8_t *)buffer, MAX_PASS_LEN);
+    result += "\n";
   }
-  response->print("#/KPDUMP\n");
+  result += "#/KPDUMP\n";
 
-  request->send(response);
+  return result;
 }
 
 // Parse a hex string back into binary data
@@ -341,27 +296,19 @@ void hexParse(const char *hexStr, uint8_t *binData, size_t maxLen) {
   }
 }
 
-void handleRestore(AsyncWebServerRequest *request) {
-  if (!request->_tempObject) {
-    return request->send(400, "text/plain", "Nothing uploaded");
-  }
+int restorePasswords(const String &data) {
   ping();
-
-  StreamString *buffer = reinterpret_cast<StreamString *>(request->_tempObject);
-  int bodyLength = request->contentLength();
-  int pos = 0;
   int slot = 0;
-
-  char hexBuffer[MAX_PASS_LEN * 2 + 1];
   uint8_t binData[MAX_PASS_LEN];
   Preferences preferences;
   bool insideKpDump = false;
 
-  // Process each line from the request body
-  while (slot < MAX_PASSWORDS && pos < bodyLength) {
-    int lineEnd = buffer->indexOf('\n', pos);
+  // Process each line from the data
+  int pos = 0;
+  while (slot < MAX_PASSWORDS && pos < data.length()) {
+    int lineEnd = data.indexOf('\n', pos);
     if (lineEnd == -1) {
-      lineEnd = bodyLength;
+      lineEnd = data.length();
     }
 
     // Skip empty lines
@@ -370,10 +317,7 @@ void handleRestore(AsyncWebServerRequest *request) {
       continue;
     }
 
-    // Copy line to hexBuffer with bounds checking
-    int lineLen = min(lineEnd - pos, (int)sizeof(hexBuffer) - 1);
-    String currentLine = buffer->substring(pos, pos + lineLen);
-    currentLine.toCharArray(hexBuffer, lineLen + 1);
+    String currentLine = data.substring(pos, lineEnd);
 
     // Check for KPDUMP markers
     if (currentLine == "#KPDUMP") {
@@ -387,9 +331,9 @@ void handleRestore(AsyncWebServerRequest *request) {
 
     // Only process lines if we're inside a KPDUMP section or if no markers were
     // used
-    if (insideKpDump) {
+    if (insideKpDump || !data.startsWith("#KPDUMP")) {
       // Convert hex string back to binary data
-      hexParse(hexBuffer, binData, MAX_PASS_LEN);
+      hexParse(currentLine.c_str(), binData, MAX_PASS_LEN);
 
       // Save the binary data directly to preferences
       preferences.begin(mkEntryName(slot), false);
@@ -402,65 +346,5 @@ void handleRestore(AsyncWebServerRequest *request) {
     pos = lineEnd + 1; // Move past the newline
   }
 
-  // Send response
-  String response = "{\"status\":\"success\",\"message\":\"Restored " +
-                    String(slot) + " passwords\"}";
-  request->send(200, "application/json", response);
-}
-
-void setUpKeyboard(AsyncWebServer &server) {
-
-#if USE_EEPROM_API
-  EEPROM.begin(sizeof(Password) * MAX_PASSWORDS);
-#endif
-
-  server.on("/", HTTP_ANY, handleIndex);
-  server.on("/typeRaw", HTTP_GET, handleTypeRaw);
-  server.on("/typePass", HTTP_GET, handleTypePass);
-  server.on("/editPass", HTTP_GET, handleEditPass);
-  server.on("/fetchPass", HTTP_GET, handleFetchPass);
-  server.on("/list", HTTP_GET, handleList);
-  server.on("/passphrase", HTTP_GET, handlePassPhrase);
-  server.on("/reset", HTTP_GET, handleFactoryReset);
-  server.on("/updateWifiPass", HTTP_GET, handleWifiPass);
-  server.on("/dump", HTTP_GET, handlePassDump);
-  // http post http://4.3.2.1/restore  < /tmp/dump
-  server.on(
-      "/restore", HTTP_POST,
-      [](AsyncWebServerRequest *request) {
-        // This function is called when the request completes
-        // If we get here without the handler sending a response, send one now
-        if (!request->_tempObject) {
-          request->send(400, "text/plain", "No data received");
-        }
-      },
-      nullptr, // We're not using the normal handler here
-      [](AsyncWebServerRequest *request, uint8_t *data, size_t len,
-         size_t index, size_t total) {
-        // This is the body handler for non-multipart uploads
-        if (index == 0) {
-          // First chunk - initialize the buffer
-          request->_tempObject = new StreamString();
-        }
-
-        if (request->_tempObject) {
-          StreamString *buffer =
-              reinterpret_cast<StreamString *>(request->_tempObject);
-          // Add this chunk to the buffer
-          buffer->write(data, len);
-
-          if (index + len == total) {
-            // This is the last chunk, process the complete data
-            handleRestore(request);
-          }
-        } else {
-          request->send(500, "text/plain", "Failed to allocate buffer");
-        }
-      });
-
-#ifdef ENABLE_GRAPHICS
-  Preferences prefs;
-  size_t entries_left = prefs.freeEntries();
-  strlcpy(DEBUG_BUFFER2, (String(entries_left) + String(" left.")).c_str(), 99);
-#endif
+  return slot;
 }
