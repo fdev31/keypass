@@ -48,7 +48,6 @@ public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
     private EditText ssidEditText;
-    private EditText passwordEditText;
     private Button connectButton;
     private LinearLayout connectionForm;
     private ConnectivityManager connectivityManager;
@@ -75,7 +74,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         ssidEditText = findViewById(R.id.ssidEditText);
-        passwordEditText = findViewById(R.id.passwordEditText);
         connectButton = findViewById(R.id.connectButton);
         connectionForm = findViewById(R.id.connectionForm);
 
@@ -174,14 +172,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void connectToWifi() {
         String ssid = ssidEditText.getText().toString();
-        String password = passwordEditText.getText().toString();
 
         if (ssid.isEmpty()) {
             Toast.makeText(getApplicationContext(), "Please enter an SSID.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (password.length() < 8) {
-            Toast.makeText(getApplicationContext(), "Password must be at least 8 characters.", Toast.LENGTH_SHORT).show();
             return;
         }
 
