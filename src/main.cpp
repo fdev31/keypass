@@ -1,5 +1,7 @@
-#include "bluetooth.h"
 #include "configuration.h"
+#if ENABLE_BLUETOOTH
+#include "bluetooth.h"
+#endif
 
 #include "captive.h"
 #include "password.h"
@@ -32,7 +34,9 @@ void setup() {
   Serial.begin(115200);
 #endif
   captiveSetup();
+#if ENABLE_BLUETOOTH
   bluetoothSetup();
+#endif
   setUpKeyboard(server);
   lastClientTime = millis();
 }
@@ -45,7 +49,9 @@ void loop() {
   if (!should_sleep) {
     captiveLoop();
     yield();
+#if ENABLE_BLUETOOTH
     bluetoothLoop(); // Handle Bluetooth commands if needed
+#endif
     yield();
 #ifdef ENABLE_GRAPHICS
     if (!sleeping) {
