@@ -40,13 +40,10 @@ class FetchCallback : public NimBLECharacteristicCallbacks {
     if (value.length() > 0 && deviceConnected) {
       int id = atoi(value.c_str());
       const char *password = fetchPassword(id);
-      vTaskDelay(10 / portTICK_PERIOD_MS); // Small delay
       if (password) {
         pCharacteristic->setValue(password);
-        pCharacteristic->notify();
       } else {
         pCharacteristic->setValue("Invalid ID");
-        pCharacteristic->notify();
       }
     }
   }
@@ -108,7 +105,7 @@ void bluetoothSetup() {
 
   // Fetch Password
   BLECharacteristic *pFetchChar = pService->createCharacteristic(
-      FETCH_CHAR_UUID, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY);
+      FETCH_CHAR_UUID, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::READ);
   pFetchChar->setCallbacks(new FetchCallback());
   pFetchChar->createDescriptor("2901", NIMBLE_PROPERTY::READ)
       ->setValue("Fetch Password by ID");
