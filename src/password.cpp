@@ -28,6 +28,8 @@ const char *mkEntryName(int num) {
   return name;
 }
 
+Password password;
+
 static Password readPassword(int id) {
 #if USE_EEPROM_API
   Password password;
@@ -39,7 +41,6 @@ static Password readPassword(int id) {
   }
   return password;
 #else
-  static Password password;
   static uint8_t buffer[MAX_PASS_LEN];
   Preferences preferences;
   const char *key = mkEntryName(id);
@@ -79,7 +80,7 @@ static void writePassword(int id, const Password &password) {
 }
 
 static void sendAnyKeymap(const char *text, int layout, int newline) {
-  if (layout == -1) {
+  if (layout == -1) { // BITLOCKER - Function keys
     while (*text) {
       sendKey(*text++, true);
     }
@@ -114,7 +115,7 @@ bool typePassword(int id, int layout, bool sendNewline) {
   strlcpy(DEBUG_BUFFER, "Shazzaam", 99);
 #endif
 
-  Password password = readPassword(id);
+  password = readPassword(id);
   char *text = (char *)password.password;
 
   // If layout is specified, use it; otherwise use the stored layout
@@ -129,11 +130,12 @@ const char *fetchPassword(int id) {
     return nullptr;
 
   ping();
-  Password password = readPassword(id);
+  password = readPassword(id);
   return (char *)password.password;
 }
 
-bool editPassword(int id, const char *name, const char *password, int layout) {
+bool editPassword(int id, const char *name, const char *clear_pass,
+                  int layout) {
   if (id < 0 || id >= MAX_PASSWORDS)
     return false;
 
@@ -142,23 +144,23 @@ bool editPassword(int id, const char *name, const char *password, int layout) {
   // strlcpy(DEBUG_BUFFER, "Edited", 99);
 #endif
 
-  Password pwd = readPassword(id);
+  password = readPassword(id);
 
   // Update fields if provided
   if (layout != -2) { // -2 means "don't change"
-    pwd.layout = layout;
+    password.layout = layout;
   }
 
   if (name != nullptr) {
-    strlcpy(pwd.name, name, MAX_NAME_LEN);
+    strlcpy(password.name, name, MAX_NAME_LEN);
   }
 
-  if (password != nullptr) {
-    strlcpy((char *)pwd.password, password, MAX_PASS_LEN);
+  if (clear_pass != nullptr) {
+    strlcpy((char *)password.password, clear_pass, MAX_PASS_LEN);
   }
 
   // Save the updated password
-  writePassword(id, pwd);
+  writePassword(id, password);
   return true;
 }
 
