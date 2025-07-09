@@ -13,7 +13,7 @@ const unsigned long SLEEP_TIME = 500; // sleep period in sleep mode
 // At least 8 chars
 #define DEFAULT_WIFI_PASSWORD "12345678" // set to NULL for no password
 
-#define ENABLE_BLUETOOTH true
+#define ENABLE_BLUETOOTH false
 #define ENABLE_GRAPHICS true
 #define FLIP_SCREEN 1
 #define DEBUG 0
