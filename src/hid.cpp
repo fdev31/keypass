@@ -48,21 +48,13 @@ void genKey(uint8_t key, uint8_t modifiers) {
 
 void sendFunctionKey(uint8_t fKeyNum) {
   // F1-F12 have USB HID key codes 0x3A to 0x45
-  if (fKeyNum >= 1 && fKeyNum <= 12) {
-    uint8_t fKeyCode = 0x3A + (fKeyNum - 1);
-    genKey(fKeyCode, 0);
-  }
+  uint8_t fKeyCode = fKeyNum ? 0x3A + (fKeyNum - 1) : 0x43;
+  return genKey(fKeyCode, 0);
 }
 
 void sendKey(char c, bool useFxKeys) {
-  if (useFxKeys && c >= '0' && c <= '9') {
-    if (c == '0') {
-      // Handle 0 as F10
-      genKey(0x43, 0);
-    } else {
-      // Convert digit to F1-F9
-      genKey(0x3A + (c - '1'), 0);
-    }
+  if (useFxKeys) {
+    return sendFunctionKey(c - '0');
   } else {
     // Use the normal keymap
     genKey(KBD_MAP[0][(int)c][0], KBD_MAP[0][(int)c][1]);
