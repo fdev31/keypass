@@ -6,7 +6,7 @@
 set -e
 
 # Define the source SVG file.
-SVG_FILE="logo.svg"
+SVG_FILE="android/icon.svg"
 
 # Define the output base path.
 OUTPUT_BASE_PATH="android/app/src/main/res"
