@@ -244,18 +244,29 @@ String hexDump(const uint8_t *data, size_t len) {
 String dumpPasswords() {
   ping();
   char buffer[MAX_PASS_LEN];
+  char name[MAX_NAME_LEN];
+  char layout;
+  char version;
   Preferences preferences;
   String result = "#KPDUMP\n";
 
   for (int id = 0; id < MAX_PASSWORDS; id++) {
     const char *key = mkEntryName(id);
     *buffer = 0;
+    randomizeBuffer((uint8_t *)name, MAX_NAME_LEN);
     preferences.begin(key, true);
-    preferences.getBytes("password", buffer, MAX_PASS_LEN);
+    preferences.getBytes(F_PASSWORD, buffer, MAX_PASS_LEN);
+    version = preferences.getInt(F_FORMAT, 0);
+    strlcpy(name, preferences.getString(F_NAME).c_str(), MAX_NAME_LEN);
+    layout = preferences.getInt(F_LAYOUT, -1);
     preferences.end();
     if (!*buffer)
       break;
 
+    result += hexDump((uint8_t *)&version, 1);
+    result += hexDump((uint8_t *)&layout, 1);
+    result += hexDump((uint8_t *)name, MAX_NAME_LEN);
+    result += " ";
     result += hexDump((uint8_t *)buffer, MAX_PASS_LEN);
     result += "\n";
   }
@@ -294,13 +305,19 @@ int restorePasswords(const String &data) {
   ping();
   int slot = 0;
   uint8_t binData[MAX_PASS_LEN];
+  uint8_t metaData[MAX_NAME_LEN + 3];
   Preferences preferences;
   bool insideKpDump = false;
 
   // Process each line from the data
   int pos = 0;
   while (slot < MAX_PASSWORDS && pos < data.length()) {
+    int lineMid = data.indexOf(' ', pos);
     int lineEnd = data.indexOf('\n', pos);
+
+    if (lineMid > lineEnd)
+      lineMid = lineEnd;
+
     if (lineEnd == -1) {
       lineEnd = data.length();
     }
@@ -311,14 +328,14 @@ int restorePasswords(const String &data) {
       continue;
     }
 
-    String currentLine = data.substring(pos, lineEnd);
+    String metaBlock = data.substring(pos, lineMid);
 
     // Check for KPDUMP markers
-    if (currentLine == "#KPDUMP") {
+    if (metaBlock == "#KPDUMP") {
       insideKpDump = true;
       pos = lineEnd + 1; // Move past the marker
       continue;
-    } else if (currentLine == "#/KPDUMP") {
+    } else if (metaBlock == "#/KPDUMP") {
       insideKpDump = false;
       break; // End of dump data
     }
@@ -326,12 +343,18 @@ int restorePasswords(const String &data) {
     // Only process lines if we're inside a KPDUMP section or if no markers were
     // used
     if (insideKpDump || !data.startsWith("#KPDUMP")) {
+      String passBlock = data.substring(lineMid + 1, lineEnd + 1);
       // Convert hex string back to binary data
-      hexParse(currentLine.c_str(), binData, MAX_PASS_LEN);
-
+      hexParse(metaBlock.c_str(), metaData, MAX_NAME_LEN + 3);
+      hexParse(passBlock.c_str(), binData, MAX_PASS_LEN);
       // Save the binary data directly to preferences
-      preferences.begin(mkEntryName(slot), false);
-      preferences.putBytes("password", binData, MAX_PASS_LEN);
+
+      const char *entryName = mkEntryName(slot);
+      preferences.begin(entryName, false);
+      preferences.putString(F_NAME, (char *)metaData + 2);
+      preferences.putInt(F_FORMAT, (int)metaData[0]);
+      preferences.putInt(F_LAYOUT, (int)metaData[1]);
+      preferences.putBytes(F_PASSWORD, binData, MAX_PASS_LEN);
       preferences.end();
 
       slot++;

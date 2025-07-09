@@ -10,8 +10,6 @@ typedef struct {
   char name[MAX_NAME_LEN];
   int8_t layout;
   byte password[MAX_PASS_LEN];
-  // NOTE: following are not defined since they are not used in property API
-  // uint8_t pass_len;
 } Password;
 
 extern AsyncWebServer server;

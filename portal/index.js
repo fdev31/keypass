@@ -427,50 +427,140 @@ function confirmFactoryReset() {
     }
   }
 }
-
 function uploadBlobFile() {
-  // if blobFileInput display: none, then show it, else proceed...
-  if (blobFileInput.style.display === "none") {
-    blobFileInput.style.display = "block";
-    alert("Once the file is selected, click the same button again to confirm.");
-    blobFileInput.click();
-    return;
+  // Get both file and text inputs
+  passwdRecoveryInputs.style.display = "block";
+  const fileInput = document.getElementById("blobFileInput");
+  const textInput = document.getElementById("blobTextInput");
+
+  // Determine which one to use based on content
+  let contentToUpload;
+  let contentSource;
+
+  // Check if we have a file selected
+  if (fileInput.files && fileInput.files.length > 0) {
+    contentToUpload = fileInput.files[0];
+    contentSource = "file";
   }
-  // Check if a file has been selected
-  if (blobFileInput.files.length === 0) {
-    alert("Please select a file first.");
+  // Otherwise check if we have text pasted
+  else if (textInput.value.trim()) {
+    const pastedText = textInput.value.trim();
+    contentToUpload = new Blob([pastedText], { type: "text/plain" });
+    contentSource = "text";
+  }
+  // If neither, ask the user to provide content
+  else {
+    alert("Please select a file or paste blob content first.");
     return;
   }
 
-  // Get the first selected file (the File object)
-  const file = blobFileInput.files[0];
+  // Show loading indicator
+  const button = document.querySelector('button[onclick="uploadBlobFile()"]');
+  const originalText = button.textContent;
+  button.textContent = "Uploading...";
+  button.disabled = true;
 
-  // Use the fetch API to send the file to the server
+  // Use the fetch API to send the content to the server
   fetch("/restore", {
     method: "POST",
     headers: { "Content-Type": "application/octet-stream" },
-    body: file,
+    body: contentToUpload,
   })
     .then((response) => {
-      // Check if the request was successful (status code 200-299)
       if (!response.ok) {
         throw new Error(
           `Server responded with ${response.status}: ${response.statusText}`,
         );
       }
-      // Assuming the server sends back a text confirmation
       return response.text();
     })
     .then((result) => {
-      blobFileInput.style.display = "none";
-      // Handle the successful response from the server
+      // Reset inputs
+      fileInput.value = "";
+      textInput.value = "";
+
+      // Reset button
+      button.textContent = originalText;
+      button.disabled = false;
+
+      // Show success message
       alert(result);
+
+      // Refresh the page to show restored data
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     })
     .catch((error) => {
+      // Reset button
+      button.textContent = originalText;
+      button.disabled = false;
+
+      // Show error message
       alert(`Error: ${error.message}`);
     });
 }
 
+// Make the passwdRecoveryInputs div more user-friendly
+function initializeRecoveryInputs() {
+  const container = document.getElementById("passwdRecoveryInputs");
+  const fileInput = document.getElementById("blobFileInput");
+  const textInput = document.getElementById("blobTextInput");
+  container.style.display = "none";
+
+  // Style the container
+  container.style.marginTop = "10px";
+  container.style.marginBottom = "10px";
+
+  // Hide file input initially (it's ugly by default)
+  fileInput.style.display = "none";
+
+  // Add toggle buttons
+  const buttonRow = document.createElement("div");
+  buttonRow.className = "button-row";
+  buttonRow.style.marginBottom = "10px";
+
+  const fileButton = document.createElement("button");
+  fileButton.className = "modern-btn";
+  fileButton.textContent = "Select File";
+  fileButton.onclick = function (e) {
+    e.preventDefault();
+    fileInput.click();
+  };
+
+  const textButton = document.createElement("button");
+  textButton.className = "modern-btn";
+  textButton.textContent = "Use Text Input";
+  textButton.onclick = function (e) {
+    e.preventDefault();
+    textInput.focus();
+  };
+
+  buttonRow.appendChild(fileButton);
+  buttonRow.appendChild(textButton);
+
+  // Add a file name display element
+  const fileNameDisplay = document.createElement("div");
+  fileNameDisplay.style.fontSize = "14px";
+  fileNameDisplay.style.color = "rgba(255, 255, 255, 0.8)";
+  fileNameDisplay.style.marginBottom = "10px";
+  fileNameDisplay.style.display = "none";
+
+  // Listen for file selection
+  fileInput.addEventListener("change", function () {
+    if (fileInput.files.length > 0) {
+      fileNameDisplay.textContent = `Selected file: ${fileInput.files[0].name}`;
+      fileNameDisplay.style.display = "block";
+      textInput.value = ""; // Clear text input when file is selected
+    } else {
+      fileNameDisplay.style.display = "none";
+    }
+  });
+
+  // Insert our new elements at the beginning of the container
+  container.insertBefore(fileNameDisplay, container.firstChild);
+  container.insertBefore(buttonRow, container.firstChild);
+}
 function toggleWifiPassForm() {
   if (wifiPassForm.classList.contains("hidden")) {
     // Show the form
@@ -542,6 +632,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   editFormContent.addEventListener("submit", editFormHandler);
   initToggleButtons();
+  initializeRecoveryInputs();
 });
 // Set up event delegation for password cards to handle both clicks and long presses
 
