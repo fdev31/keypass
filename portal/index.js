@@ -145,11 +145,6 @@ function hideElement(elementId) {
       : elementId;
   if (!el.classList.contains("hidden")) {
     el.classList.add("hidden");
-    // el.classList.add("fade-out");
-    // setTimeout(() => {
-    //   el.classList.add("hidden");
-    //   // el.classList.remove("fade-out");
-    // }, 300);
   }
 }
 function showElement(elementId) {
@@ -160,10 +155,6 @@ function showElement(elementId) {
 
   if (el.classList.contains("hidden")) {
     el.classList.remove("hidden");
-    // el.classList.add("fade-in");
-    // setTimeout(() => {
-    //   el.classList.remove("fade-in");
-    // }, 400);
   }
 }
 
