@@ -7,7 +7,7 @@
 #define STORED_PASSWD_BLOCKS 2
 
 // Crypto constants
-#define BLOCK_SIZE 16
+#define STO_BLOCK_SIZE 16
 #define RAND_BYTE_FACTOR RAND_MAX / 255
 
 #define MAX_NAME_LEN 30

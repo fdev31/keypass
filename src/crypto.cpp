@@ -39,7 +39,7 @@ void encryptPassword(const char *password, uint8_t *result) {
 
   // Process each 16-byte block
   for (size_t i = 0; i < STORED_PASSWD_BLOCKS; i++) {
-    int offset = i * BLOCK_SIZE;
+    int offset = i * STO_BLOCK_SIZE;
     speck.encryptBlock(result + offset, passBuffer + offset);
   }
 }
@@ -47,7 +47,7 @@ void encryptPassword(const char *password, uint8_t *result) {
 void decryptPassword(const uint8_t *password, char *result) {
   // Process each 16-byte block
   for (size_t i = 0; i < STORED_PASSWD_BLOCKS; i++) {
-    int offset = i * BLOCK_SIZE;
+    int offset = i * STO_BLOCK_SIZE;
     // Decrypt the block
     speck.decryptBlock((uint8_t *)result + offset, password + offset);
   }
