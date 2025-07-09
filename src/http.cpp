@@ -145,17 +145,16 @@ static void handleWifiPass(AsyncWebServerRequest *request) {
 }
 
 static void handlePassPhrase(AsyncWebServerRequest *request) {
-  if (request->hasParam("p") && request->hasParam("k")) {
+  if (request->hasParam("p")) {
     const char *phrase = request->getParam("p")->value().c_str();
-    unsigned long pin = request->getParam("k")->value().toInt();
 
-    if (setupPassphrase(phrase, pin)) {
+    if (setupPassphrase(phrase)) {
       request->send(200, "text/plain", "Passphrase set successfully");
     } else {
       request->send(500, "text/plain", "Passphrase couldn't be set");
     }
   } else {
-    request->send(400, "text/plain", "Missing 'p' or 'k' parameter");
+    request->send(400, "text/plain", "Missing parameter");
   }
 }
 

@@ -12,8 +12,7 @@ void randomizeBuffer(uint8_t *buffer, int size) {
   }
 }
 
-bool setPassPhrase(const char *passphrase, unsigned long seed) {
-
+bool setPassPhrase(const char *passphrase) {
   BLAKE2s blake;
   uint8_t myhash[32];
   blake.reset(passphrase, strlen(passphrase), 32);

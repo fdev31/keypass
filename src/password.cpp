@@ -80,7 +80,7 @@ static void writePassword(int id, const Password &password) {
 }
 
 static void sendAnyKeymap(const char *text, int layout, int newline) {
-  if (layout == -1) { // BITLOCKER - Function keys
+  if (layout == -1) {
     while (*text) {
       sendKey(*text++, true);
     }
@@ -229,11 +229,11 @@ bool setWifiPassword(const char *pass) {
   return true;
 }
 
-bool setupPassphrase(const char *phrase, unsigned long pin) {
+bool setupPassphrase(const char *phrase) {
   if (phrase == nullptr)
     return false;
   ping();
-  return setPassPhrase(phrase, pin);
+  return setPassPhrase(phrase);
 }
 
 String hexDump(const uint8_t *data, size_t len) {

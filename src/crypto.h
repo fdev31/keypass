@@ -11,5 +11,5 @@
 extern void encryptPassword(const char *password, uint8_t *result);
 extern void decryptPassword(const uint8_t *password, char *result);
 // extern const byte *encryptPassword(const uint8_t *password);
-extern bool setPassPhrase(const char *passphrase, unsigned long pin);
+extern bool setPassPhrase(const char *passphrase);
 #endif

