@@ -1,10 +1,9 @@
 #include "configuration.h"
 #if ENABLE_BLUETOOTH
 #include "bluetooth.h"
+#include "main.h"
 #include "password.h"
 #include <NimBLEDevice.h>
-
-extern void ping();
 
 #define SERVICE_UUID "12345678-1234-1234-1234-123456789abc"
 #define LIST_CHAR_UUID "12345678-1234-1234-1234-123456789abd"
@@ -20,9 +19,7 @@ class ServerCallbacks : public NimBLEServerCallbacks {
     ping();
   };
 
-  void onDisconnect(NimBLEServer *pServer) {
-    deviceConnected = false;
-  }
+  void onDisconnect(NimBLEServer *pServer) { deviceConnected = false; }
 };
 
 class ListCallback : public NimBLECharacteristicCallbacks {
@@ -142,4 +139,3 @@ void bluetoothLoop() {
 }
 
 #endif // ENABLE_BLUETOOTH
-

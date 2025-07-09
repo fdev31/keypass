@@ -3,8 +3,10 @@
 #include "configuration.h"
 #include "constants.h"
 #include "crypto.h"
+#include "graphics.h"
 #include "hid.h"
 #include "indexPage.h"
+#include "main.h"
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
 #include <StreamString.h>
@@ -12,13 +14,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-
-extern void ping();
-
-#ifdef ENABLE_GRAPHICS
-extern char DEBUG_BUFFER[100];
-extern char DEBUG_BUFFER2[100];
-#endif
 
 // Core business logic functions (independent of AsyncWebServerRequest)
 
@@ -112,7 +107,7 @@ bool typePassword(int id, int layout, bool sendNewline) {
 
   ping();
 #ifdef ENABLE_GRAPHICS
-  strlcpy(DEBUG_BUFFER, "Shazzaam", 99);
+  printText(1, "Typing");
 #endif
 
   password = readPassword(id);
@@ -140,9 +135,6 @@ bool editPassword(int id, const char *name, const char *clear_pass,
     return false;
 
   ping();
-#ifdef ENABLE_GRAPHICS
-  // strlcpy(DEBUG_BUFFER, "Edited", 99);
-#endif
 
   password = readPassword(id);
 
@@ -197,7 +189,7 @@ String listPasswords() {
 void factoryReset() {
   ping();
 #ifdef ENABLE_GRAPHICS
-  strlcpy(DEBUG_BUFFER, "Reset", 99);
+  printText(1, "Reset");
 #endif
   Preferences preferences;
 

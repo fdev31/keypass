@@ -1,6 +1,6 @@
-#include "configuration.h"
-
 #include "graphics.h"
+#include "configuration.h"
+#if ENABLE_GRAPHICS
 
 #include <Arduino.h>
 #include <U8g2lib.h>
@@ -19,6 +19,10 @@ char DEBUG_BUFFER2[100];
 
 U8G2_SSD1306_72X40_ER_F_HW_I2C
 u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE); // EastRising 0.42" OLED
+//
+void printText(uint8_t bufid, const char *text) {
+  strlcpy(bufid == 1 ? DEBUG_BUFFER : DEBUG_BUFFER2, text, 100);
+}
 
 void u8g2_prepare(void) {
   u8g2.setFont(u8g2_font_crox4tb_tf);
@@ -75,3 +79,9 @@ void shutdownGraphics() {
   u8g2.clearDisplay();
   u8g2.setPowerSave(1); // Put display in power-saving mode
 }
+#else
+void printText(uint8_t, const char *) {}
+void graphicsSetup() {};
+void graphicsLoop() {};
+void shutdownGraphics() {};
+#endif

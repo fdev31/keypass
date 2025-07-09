@@ -2,8 +2,10 @@
 #include "configuration.h"
 #include "constants.h"
 #include "crypto.h"
+#include "graphics.h"
 #include "hid.h"
 #include "indexPage.h"
+#include "main.h"
 #include "password.h"
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
@@ -12,13 +14,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-
-extern void ping();
-
-#ifdef ENABLE_GRAPHICS
-extern char DEBUG_BUFFER[100];
-extern char DEBUG_BUFFER2[100];
-#endif
 
 // HTTP handler wrappers (dependent on AsyncWebServerRequest)
 
@@ -46,7 +41,7 @@ static void handleTypeRaw(AsyncWebServerRequest *request) {
 static void handleIndex(AsyncWebServerRequest *request) {
   ping();
 #ifdef ENABLE_GRAPHICS
-  strlcpy(DEBUG_BUFFER, "Welcome !", 99);
+  printText(1, "Welcome!");
 #endif
   AsyncWebServerResponse *response =
       request->beginResponse(200, "text/html", index_html);
@@ -233,6 +228,6 @@ void setUpKeyboard(AsyncWebServer &server) {
 #ifdef ENABLE_GRAPHICS
   Preferences prefs;
   size_t entries_left = prefs.freeEntries();
-  strlcpy(DEBUG_BUFFER2, (String(entries_left) + String(" left.")).c_str(), 99);
+  printText(2, (String(entries_left) + String(" left.")).c_str());
 #endif
 }
