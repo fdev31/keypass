@@ -245,7 +245,6 @@ function fillForm(data) {
 async function checkPassphrase(opts) {
   const { force } = opts || {};
   const storedPassphrase = localStorage.getItem("keypass_passphrase");
-  const storedMagic = localStorage.getItem("keypass_magicnumber");
 
   if (!storedPassphrase || force) {
     // First time setup - prompt for new passphrase
@@ -253,20 +252,9 @@ async function checkPassphrase(opts) {
       "Please set up a passphrase to secure your passwords:",
     );
     if (newPassphrase) {
-      let newPin = prompt(
-        "Please set up a PIN number to secure your passwords:",
-      );
-      newPin = newPin && /^\d+$/.test(newPin) ? parseInt(newPin, 10) : null;
-
-      if (newPin) {
-        await setPassPhrase(newPassphrase, newPin);
-        localStorage.setItem("keypass_passphrase", newPassphrase);
-        localStorage.setItem("keypass_magicnumber", newPin);
-        return true;
-      } else {
-        alert("A PIN CODE (number) is required to use KeyPass.");
-        return await checkPassphrase(); // Prompt again
-      }
+      await setPassPhrase(newPassphrase);
+      localStorage.setItem("keypass_passphrase", newPassphrase);
+      return true;
     } else {
       // User cancelled - might need to retry or restrict access
       alert("A passphrase is required to use KeyPass.");
@@ -274,13 +262,13 @@ async function checkPassphrase(opts) {
     }
   } else {
     // Use the stored passphrase
-    await setPassPhrase(storedPassphrase, storedMagic);
+    await setPassPhrase(storedPassphrase);
     return true;
   }
 }
 
-async function setPassPhrase(phrase, pin) {
-  return fetch(`/passphrase?p=${phrase}&k=${pin}`).catch(errorHandler);
+async function setPassPhrase(phrase) {
+  return fetch(`/passphrase?p=${phrase}`).catch(errorHandler);
 }
 
 function typeOldPass() {
