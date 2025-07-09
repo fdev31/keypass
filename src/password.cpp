@@ -204,7 +204,6 @@ void factoryReset() {
   preferences.clear(); // Clear all preferences
   preferences.end();
 #elif
-// TODO: implement this
 #pragma message "EEPROM API is used, factory reset not implemented for settings"
 #endif
 }
@@ -257,7 +256,13 @@ String dumpPasswords() {
     preferences.begin(key, true);
     preferences.getBytes(F_PASSWORD, buffer, MAX_PASS_LEN);
     version = preferences.getInt(F_FORMAT, 0);
+
+#if ENABLE_FULL_ENCRYPTION
+    encryptPassword((const char *)preferences.getString(F_NAME).c_str(),
+                    (uint8_t *)name);
+#else
     strlcpy(name, preferences.getString(F_NAME).c_str(), MAX_NAME_LEN);
+#endif
     layout = preferences.getInt(F_LAYOUT, -1);
     preferences.end();
     if (!*buffer)
@@ -306,8 +311,11 @@ int restorePasswords(const String &data) {
   int slot = 0;
   uint8_t binData[MAX_PASS_LEN];
   uint8_t metaData[MAX_NAME_LEN + 3];
+  char name[MAX_PASS_LEN];
+  char *namePtr;
   Preferences preferences;
   bool insideKpDump = false;
+  const int headerBytes = 3;
 
   // Process each line from the data
   int pos = 0;
@@ -342,19 +350,25 @@ int restorePasswords(const String &data) {
 
     // Only process lines if we're inside a KPDUMP section or if no markers were
     // used
-    if (insideKpDump || !data.startsWith("#KPDUMP")) {
+    if (insideKpDump) {
       String passBlock = data.substring(lineMid + 1, lineEnd + 1);
       // Convert hex string back to binary data
-      hexParse(metaBlock.c_str(), metaData, MAX_NAME_LEN + 3);
+      hexParse(metaBlock.c_str(), metaData, MAX_NAME_LEN + headerBytes);
       hexParse(passBlock.c_str(), binData, MAX_PASS_LEN);
       // Save the binary data directly to preferences
 
       const char *entryName = mkEntryName(slot);
       preferences.begin(entryName, false);
-      preferences.putString(F_NAME, (char *)metaData + 2);
       preferences.putInt(F_FORMAT, (int)metaData[0]);
       preferences.putInt(F_LAYOUT, (int)metaData[1]);
       preferences.putBytes(F_PASSWORD, binData, MAX_PASS_LEN);
+#if ENABLE_FULL_ENCRYPTION
+      decryptPassword(metaData + headerBytes - 1, name);
+      namePtr = name;
+#else
+      namePtr = metaData + headerBytes - 1;
+#endif
+      preferences.putString(F_NAME, namePtr);
       preferences.end();
 
       slot++;

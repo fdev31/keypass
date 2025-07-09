@@ -10,7 +10,8 @@
 #define STO_BLOCK_SIZE 16
 #define RAND_BYTE_FACTOR RAND_MAX / 255
 
-#define MAX_NAME_LEN 30
+#define MAX_NAME_LEN                                                           \
+  30 // WARN: must be <= MAX_PASS_LEN to support name encryption
 #define MAX_PASS_LEN (16 * STORED_PASSWD_BLOCKS)
 
 // Preferences fields
