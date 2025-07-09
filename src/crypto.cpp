@@ -1,12 +1,10 @@
 // NOTE: uses a single buffer, can only handle one at a time !
-// Consider using BLACKE2 instead of XX and CHACHA instead of SPECK
+// Consider using CHACHA instead of SPECK
 #include "crypto.h"
 #include "constants.h"
 Speck speck;
 
 uint8_t passBuffer[MAX_PASS_LEN];
-
-extern char DEBUG_BUFFER2[];
 
 void randomizeBuffer(uint8_t *buffer, int size) {
   for (size_t i = 0; i < size; i++) {
@@ -15,8 +13,12 @@ void randomizeBuffer(uint8_t *buffer, int size) {
 }
 
 bool setPassPhrase(const char *passphrase, unsigned long seed) {
-  XXH64_hash_t hash = XXH64(passphrase, strlen(passphrase), seed);
-  return speck.setKey((const uint8_t *)&hash, 64);
+
+  BLAKE2s blake;
+  uint8_t myhash[32];
+  blake.reset(passphrase, strlen(passphrase), 32);
+  blake.finalize(myhash, 32);
+  return speck.setKey((const uint8_t *)myhash, 32);
 }
 
 void encryptPassword(const char *password, uint8_t *result) {

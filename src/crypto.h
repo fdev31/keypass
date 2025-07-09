@@ -1,7 +1,7 @@
 #ifndef __CRYPTO_H
 #define __CRYPTO_H
 #include "constants.h"
-#include "xxhash.h"
+#include <BLAKE2s.h>
 #include <Crypto.h>
 #include <Speck.h>
 #include <SpeckSmall.h>
