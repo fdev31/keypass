@@ -1,5 +1,29 @@
 A password manager in your keychain
 
+# Goals
+
+- Manages your passwords up to 32 characters
+- Simple: minimal user interface, polished UX
+- Offline: Can work 100% without internet/cloud
+- Secure: all you need is to remember a passphrase
+- Safe: backup your passwords and restore them at any time
+- Zero requirement: no application needed
+    - Detected as a USB keyboard
+    - Controlled by your phone
+    - Shows the UI via WiFi with minimal user interaction
+- Works in any situation
+    - Boot / Logon / BitLocker support
+- Android app (contributions are very welcome)
+- Nice shell / casing for easy to get electronics
+- Easy to build
+
+# Unmet goals
+
+- BLE control
+- More keyboard layouts
+- iPhone/iOS app (works fine using but an app could improve the UX)
+- Showing the UI with even less steps / Improving the UX...
+
 # Requirements
 
 - ESP32 C3 super mini (any controller with Wifi and Serial will do, but an Espressif will require little or no code change)
