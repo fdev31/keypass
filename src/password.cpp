@@ -7,6 +7,7 @@
 #include "hid.h"
 #include "indexPage.h"
 #include "main.h"
+#include "utils.h"
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
 #include <StreamString.h>
@@ -49,7 +50,7 @@ static Password readPassword(int id) {
   if (pass_version == 0) { // unencrypted version 0
     strlcpy((char *)password.password, (char *)buffer, MAX_PASS_LEN);
   } else { // current version using XXH32 + SPECK
-    decryptPassword((uint8_t *)buffer, (char *)password.password);
+    decryptPassword((uint8_t *)buffer, (char *)password.password, id);
   }
   return password;
 #endif
@@ -66,7 +67,7 @@ static void writePassword(int id, const Password &password) {
   preferences.putString(F_NAME, password.name);
   static uint8_t encrypted_password[MAX_PASS_LEN];
   // initialize encrypted_password with random values
-  encryptPassword((char *)password.password, encrypted_password);
+  encryptPassword((char *)password.password, encrypted_password, id);
   preferences.putBytes(F_PASSWORD, encrypted_password, MAX_PASS_LEN);
   preferences.putInt(F_FORMAT, FORMAT_VERSION);
   preferences.putInt(F_LAYOUT, password.layout);
@@ -227,23 +228,10 @@ bool setupPassphrase(const char *phrase) {
   return setPassPhrase(phrase);
 }
 
-String hexDump(const uint8_t *data, size_t len) {
-  String result = "";
-  char hexChars[3]; // Two characters for the hex value plus null terminator
-
-  for (size_t i = 0; i < len; i++) {
-    // Convert each byte to a two-character hex representation
-    sprintf(hexChars, "%02X", data[i]);
-    result += hexChars;
-  }
-
-  return result;
-}
-
 String dumpPasswords() {
   ping();
-  char buffer[MAX_PASS_LEN];
-  char name[MAX_NAME_LEN];
+  char buffer[MAX_PASS_LEN + CRYPTO_OVERHEAD];
+  char name[MAX_NAME_LEN + CRYPTO_OVERHEAD];
   char layout;
   char version;
   Preferences preferences;
@@ -259,7 +247,7 @@ String dumpPasswords() {
 
 #if ENABLE_FULL_ENCRYPTION
     encryptPassword((const char *)preferences.getString(F_NAME).c_str(),
-                    (uint8_t *)name);
+                    (uint8_t *)name, id);
 #else
     strlcpy(name, preferences.getString(F_NAME).c_str(), MAX_NAME_LEN);
 #endif
@@ -270,9 +258,9 @@ String dumpPasswords() {
 
     result += hexDump((uint8_t *)&version, 1);
     result += hexDump((uint8_t *)&layout, 1);
-    result += hexDump((uint8_t *)name, MAX_NAME_LEN);
+    result += hexDump((uint8_t *)name, MAX_NAME_LEN + CRYPTO_OVERHEAD);
     result += " ";
-    result += hexDump((uint8_t *)buffer, MAX_PASS_LEN);
+    result += hexDump((uint8_t *)buffer, MAX_PASS_LEN + CRYPTO_OVERHEAD);
     result += "\n";
   }
   result += "#/KPDUMP\n";
@@ -280,42 +268,16 @@ String dumpPasswords() {
   return result;
 }
 
-// Parse a hex string back into binary data
-void hexParse(const char *hexStr, uint8_t *binData, size_t maxLen) {
-  size_t len = 0;
-  while (*hexStr && *(hexStr + 1) && len < maxLen) {
-    char highNibble = *hexStr++;
-    char lowNibble = *hexStr++;
-
-    uint8_t value = 0;
-    if (highNibble >= '0' && highNibble <= '9')
-      value = (highNibble - '0') << 4;
-    else if (highNibble >= 'A' && highNibble <= 'F')
-      value = (highNibble - 'A' + 10) << 4;
-    else if (highNibble >= 'a' && highNibble <= 'f')
-      value = (highNibble - 'a' + 10) << 4;
-
-    if (lowNibble >= '0' && lowNibble <= '9')
-      value |= (lowNibble - '0');
-    else if (lowNibble >= 'A' && lowNibble <= 'F')
-      value |= (lowNibble - 'A' + 10);
-    else if (lowNibble >= 'a' && lowNibble <= 'f')
-      value |= (lowNibble - 'a' + 10);
-
-    binData[len++] = value;
-  }
-}
-
 int restorePasswords(const String &data) {
   ping();
   int slot = 0;
-  uint8_t binData[MAX_PASS_LEN];
-  uint8_t metaData[MAX_NAME_LEN + 3];
+  const int headerBytes = 3;
+  uint8_t binData[MAX_PASS_LEN + CRYPTO_OVERHEAD];
+  uint8_t metaData[MAX_NAME_LEN + headerBytes + CRYPTO_OVERHEAD];
   char name[MAX_PASS_LEN];
   char *namePtr;
   Preferences preferences;
   bool insideKpDump = false;
-  const int headerBytes = 3;
 
   // Process each line from the data
   int pos = 0;
@@ -353,8 +315,9 @@ int restorePasswords(const String &data) {
     if (insideKpDump) {
       String passBlock = data.substring(lineMid + 1, lineEnd + 1);
       // Convert hex string back to binary data
-      hexParse(metaBlock.c_str(), metaData, MAX_NAME_LEN + headerBytes);
-      hexParse(passBlock.c_str(), binData, MAX_PASS_LEN);
+      hexParse(metaBlock.c_str(), metaData,
+               MAX_NAME_LEN + headerBytes + CRYPTO_OVERHEAD);
+      hexParse(passBlock.c_str(), binData, MAX_PASS_LEN + CRYPTO_OVERHEAD);
       // Save the binary data directly to preferences
 
       const char *entryName = mkEntryName(slot);
@@ -363,7 +326,7 @@ int restorePasswords(const String &data) {
       preferences.putInt(F_LAYOUT, (int)metaData[1]);
       preferences.putBytes(F_PASSWORD, binData, MAX_PASS_LEN);
 #if ENABLE_FULL_ENCRYPTION
-      decryptPassword(metaData + headerBytes - 1, name);
+      decryptPassword(metaData + headerBytes - 1, name, slot);
       namePtr = name;
 #else
       namePtr = metaData + headerBytes - 1;

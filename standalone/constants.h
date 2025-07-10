@@ -14,9 +14,6 @@
   30 // WARN: must be <= MAX_PASS_LEN to support name encryption
 #define MAX_PASS_LEN (16 * STORED_PASSWD_BLOCKS)
 
-// 12 nonce bytes + 4 bytes length
-#define CRYPTO_OVERHEAD 16
-
 // Preferences fields
 #define F_NAMESPACE "KeyPass" // used for global settings
 // password entry properties

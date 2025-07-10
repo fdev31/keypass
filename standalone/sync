@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cp -r ../.pio/libdeps/esp32-c3/Crypto .
+cp ../src/crypto.cpp .
+cp ../src/crypto.h .
