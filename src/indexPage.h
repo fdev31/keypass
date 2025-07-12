@@ -340,6 +340,7 @@ animation: slideUp 0.6s ease-out;
 }
 
 .password-card {
+user-select: none;
 background: rgba(255, 255, 255, 0.1);
 backdrop-filter: blur(20px);
 border: 1px solid rgba(255, 255, 255, 0.2);
@@ -351,7 +352,9 @@ position: relative;
 overflow: hidden;
 
 }
-
+.password-card button {
+user-select: none;
+}
 .password-card:nth-child(odd) { animation: fadeInLeft 0.5s ease-out; }
 .password-card:nth-child(even) { animation: fadeInRight 0.5s ease-out; }
 
