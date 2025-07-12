@@ -15,8 +15,6 @@ String dumpSinglePassword(const char *label, const char *password,
 
   char buffer[DUMP_LENGTH];
 
-  randomizeBuffer((uint8_t *)buffer, DUMP_LENGTH);
-
   buffer[0] = version;
   buffer[1] = layout;
   int sz = strlen(label) + 1;
