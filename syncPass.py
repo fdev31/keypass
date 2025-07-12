@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
+import sys
 import re
 import subprocess
+from getpass import getpass
+import shlex
 import urllib.parse
 import json
 import requests
@@ -28,7 +31,7 @@ def get_password_from_gopass(path):
         return None
 
 
-def export_passwords(mapping, base_url="http://4.3.2.1/editPass"):
+def export_passwords(mapping, callback):
     """Export passwords to the specified URL"""
     for i, (name, data) in enumerate(mapping.items()):
         if isinstance(data, str):
@@ -41,23 +44,35 @@ def export_passwords(mapping, base_url="http://4.3.2.1/editPass"):
         else:
             password = path
         if password:
-            # Properly escape the password for URL usage
-            escaped_password = urllib.parse.quote(password)
-            url = f"{base_url}?id={i}&name={urllib.parse.quote(name)}&layout={layout}&password={escaped_password}"
-            logging.info(f"Exporting password for {name}")
-            try:
-                # print(url)
-                response = requests.get(url)
-                logging.info(f"Export status: {response.status_code}")
-            except Exception as e:
-                logging.error(f"Error exporting {name}: {e}")
+            callback(i, name, layout, password)
+
+
+def sync2key(index, name, layout, password):
+    base_url = "http://4.3.2.1/editPass"
+    escaped_password = urllib.parse.quote(password)
+    url = f"{base_url}?id={index}&name={urllib.parse.quote(name)}&layout={layout}&password={escaped_password}"
+    logging.info(f"Exporting password for {name}")
+    try:
+        response = requests.get(url)
+        logging.info(f"Export status: {response.status_code}")
+    except Exception as e:
+        logging.error(f"Error exporting {name}: {e}")
+
+
+def dumpBackupline(index, name, layout, password):
+    # "Syntax: <passphrase> <slot> <layout> <name> <pass>")
+    print(
+        subprocess.getstatusoutput(
+            f"./standalone/encoderaw {passphrase} {index} {layout} {shlex.quote(name)} {shlex.quote(password)}"
+        )[1]
+    )
 
 
 # Example usage
 if __name__ == "__main__":
-    passphrase = input("Passphrase: ")
+    sys.stderr.write("Enter passphrase:\n")
+    passphrase = getpass("").strip()
 
-    url = f"http://4.3.2.1/passphrase?p={urllib.parse.quote(passphrase)}"
     # read exported data from a JSON file
     try:
         exported = json.load(open("exported.json", "r"))
@@ -69,4 +84,12 @@ if __name__ == "__main__":
 }
         """)
     else:
-        export_passwords(exported)
+        dump = "--dump" in sys.argv
+        if not dump:
+            url = f"http://4.3.2.1/passphrase?p={urllib.parse.quote(passphrase)}"
+            requests.get(url)
+        else:
+            print("\n#KPDUMP")
+        export_passwords(exported, dumpBackupline if dump else sync2key)
+        if dump:
+            print("#/KPDUMP")

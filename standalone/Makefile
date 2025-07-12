@@ -4,7 +4,7 @@ EXT = CryptoLW/Speck.o Crypto/BLAKE2s.o Crypto/ChaCha.o Crypto/Poly1305.o Crypto
 OBJS = importexport.o crypto.o utils.o String.o $(EXT)
 CFLAGS = -I. -ICrypto -ICryptoLW/ -ggdb
 
-all: synchro decode encode test
+all: synchro decode encode test encoderaw decoderaw
 
 synchro:
 	./sync
@@ -13,6 +13,12 @@ decode: $(OBJS) decode.o
 	$(CXX) -o $@ $^
 
 encode: $(OBJS) encode.o
+	$(CXX) -o $@ $^
+
+encoderaw: $(OBJS) encoderaw.o
+	$(CXX) -o $@ $^
+
+decoderaw: $(OBJS) decoderaw.o
 	$(CXX) -o $@ $^
 
 test: $(OBJS) main.o
