@@ -1,5 +1,11 @@
 #!/bin/sh
 
 cp -r ../.pio/libdeps/esp32-c3/Crypto .
-cp ../src/crypto.cpp .
-cp ../src/crypto.h .
+cp -r ../.pio/libdeps/esp32-c3/CryptoLW/src CryptoLW
+
+# exit 0
+
+for n in ../src/crypto.* ../src/utils.* ../src/constants.h ../src/importexport.{h,cpp} ; do
+    fname=$(basename $n)
+    cp $n $fname
+done

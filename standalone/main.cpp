@@ -1,5 +1,9 @@
-#include "ChaCha.h"
+#include "constants.h"
 #include "crypto.h"
+#include "importexport.h"
+#include "utils.h"
+#include <ChaCha.h>
+#include <iostream>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -7,49 +11,78 @@
 #include <string.h>
 #include <string>
 
-#define MAX_PASS_LEN 32
-#define MAX_NAME_LEN 30
 #define MAX_LINE_LENGTH 1024
-#define MAX_PASSWORDS 100
-#define CRYPTO_OVERHEAD 16
 
-// External functions declaration
-extern std::string hexDump(const char *hexStr, size_t maxLen);
-extern void hexParse(const char *hexStr, uint8_t *binData, size_t maxLen);
-extern bool setPassPhrase(const char *passphrase);
-extern void encryptPassword(const char *password, uint8_t *result, int index);
-extern void decryptPassword(const uint8_t *encrypted, char *result, int index);
+#include <fstream>
+#include <sstream>
+#include <string>
+
 ChaCha chacha(20); // ChaCha with 20 rounds (ChaCha20)
                    //
-// Helper function to create entry name
-const char *mkEntryName(int num) {
-  static char name[16];
-  snprintf(name, sizeof(name), "p%d", num);
-  return name;
-}
-//
-std::string testDumpPassword(char *password) {
-  char buffer[MAX_PASS_LEN + CRYPTO_OVERHEAD];
-  char name[MAX_NAME_LEN + CRYPTO_OVERHEAD];
-  char layout = 0;
-  char version = 0;
-  std::string result;
-  const char *key = mkEntryName(0);
-  *buffer = 0;
-  randomizeBuffer((uint8_t *)name, MAX_NAME_LEN);
-  result += hexDump(&version, 1);
-  result += hexDump(&layout, 1);
-  result += hexDump(name, MAX_NAME_LEN + CRYPTO_OVERHEAD);
-  result += " ";
-  result += hexDump(buffer, MAX_PASS_LEN + CRYPTO_OVERHEAD);
-  result += "\n";
-  encryptPassword(password, (uint8_t *)name, 0);
-  return result;
+
+int restorePasswords2(const String &data) {
+  int slot = 0;
+
+  uint8_t passwordData[MAX_PASS_LEN];
+  char name[MAX_NAME_LEN];
+  unsigned char version;
+  char layout;
+
+  bool insideKpDump = false;
+
+  // Process each line from the data
+  size_t pos = 0;
+  while (slot < MAX_PASSWORDS && pos < data.length()) {
+    size_t lineEnd = data.find('\n', pos);
+    printf("************************\n");
+
+    // if (lineEnd == String::npos) {
+    //   lineEnd = data.length();
+    // }
+
+    // Skip invalid lines
+    if (lineEnd - pos <= 1) {
+      pos = lineEnd + 1; // Move past the newline
+      continue;
+    }
+
+    String passBlock = data.substr(pos, lineEnd - pos);
+
+    printf("%s#\n", passBlock.c_str());
+    // Check for KPDUMP markers
+    if (passBlock == "#KPDUMP") {
+      insideKpDump = true;
+      pos = lineEnd + 1; // Move past the marker
+      continue;
+    } else if (passBlock == "#/KPDUMP") {
+      insideKpDump = false;
+      break; // End of dump data
+    }
+
+    // Only process lines if we're inside a KPDUMP
+    if (insideKpDump) {
+
+      parseSinglePassword(passBlock.c_str(), name, (char *)passwordData, NULL,
+                          &layout, &version, slot);
+
+      // Save the binary data directly to preferences
+      // const char *entryName = mkEntryName(slot);
+      printf("Format: %d\n", (int)version);
+      printf("Layout: %d\n", (int)layout);
+      printf("Name: %s\n", name);
+      // printf("Password: %s\n", passwordData);
+      slot++;
+    }
+
+    pos = lineEnd + 1; // Move past the newline
+  }
+
+  return slot;
 }
 //
 void testEncryptDecrypt() {
   // Test data
-  const char *original = "XXXthis is a nie long passwordXX";
+  const char *original = "XXXthis is a nice long passwordXX";
   uint8_t encrypted[100] = {0};
   char decrypted[100] = {0};
 
@@ -72,7 +105,7 @@ void testEncryptDecrypt() {
   decryptChacha.setIV(nonce, 12);
 
   // Encrypt
-  size_t plaintext_len = strlen(original) + 1;
+  size_t plaintext_len = 100;
   encryptChacha.encrypt(encrypted, (const uint8_t *)original, plaintext_len);
 
   // Decrypt
@@ -103,25 +136,26 @@ void testChaCha() {
   chacha.setIV(nonce, 12);
 
   // Encrypt
-  chacha.encrypt(ciphertext, (const uint8_t *)test, strlen(test) + 1);
+  chacha.encrypt(ciphertext, (const uint8_t *)test, 64);
 
   // Print encrypted data
-  printf("Test Encrypted: ");
-  for (int i = 0; i < strlen(test) + 1; i++) {
+  printf("\nTest Encrypted: ");
+  for (int i = 0; i < 64; i++) {
     printf("%02x ", ciphertext[i]);
   }
   printf("\n");
 
+  chacha.clear();
   // Reset ChaCha with same key and nonce
   chacha.setKey(key, 32);
   chacha.setIV(nonce, 12);
 
   // Decrypt
-  chacha.decrypt(decrypted, ciphertext, strlen(test) + 1);
+  chacha.decrypt(decrypted, ciphertext, 64);
 
   // Print decrypted data
-  printf("Test Decrypted: ");
-  for (int i = 0; i < strlen(test) + 1; i++) {
+  printf("Test Decrypted: %s\n", decrypted);
+  for (int i = 0; i < 64 + 1; i++) {
     printf("%02x ", decrypted[i]);
   }
   printf("\n");
@@ -130,9 +164,9 @@ void testChaCha() {
 }
 
 void printHex(const char *label, const uint8_t *data, size_t len) {
-  printf("%s: ", label);
+  printf("%20s: ", label);
   for (size_t i = 0; i < len; i++) {
-    printf("%02x ", data[i]);
+    printf("%02x-", data[i]);
   }
   printf("\n");
 }
@@ -140,19 +174,43 @@ void printHex(const char *label, const uint8_t *data, size_t len) {
 int main(int argc, char *argv[]) {
 
   testEncryptDecrypt(); // Test the encrypt/decrypt functionality
-  testChaCha();         // Test the ChaCha implementation
-  const uint8_t password[MAX_PASS_LEN] = "this is clear!";
+  printf(
+      "#####################################################################");
+  testChaCha(); // Test the ChaCha implementation
+
+  printf("#####################################################################"
+         "######\n");
+  uint8_t password[MAX_PASS_LEN] = "this is clear, and fun!";
   uint8_t result[MAX_PASS_LEN];
   uint8_t clear[MAX_PASS_LEN];
+  randomizeBuffer(password, 10);
 
-  encryptPassword((const char *)password, result, 1);
-  decryptPassword(result, (char *)clear, 1);
+  encryptBuffer((const char *)password, result, 1, MAX_PASS_LEN);
+  decryptPassword(result, (char *)clear, 1, MAX_PASS_LEN);
 
-  int plaintext_len = strlen((char *)password);
-  printHex("Original", password, plaintext_len); // Include null terminator
-  printHex("Encrypted", result,
-           16 + plaintext_len + 16); // nonce + length + ciphertext + tag
-  printHex("Decrypted", clear, plaintext_len);
+  int plaintext_len = MAX_PASS_LEN;
+  printHex("\nOriginal", password, plaintext_len); // Include null terminator
+  printHex("\nEncrypted", result,
+           plaintext_len); // nonce + length + ciphertext + tag
+  printHex("\nDecrypted", clear, plaintext_len);
+
+  printf("#####################################################################"
+         "######\n");
+  printf("%s\n",
+         dumpSinglePassword("Mr label", "pikaCouille36", 14, 1, 5, 2).c_str());
+  String res = dumpSinglePassword("Mr label", "pikaCouille36", 14, 1, 5, 1);
+  printf("%s\n", res.c_str());
+  parseSinglePassword(res.c_str(), (char *)clear, (char *)password,
+                      &plaintext_len, (char *)&result[0],
+                      (unsigned char *)&result[1], 1);
+  printf("Parsed label: %s\n", clear);
+  printf("Parsed password: %s\n", password);
+  String test = String("#KPDUMP\n");
+  test += res;
+  test += String("\n#/KPDUMP\n");
+
+  printf("#####################################################################"
+         "######\n");
 
   FILE *inputFile = stdin;
   bool closeFile = false;
@@ -178,90 +236,23 @@ int main(int argc, char *argv[]) {
 
   printf("# Processing passwords...\n");
 
-  // Read the input line by line
-  while (slot < MAX_PASSWORDS && fgets(line, sizeof(line), inputFile)) {
-    // Remove newline character if present
-    size_t len = strlen(line);
-    if (len > 0 && line[len - 1] == '\n') {
-      line[len - 1] = '\0';
-      len--;
+  String fileContents;
+  if (inputFile == stdin) {
+    // Read from stdin line by line
+    while (fgets(line, MAX_LINE_LENGTH, inputFile)) {
+      fileContents += line;
     }
-
-    // Skip empty lines
-    if (len == 0) {
-      continue;
-    }
-
-    // Check for KPDUMP markers
-    if (strcmp(line, "#KPDUMP") == 0) {
-      insideKpDump = true;
-      printf("# Found KPDUMP header\n");
-      continue;
-    } else if (strcmp(line, "#/KPDUMP") == 0) {
-      insideKpDump = false;
-      printf("# Found KPDUMP footer\n");
-      break;
-    }
-
-    // Only process lines if we're inside a KPDUMP section
-    if (insideKpDump) {
-      char *spacePos = strchr(line, ' ');
-      if (!spacePos) {
-        fprintf(stderr,
-                "Warning: Invalid line format (missing space separator): %s\n",
-                line);
-        continue;
-      }
-
-      // Null-terminate the metaBlock part
-      *spacePos = '\0';
-
-      const char *metaBlock = line;
-      const char *passBlock = spacePos + 1;
-
-      // Convert hex strings back to binary data
-      memset(metaData, 0, sizeof(metaData));
-      memset(binData, 0, sizeof(binData));
-
-      hexParse(metaBlock, metaData, MAX_NAME_LEN + headerBytes);
-      hexParse(passBlock, binData, MAX_PASS_LEN);
-
-      // Extract metadata
-      int format = metaData[0];
-      int layout = metaData[1];
-
-      // Decrypt name if needed
-      decryptPassword(metaData + headerBytes - 1, name, slot);
-
-      printf("Password %d:\n", slot);
-      printf("  Name: %s\n", name);
-      printf("  Format: %d\n", format);
-      printf("  Layout: %d\n", layout);
-
-      // Decrypt password
-      char passwordText[MAX_PASS_LEN];
-      memset(passwordText, 0, sizeof(passwordText));
-      decryptPassword(binData, passwordText, slot);
-      printf("  Password: %s\n", passwordText);
-
-      // Test re-encryption
-      uint8_t reencrypted[MAX_PASS_LEN];
-      encryptPassword(passwordText, reencrypted, slot);
-
-      // Verify re-encryption matches original
-      bool matches = (memcmp(reencrypted, binData, MAX_PASS_LEN) == 0);
-      printf("  Re-encryption test: %s\n", matches ? "PASSED" : "FAILED");
-
-      printf("\n");
-      slot++;
+  } else {
+    // Read the entire file using your existing function (for non-stdin cases)
+    char buffer[1024];
+    while (fgets(buffer, sizeof(buffer), inputFile)) {
+      fileContents += buffer;
     }
   }
-
-  printf("# Processed %d passwords\n", slot);
+  restorePasswords2(fileContents);
 
   if (closeFile) {
     fclose(inputFile);
   }
-
   return 0;
 }

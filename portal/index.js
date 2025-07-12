@@ -421,21 +421,19 @@ function confirmFactoryReset() {
 function uploadBlobFile() {
   // Get both file and text inputs
   passwdRecoveryInputs.style.display = "block";
-  const fileInput = document.getElementById("blobFileInput");
-  const textInput = document.getElementById("blobTextInput");
 
   // Determine which one to use based on content
   let contentToUpload;
   let contentSource;
 
   // Check if we have a file selected
-  if (fileInput.files && fileInput.files.length > 0) {
-    contentToUpload = fileInput.files[0];
+  if (blobFileInput.files && blobFileInput.files.length > 0) {
+    contentToUpload = blobFileInput.files[0];
     contentSource = "file";
   }
   // Otherwise check if we have text pasted
-  else if (textInput.value.trim()) {
-    const pastedText = textInput.value.trim();
+  else if (blobTextInput.value.trim()) {
+    const pastedText = blobTextInput.value.trim();
     contentToUpload = new Blob([pastedText], { type: "text/plain" });
     contentSource = "text";
   }
@@ -467,8 +465,8 @@ function uploadBlobFile() {
     })
     .then((result) => {
       // Reset inputs
-      fileInput.value = "";
-      textInput.value = "";
+      blobFileInput.value = "";
+      blobTextInput.value = "";
 
       // Reset button
       button.textContent = originalText;
@@ -495,8 +493,6 @@ function uploadBlobFile() {
 // Make the passwdRecoveryInputs div more user-friendly
 function initializeRecoveryInputs() {
   const container = document.getElementById("passwdRecoveryInputs");
-  const fileInput = document.getElementById("blobFileInput");
-  const textInput = document.getElementById("blobTextInput");
   container.style.display = "none";
 
   // Style the container
@@ -504,7 +500,7 @@ function initializeRecoveryInputs() {
   container.style.marginBottom = "10px";
 
   // Hide file input initially (it's ugly by default)
-  fileInput.style.display = "none";
+  blobFileInput.style.display = "none";
 
   // Add toggle buttons
   const buttonRow = document.createElement("div");
@@ -516,15 +512,16 @@ function initializeRecoveryInputs() {
   fileButton.textContent = "Select File";
   fileButton.onclick = function (e) {
     e.preventDefault();
-    fileInput.click();
+    blobFileInput.click();
   };
 
   const textButton = document.createElement("button");
   textButton.className = "modern-btn";
   textButton.textContent = "Use Text Input";
   textButton.onclick = function (e) {
+    blobTextInput.style.display = "block";
     e.preventDefault();
-    textInput.focus();
+    blobTextInput.focus();
   };
 
   buttonRow.appendChild(fileButton);
@@ -538,11 +535,11 @@ function initializeRecoveryInputs() {
   fileNameDisplay.style.display = "none";
 
   // Listen for file selection
-  fileInput.addEventListener("change", function () {
-    if (fileInput.files.length > 0) {
-      fileNameDisplay.textContent = `Selected file: ${fileInput.files[0].name}`;
+  blobFileInput.addEventListener("change", function () {
+    if (blobFileInput.files.length > 0) {
+      fileNameDisplay.textContent = `Selected file: ${blobFileInput.files[0].name}`;
       fileNameDisplay.style.display = "block";
-      textInput.value = ""; // Clear text input when file is selected
+      blobTextInput.value = ""; // Clear text input when file is selected
     } else {
       fileNameDisplay.style.display = "none";
     }

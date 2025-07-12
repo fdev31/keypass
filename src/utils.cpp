@@ -1,8 +1,14 @@
+#include <Arduino.h>
 #include <stdint.h>
-#include <string>
 
-std::string hexDump(const uint8_t *data, size_t len) {
-  std::string result = "";
+const char *mkEntryName(int num) {
+  static char name[16];
+  snprintf(name, sizeof(name), "p%d", num);
+  return name;
+}
+
+String hexDump(const uint8_t *data, size_t len) {
+  String result = "";
   char hexChars[3]; // Two characters for the hex value plus null terminator
 
   for (size_t i = 0; i < len; i++) {

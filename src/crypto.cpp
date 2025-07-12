@@ -1,15 +1,28 @@
 // NOTE: uses a single buffer, can only handle one at a time !
 #include "crypto.h"
-#include "ChaCha.h"
-#include "Poly1305.h"
 #include "constants.h"
 #include <BLAKE2s.h>
+#include <ChaCha.h>
+#include <cstddef>
+#include <cstdint>
 #include <cstdio>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
-// Global variables
-static uint8_t passKey[MAX_PASS_LEN];
+static ChaCha chacha(20); // ChaCha20
+
+static const uint8_t *getNonce(int num) {
+  static char nonce[12];
+  static uint8_t myhash[32];
+  static BLAKE2s blake;
+
+  snprintf(nonce, sizeof(nonce), "nonce-%x", num);
+  blake.reset(nonce, strlen(nonce), 32);
+  blake.finalize(myhash, 32);
+  return myhash;
+}
+
+uint8_t tempBuffer[112];
 
 void randomizeBuffer(uint8_t *buffer, int size) {
   for (size_t i = 0; i < size; i++) {
@@ -17,86 +30,38 @@ void randomizeBuffer(uint8_t *buffer, int size) {
   }
 }
 
-static void deriveNonceFromDigit(int digit, uint8_t *nonce, size_t nonce_len) {
-  // Use the same BLAKE2s approach that was used in setPassPhrase
-  BLAKE2s blake;
-
-  // Create a seed from the digit
-  char seed[16] = {0};
-  snprintf(seed, sizeof(seed), "Nonce%d",
-           digit); // Convert digit to string with prefix
-
-  // Hash the seed to produce the nonce
-  blake.reset(seed, strlen(seed), nonce_len);
-  blake.finalize(nonce, nonce_len);
-}
-
 bool setPassPhrase(const char *passphrase) {
   BLAKE2s blake;
-  uint8_t key[32]; // ChaCha20 uses 32-byte key
+  uint8_t myhash[32];
   blake.reset(passphrase, strlen(passphrase), 32);
-  blake.finalize(key, 32);
-
-  // Only store if needed elsewhere, otherwise can be removed
-  memcpy(passKey, key, 32);
-
-  return true;
+  blake.finalize(myhash, 32);
+  return chacha.setKey((const uint8_t *)myhash, 32);
 }
 
-void encryptPassword(const char *password, uint8_t *result, int index) {
-  if (!result || !password)
+// TODO: rename to encryptBuffer
+void encryptBuffer(const char *password, uint8_t *result, int index, int size) {
+  if (!result)
     return;
 
-  // Create a fresh ChaCha instance
-  ChaCha encryptChacha(20);
+  if (!password) {
+    result[0] = 0;
+    return;
+  }
 
-  // Set key (which should have been set by setPassPhrase)
-  encryptChacha.setKey(passKey, 32);
+  uint8_t blocks = 0.5 + (size / STO_BLOCK_SIZE);
+  uint8_t total_size = blocks * STO_BLOCK_SIZE;
 
-  // Derive nonce from index
-  uint8_t nonce[12] = {0};
-  deriveNonceFromDigit(index, nonce, 12);
+  chacha.setIV(getNonce(index), 12);
 
-  // Store nonce at the beginning of result
-  memcpy(result, nonce, 12);
+  memcpy(tempBuffer, password, size);
+  randomizeBuffer((uint8_t *)(tempBuffer + size), total_size - size);
 
-  // Set the IV (nonce)
-  encryptChacha.setIV(nonce, 12);
-
-  // Calculate plaintext length
-  int plaintext_len = strlen(password) + 1;
-
-  // Store the plaintext length after the nonce
-  *((uint32_t *)(result + 12)) = plaintext_len;
-
-  // The actual ciphertext will be stored after the nonce and length
-  uint8_t *ciphertext = result + 16;
-
-  // Encrypt the password
-  encryptChacha.encrypt(ciphertext, (const uint8_t *)password, plaintext_len);
+  chacha.encrypt(result, tempBuffer, blocks * STO_BLOCK_SIZE);
 }
 
-void decryptPassword(const uint8_t *encrypted, char *result, int index) {
-  if (!encrypted || !result)
-    return;
-
-  // Create a fresh ChaCha instance
-  ChaCha decryptChacha(20);
-
-  decryptChacha.setKey(passKey, 32);
-
-  // Extract the nonce from the encrypted data
-  const uint8_t *stored_nonce = encrypted;
-
-  // Set the IV (nonce)
-  decryptChacha.setIV(stored_nonce, 12);
-
-  // Extract the plaintext length
-  uint32_t plaintext_len = *((uint32_t *)(encrypted + 12));
-
-  // Get pointer to the ciphertext
-  const uint8_t *ciphertext = encrypted + 16;
-
-  // Decrypt the ciphertext
-  decryptChacha.decrypt((uint8_t *)result, ciphertext, plaintext_len);
+void decryptPassword(const uint8_t *password, char *result, int index,
+                     int size) {
+  uint8_t blocks = 0.5 + (size / STO_BLOCK_SIZE);
+  chacha.setIV(getNonce(index), 12);
+  chacha.decrypt((unsigned char *)result, password, blocks * STO_BLOCK_SIZE);
 }

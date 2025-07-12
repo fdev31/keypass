@@ -5,24 +5,22 @@
 #include "crypto.h"
 #include "graphics.h"
 #include "hid.h"
+#include "importexport.h"
 #include "indexPage.h"
 #include "main.h"
+#include "restore.h"
 #include "utils.h"
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
 #include <StreamString.h>
+#include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
 // Core business logic functions (independent of AsyncWebServerRequest)
-
-const char *mkEntryName(int num) {
-  static char name[16]; // Static buffer to hold the result
-  snprintf(name, sizeof(name), "p%d", num);
-  return name;
-}
 
 Password password;
 
@@ -37,23 +35,32 @@ static Password readPassword(int id) {
   }
   return password;
 #else
-  static uint8_t buffer[MAX_PASS_LEN];
+  static uint8_t passBuffer[MAX_PASS_LEN];
   Preferences preferences;
   const char *key = mkEntryName(id);
   preferences.begin(key, true);
   size_t pass_version = preferences.getInt(F_FORMAT, 0);
-  strlcpy(password.name, preferences.getString(F_NAME).c_str(), MAX_NAME_LEN);
-  preferences.getBytes(F_PASSWORD, buffer, MAX_PASS_LEN);
+  strlcpy(password.name, preferences.getString(F_NAME).c_str(),
+          MAX_NAME_LEN - 1);
+  preferences.getBytes(F_PASSWORD, passBuffer, MAX_PASS_LEN);
   password.layout = preferences.getInt(F_LAYOUT, -1);
   preferences.end();
 
   if (pass_version == 0) { // unencrypted version 0
-    strlcpy((char *)password.password, (char *)buffer, MAX_PASS_LEN);
-  } else { // current version using XXH32 + SPECK
-    decryptPassword((uint8_t *)buffer, (char *)password.password, id);
+    strlcpy((char *)password.password, (char *)passBuffer, MAX_PASS_LEN - 1);
+  } else { // one version only
+    decryptPassword((uint8_t *)passBuffer, (char *)password.password, id,
+                    MAX_PASS_LEN);
   }
   return password;
 #endif
+}
+
+static void clearPassword(int id) {
+  Preferences preferences;
+  preferences.begin(mkEntryName(id), false);
+  preferences.clear();
+  preferences.end();
 }
 
 static void writePassword(int id, const Password &password) {
@@ -66,8 +73,11 @@ static void writePassword(int id, const Password &password) {
   preferences.begin(mkEntryName(id), false);
   preferences.putString(F_NAME, password.name);
   static uint8_t encrypted_password[MAX_PASS_LEN];
-  // initialize encrypted_password with random values
-  encryptPassword((char *)password.password, encrypted_password, id);
+  int pass_len = strlen((const char *)password.password);
+  randomizeBuffer((uint8_t *)password.password + pass_len + 1,
+                  MAX_PASS_LEN - pass_len - 1);
+  encryptBuffer((char *)password.password, encrypted_password, id,
+                MAX_PASS_LEN);
   preferences.putBytes(F_PASSWORD, encrypted_password, MAX_PASS_LEN);
   preferences.putInt(F_FORMAT, FORMAT_VERSION);
   preferences.putInt(F_LAYOUT, password.layout);
@@ -90,8 +100,6 @@ static void sendAnyKeymap(const char *text, int layout, int newline) {
     sendKey('\n', false); // Send newline if requested
   }
 }
-
-// Service functions (independent of AsyncWebServerRequest)
 
 bool typeRawText(const char *text, int layout, bool sendNewline) {
   if (text == nullptr)
@@ -145,11 +153,11 @@ bool editPassword(int id, const char *name, const char *clear_pass,
   }
 
   if (name != nullptr) {
-    strlcpy(password.name, name, MAX_NAME_LEN);
+    strlcpy(password.name, name, MAX_NAME_LEN - 1);
   }
 
   if (clear_pass != nullptr) {
-    strlcpy((char *)password.password, clear_pass, MAX_PASS_LEN);
+    strlcpy((char *)password.password, clear_pass, MAX_PASS_LEN - 1);
   }
 
   // Save the updated password
@@ -195,9 +203,7 @@ void factoryReset() {
   Preferences preferences;
 
   for (int id = 0; id < MAX_PASSWORDS; id++) {
-    Password emptyPassword;
-    memset(&emptyPassword, 0, sizeof(Password)); // Initialize to zeros
-    writePassword(id, emptyPassword);
+    clearPassword(id);
   }
 
 #if not USE_EEPROM_API
@@ -230,115 +236,61 @@ bool setupPassphrase(const char *phrase) {
 
 String dumpPasswords() {
   ping();
-  char buffer[MAX_PASS_LEN + CRYPTO_OVERHEAD];
-  char name[MAX_NAME_LEN + CRYPTO_OVERHEAD];
+  // Use the fixed block size for buffers
+  uint8_t passBuffer[MAX_PASS_LEN];
   char layout;
   char version;
   Preferences preferences;
-  String result = "#KPDUMP\n";
+  String result = String(DUMP_START) + "\n";
 
   for (int id = 0; id < MAX_PASSWORDS; id++) {
     const char *key = mkEntryName(id);
-    *buffer = 0;
-    randomizeBuffer((uint8_t *)name, MAX_NAME_LEN);
+
     preferences.begin(key, true);
-    preferences.getBytes(F_PASSWORD, buffer, MAX_PASS_LEN);
+    // Check if this password slot is used
+    String nameStr = preferences.getString(F_NAME);
+    if (nameStr.length() == 0) {
+      preferences.end();
+      break; // No more passwords stored
+    }
+
+    // Get metadata
     version = preferences.getInt(F_FORMAT, 0);
-
-#if ENABLE_FULL_ENCRYPTION
-    encryptPassword((const char *)preferences.getString(F_NAME).c_str(),
-                    (uint8_t *)name, id);
-#else
-    strlcpy(name, preferences.getString(F_NAME).c_str(), MAX_NAME_LEN);
-#endif
     layout = preferences.getInt(F_LAYOUT, -1);
-    preferences.end();
-    if (!*buffer)
-      break;
 
-    result += hexDump((uint8_t *)&version, 1);
-    result += hexDump((uint8_t *)&layout, 1);
-    result += hexDump((uint8_t *)name, MAX_NAME_LEN + CRYPTO_OVERHEAD);
-    result += " ";
-    result += hexDump((uint8_t *)buffer, MAX_PASS_LEN + CRYPTO_OVERHEAD);
-    result += "\n";
+    // Get password data (fixed-size encrypted block)
+    preferences.getBytes(F_PASSWORD, passBuffer, MAX_PASS_LEN);
+
+    String line = dumpSinglePassword(nameStr.c_str(), (const char *)passBuffer,
+                                     MAX_PASS_LEN, layout, version, id);
+    preferences.end();
+    result += line + "\n";
   }
-  result += "#/KPDUMP\n";
+  result += DUMP_END;
+  result += "\n";
 
   return result;
 }
 
-int restorePasswords(const String &data) {
-  ping();
-  int slot = 0;
-  const int headerBytes = 3;
-  uint8_t binData[MAX_PASS_LEN + CRYPTO_OVERHEAD];
-  uint8_t metaData[MAX_NAME_LEN + headerBytes + CRYPTO_OVERHEAD];
-  char name[MAX_PASS_LEN];
-  char *namePtr;
+static int savePassCount = 0;
+
+static void savePassData(const char *name, const uint8_t *passwordData,
+                         char layout, unsigned char version, int slot) {
+
   Preferences preferences;
-  bool insideKpDump = false;
+  const char *entryName = mkEntryName(slot);
+  preferences.begin(entryName, false);
+  preferences.putInt(F_FORMAT, (int)version);
+  preferences.putInt(F_LAYOUT, (int)layout);
+  preferences.putString(F_NAME, name);
+  preferences.putBytes(F_PASSWORD, passwordData, MAX_PASS_LEN);
+  preferences.end();
+  savePassCount++;
+}
 
-  // Process each line from the data
-  int pos = 0;
-  while (slot < MAX_PASSWORDS && pos < data.length()) {
-    int lineMid = data.indexOf(' ', pos);
-    int lineEnd = data.indexOf('\n', pos);
-
-    if (lineMid > lineEnd)
-      lineMid = lineEnd;
-
-    if (lineEnd == -1) {
-      lineEnd = data.length();
-    }
-
-    // Skip empty lines
-    if (lineEnd - pos <= 0) {
-      pos = lineEnd + 1; // Move past the newline
-      continue;
-    }
-
-    String metaBlock = data.substring(pos, lineMid);
-
-    // Check for KPDUMP markers
-    if (metaBlock == "#KPDUMP") {
-      insideKpDump = true;
-      pos = lineEnd + 1; // Move past the marker
-      continue;
-    } else if (metaBlock == "#/KPDUMP") {
-      insideKpDump = false;
-      break; // End of dump data
-    }
-
-    // Only process lines if we're inside a KPDUMP section or if no markers were
-    // used
-    if (insideKpDump) {
-      String passBlock = data.substring(lineMid + 1, lineEnd + 1);
-      // Convert hex string back to binary data
-      hexParse(metaBlock.c_str(), metaData,
-               MAX_NAME_LEN + headerBytes + CRYPTO_OVERHEAD);
-      hexParse(passBlock.c_str(), binData, MAX_PASS_LEN + CRYPTO_OVERHEAD);
-      // Save the binary data directly to preferences
-
-      const char *entryName = mkEntryName(slot);
-      preferences.begin(entryName, false);
-      preferences.putInt(F_FORMAT, (int)metaData[0]);
-      preferences.putInt(F_LAYOUT, (int)metaData[1]);
-      preferences.putBytes(F_PASSWORD, binData, MAX_PASS_LEN);
-#if ENABLE_FULL_ENCRYPTION
-      decryptPassword(metaData + headerBytes - 1, name, slot);
-      namePtr = name;
-#else
-      namePtr = metaData + headerBytes - 1;
-#endif
-      preferences.putString(F_NAME, namePtr);
-      preferences.end();
-
-      slot++;
-    }
-
-    pos = lineEnd + 1; // Move past the newline
-  }
-
-  return slot;
+String restoreMCUPasswords(const String &data) {
+  savePassCount = 0;
+  restorePasswords(data, savePassData);
+  return String("Restored ") + String(savePassCount) +
+         " passwords successfully.";
 }

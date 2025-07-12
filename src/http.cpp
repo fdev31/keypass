@@ -168,12 +168,10 @@ void handleRestore(AsyncWebServerRequest *request) {
   StreamString *buffer = reinterpret_cast<StreamString *>(request->_tempObject);
   String uploadData = buffer->readString();
 
-  int restoredCount = restorePasswords(uploadData);
+  String ret = restoreMCUPasswords(uploadData);
 
   // Send response
-  String response = "{\"status\":\"success\",\"message\":\"Restored " +
-                    String(restoredCount) + " passwords\"}";
-  request->send(200, "application/json", response);
+  request->send(200, "text/plain", ret);
 }
 
 void setUpKeyboard(AsyncWebServer &server) {

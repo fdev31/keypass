@@ -550,7 +550,7 @@
           <button class="modern-btn column" role="button" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">Factory Reset</button>
           <div id="passwdRecoveryInputs">
             <input type="file" id="blobFileInput" />
-            <textarea id="blobTextInput" placeholder="Paste blob file content here..." rows="4" style="width: 100%;"></textarea>
+            <textarea id="blobTextInput" placeholder="Paste blob file content here..." rows="4" style="width: 100%; display: none;"></textarea>
           </div>
           <button class="modern-btn column" role="button" onclick="uploadBlobFile()">Recover passwords from blob</button>
           <button class="modern-btn column" role="button" onclick="alert(localStorage.getItem('keypass_passphrase'))">Show passphrase</button>
