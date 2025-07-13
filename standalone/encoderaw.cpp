@@ -49,8 +49,7 @@ int main(int argc, char *argv[]) {
                   MAX_PASS_LEN);
   }
 
-  String line =
-      dumpSinglePassword(name, passBuffer, strlen(argv[5]), layout, 1, slot);
+  String line = dumpSinglePassword(name, passBuffer, layout, 1, slot);
   printf("%s\n", line.c_str());
 
   if (closeFile) {

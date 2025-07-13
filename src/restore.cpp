@@ -42,7 +42,7 @@ int restorePasswords(const String &data, PasswordCallback callback,
     // Only process lines if we're inside a KPDUMP
     if (insideKpDump) {
 
-      parseSinglePassword(passBlock.c_str(), name, (char *)passwordData, NULL,
+      parseSinglePassword(passBlock.c_str(), name, (char *)passwordData,
                           &layout, &version, slot);
 
       if (callback) {

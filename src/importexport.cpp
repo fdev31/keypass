@@ -11,8 +11,8 @@
 #include <unistd.h>
 
 String dumpSinglePassword(const char *label, const char *password,
-                          int password_size, const char layout,
-                          const unsigned char version, int index) {
+                          const char layout, const unsigned char version,
+                          int index) {
 
   char buffer[DUMP_LENGTH + 1];
 
@@ -40,8 +40,7 @@ String dumpSinglePassword(const char *label, const char *password,
 }
 
 bool parseSinglePassword(const char *rawdata, char *label, char *password,
-                         int *password_size, char *layout,
-                         unsigned char *version, int index) {
+                         char *layout, unsigned char *version, int index) {
 
   uint8_t buffer[DUMP_LENGTH + 1];
   uint8_t *ptr = buffer;
@@ -56,7 +55,7 @@ bool parseSinglePassword(const char *rawdata, char *label, char *password,
     *layout = ptr[1] ^ ptr[0];
     ptr += CRYPTO_HEADER_SIZE;
 
-    strncpy(label, (const char *)ptr, MAX_NAME_LEN);
+    strlcpy(label, (const char *)ptr, MAX_NAME_LEN);
     ptr += MAX_NAME_LEN;
 
     memcpy(password, (const char *)ptr, MAX_PASS_LEN);

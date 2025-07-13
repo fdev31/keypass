@@ -11,9 +11,10 @@
 
 static ChaCha chacha(20); // ChaCha20
 static uint8_t myhash[32];
+static uint8_t tempBuffer[112];
 
 static const uint8_t *getNonce(int num) {
-  static char nonce[12];
+  static char nonce[40];
   static uint8_t hashedNonce[32];
   static BLAKE2s blake;
 
@@ -23,10 +24,8 @@ static const uint8_t *getNonce(int num) {
   return hashedNonce;
 }
 
-uint8_t tempBuffer[112];
-
 void randomizeBuffer(uint8_t *buffer, int size) {
-  for (size_t i = 0; i < size; i++) {
+  for (int i = 0; i < size; i++) {
     buffer[i] = random() % 255;
   }
 }

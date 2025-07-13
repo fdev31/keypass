@@ -128,12 +128,6 @@ int main(int argc, char *argv[]) {
   }
 
   char line[MAX_LINE_LENGTH];
-  uint8_t binData[MAX_PASS_LEN];
-  uint8_t metaData[MAX_NAME_LEN + 3];
-  char name[MAX_NAME_LEN];
-  bool insideKpDump = false;
-  int slot = 0;
-  const int headerBytes = 3;
 
   String fileContents;
   if (inputFile == stdin) {

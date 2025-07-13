@@ -261,7 +261,7 @@ String dumpPasswords() {
     preferences.getBytes(F_PASSWORD, passBuffer, MAX_PASS_LEN);
 
     String line = dumpSinglePassword(nameStr.c_str(), (const char *)passBuffer,
-                                     MAX_PASS_LEN, layout, version, id);
+                                     layout, version, id);
     preferences.end();
     result += line + "\n";
   }

@@ -52,13 +52,7 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
 
-  char line[MAX_LINE_LENGTH];
-  uint8_t binData[MAX_PASS_LEN];
-  uint8_t metaData[MAX_NAME_LEN + 3];
   char name[MAX_NAME_LEN];
-  bool insideKpDump = false;
-  int slot = 0;
-  const int headerBytes = 3;
 
   printf("# Processing passwords...\n");
 
@@ -80,7 +74,7 @@ int main(int argc, char *argv[]) {
   printf("#KPDUMP\n");
   for (int i = 0; i < 32; i++) {
     sprintf(name, "Password length %d", i);
-    String line = dumpSinglePassword(name, generateRandomString(i), i + 1,
+    String line = dumpSinglePassword(name, generateRandomString(i),
                                      random() % 3 - 1, 1, i);
     printf("%s\n", line.c_str());
   }
