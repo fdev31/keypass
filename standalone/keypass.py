@@ -1,8 +1,8 @@
 #!/bin/env python
-# XXX: THIS TOOL IS BROKEN
 
 import ctypes
 import sys
+from itertools import count
 import argparse
 
 # Load the shared library
@@ -106,9 +106,6 @@ def parse_single_password(rawdata: str, index: int) -> dict[str, any]:
         ctypes.c_int(index),
     )
 
-    # Debug output after calling
-    print(f"C function returned: {success}", label_buffer.value, password_buffer.value)
-
     if success:
         # Try a different approach to access buffer contents
         label_str = label_buffer.value.decode("utf-8")
@@ -151,7 +148,7 @@ def main():
         "--layout", "-y", type=int, default=0, help="Keyboard layout (default: 0)"
     )
     dump_parser.add_argument(
-        "--version", "-v", type=int, default=5, help="Version (default: 5)"
+        "--version", "-v", type=int, default=1, help="Version (default: 1)"
     )
     dump_parser.add_argument(
         "--index", "-i", type=int, default=0, help="Index (default: 0)"
@@ -188,27 +185,23 @@ def main():
 
         def printResult(result):
             print(result)
-            return
-            print(f"  Label: {result['label']}")
-            print(f"  Password: {result['password']}")
-            print(f"  Version: {result['version']}")
-            print(f"  Index: {result['index']}")
-            print()
 
         if args.inline:
             result = parse_single_password(args.inline, args.index)
             printResult(result)
         else:
-            for i, line in enumerate(sys.stdin):
+            counter = count()
+            num = next(counter)
+            for line in sys.stdin:
                 code = line.strip()
-                print("···%s•••" % code)
-                if code:
+                if code and code[0] != "#":
                     try:
-                        result = parse_single_password(code, args.index + i)
-                        print(f"Code: {code}")
+                        result = parse_single_password(code, args.index + num)
                         printResult(result)
                     except Exception as e:
                         print(f"Error parsing code {code}: {e}")
+                    else:
+                        num = next(counter)
     else:
         parser.print_help()
 
