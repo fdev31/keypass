@@ -2,7 +2,7 @@
 #if ENABLE_BLUETOOTH
 #include "bluetooth.h"
 #endif
-
+#include "bootloader_random.h"
 #include "captive.h"
 #include "password.h"
 #include <Arduino.h>
@@ -24,6 +24,7 @@ void ping() {
 }
 
 void setup() {
+  bootloader_random_enable();
   srand(millis());
 #ifdef ENABLE_GRAPHICS
   graphicsSetup();

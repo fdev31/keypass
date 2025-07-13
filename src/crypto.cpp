@@ -1,6 +1,7 @@
 // NOTE: uses a single buffer, can only handle one at a time !
 #include "crypto.h"
 #include "constants.h"
+#include "esp_random.h"
 #include <BLAKE2s.h>
 #include <ChaCha.h>
 #include <cstddef>
@@ -25,9 +26,13 @@ static const uint8_t *getNonce(int num) {
 }
 
 void randomizeBuffer(uint8_t *buffer, int size) {
+#ifdef ESP32
+  esp_fill_random(buffer, size);
+#else
   for (int i = 0; i < size; i++) {
     buffer[i] = random() % 255;
   }
+#endif
 }
 
 bool setPassPhrase(const char *passphrase) {
