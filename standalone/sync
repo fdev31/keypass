@@ -1,10 +1,10 @@
 #!/bin/sh
 
-cp -r ../.pio/libdeps/esp32-c3/Crypto .
+ln -sf ../.pio/libdeps/esp32-c3/Crypto .
 
 # exit 0
 
 for n in ../src/crypto.* ../src/utils.* ../src/constants.h ../src/restore.* ../src/importexport.{h,cpp} ; do
     fname=$(basename $n)
-    cp $n $fname
+    ln -sf $n $fname
 done
