@@ -1,7 +1,6 @@
 #!/bin/sh
 
 cp -r ../.pio/libdeps/esp32-c3/Crypto .
-cp -r ../.pio/libdeps/esp32-c3/CryptoLW/src CryptoLW
 
 # exit 0
 

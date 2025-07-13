@@ -1,8 +1,8 @@
 .PHONY: all clean synchro
 
-EXT = CryptoLW/Speck.o Crypto/BLAKE2s.o Crypto/ChaCha.o Crypto/Poly1305.o Crypto/Cipher.o Crypto/Hash.o Crypto/Crypto.o Crypto/BlockCipher.o
-OBJS = importexport.o crypto.o utils.o String.o $(EXT)
-CFLAGS = -I. -ICrypto -ICryptoLW/ -ggdb
+EXT = String.o Crypto/BLAKE2s.o Crypto/ChaCha.o Crypto/Poly1305.o Crypto/Cipher.o Crypto/Hash.o Crypto/Crypto.o Crypto/BlockCipher.o
+OBJS = importexport.o crypto.o utils.o $(EXT)
+CFLAGS = -I. -ICrypto -ggdb
 
 all: synchro decode encode test encoderaw decoderaw
 
