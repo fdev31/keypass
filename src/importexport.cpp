@@ -51,13 +51,16 @@ bool parseSinglePassword(const char *rawdata, char *label, char *password,
 
   decryptBuffer(ptr, (char *)ptr, index, DUMP_LENGTH);
   *version = buffer[0];
-  *layout = ptr[1] ^ ptr[0];
-  ptr += CRYPTO_HEADER_SIZE;
+  switch (*version) {
+  case 1:
+    *layout = ptr[1] ^ ptr[0];
+    ptr += CRYPTO_HEADER_SIZE;
 
-  strncpy(label, (const char *)ptr, MAX_NAME_LEN);
-  ptr += MAX_NAME_LEN;
+    strncpy(label, (const char *)ptr, MAX_NAME_LEN);
+    ptr += MAX_NAME_LEN;
 
-  memcpy(password, (const char *)ptr, MAX_PASS_LEN);
+    memcpy(password, (const char *)ptr, MAX_PASS_LEN);
+  }
 
   return true;
 }
