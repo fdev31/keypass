@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include <time.h>
 
 #define MAX_LINE_LENGTH 1024
 
@@ -17,28 +18,10 @@
 #include <sstream>
 #include <string>
 
-char *generateRandomString(int length) {
-  // generate a string of "length" containing A-Za-z0-9
-  static char buffer[100];
-  if (length > 99)
-    length = 99;
-  for (int i = 0; i < length; i++) {
-    int randomChar = rand() % 62; // 26 + 26 + 10
-    if (randomChar < 26) {
-      buffer[i] = 'A' + randomChar; // Uppercase letters
-    } else if (randomChar < 52) {
-      buffer[i] = 'a' + (randomChar - 26); // Lowercase letters
-    } else {
-      buffer[i] = '0' + (randomChar - 52); // Digits
-    }
-  }
-  buffer[length + 1] = 0;
-  return buffer;
-}
-
 int main(int argc, char *argv[]) {
   FILE *inputFile = stdin;
   bool closeFile = false;
+  srandom(time(NULL));
 
   // If a filename is provided, it's the key
   if (argc > 1) {

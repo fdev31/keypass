@@ -570,7 +570,7 @@ content: "";
 
 <div class="form-group">
 <label for="passLabel">Name</label>
-<input class="passwordLength" id="passLabel" name="name" type="text" required placeholder="Enter password name" maxlength="15">
+<input class="passwordLength" id="passLabel" name="name" type="text" required placeholder="Enter password name" maxlength="29">
 
 <label for="passwordInput">Password</label>
 <div style="display: flex; gap: 10px;">
