@@ -26,15 +26,19 @@ String dumpSinglePassword(const char *label, const char *password,
   memcpy(ptr, label, labelLength);
   ptr += MAX_NAME_LEN;
 
-  randomizeBuffer((uint8_t *)buffer + CRYPTO_HEADER_SIZE + labelLength + 1,
-                  DUMP_LENGTH - CRYPTO_HEADER_SIZE - labelLength - 1);
+  randomizeBuffer((uint8_t *)buffer + CRYPTO_HEADER_SIZE + labelLength +
+                      UNENCRYPTED_DATA_LENGTH,
+                  DUMP_LENGTH - CRYPTO_HEADER_SIZE - labelLength -
+                      UNENCRYPTED_DATA_LENGTH);
 
   memcpy(ptr, password, MAX_PASS_LEN);
 
   // fprintf(stderr, "DEBUG=>%s#\n",
   //         hexDump((const uint8_t *)buffer, DUMP_LENGTH).c_str());
 
-  encryptBuffer(buffer + 1, (uint8_t *)buffer + 1, index, DUMP_LENGTH);
+  encryptBuffer(buffer + UNENCRYPTED_DATA_LENGTH,
+                (uint8_t *)buffer + UNENCRYPTED_DATA_LENGTH, index,
+                DUMP_LENGTH);
 
   return hexDump((const uint8_t *)buffer, DUMP_LENGTH + 1);
 }
@@ -42,11 +46,12 @@ String dumpSinglePassword(const char *label, const char *password,
 bool parseSinglePassword(const char *rawdata, char *label, char *password,
                          char *layout, unsigned char *version, int index) {
 
-  uint8_t buffer[DUMP_LENGTH + 1];
+  uint8_t buffer[DUMP_LENGTH + UNENCRYPTED_DATA_LENGTH];
   uint8_t *ptr = buffer;
 
-  hexParse(rawdata, buffer, DUMP_LENGTH + 1);
-  ptr++;
+  hexParse(rawdata, buffer, DUMP_LENGTH + UNENCRYPTED_DATA_LENGTH);
+
+  ptr += UNENCRYPTED_DATA_LENGTH;
 
   decryptBuffer(ptr, (char *)ptr, index, DUMP_LENGTH);
   *version = buffer[0];

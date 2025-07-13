@@ -12,3 +12,4 @@ clean:
 
 keymap:
     cd scripts && ./generate keymaps/fr
+

@@ -17,6 +17,7 @@
 #define MAX_PASS_LEN (STORED_PASSWD_BLOCKS * 16)
 
 #define CRYPTO_OVERHEAD 0
+#define UNENCRYPTED_DATA_LENGTH 1 // version
 
 // Encrypted dump length
 #define DUMP_LENGTH (META_SIZE + MAX_PASS_LEN + CRYPTO_OVERHEAD)
