@@ -17,7 +17,7 @@ static const uint8_t *getNonce(int num) {
   static uint8_t hashedNonce[32];
   static BLAKE2s blake;
 
-  snprintf(nonce, sizeof(nonce), "%x-%s", num, myhash);
+  snprintf(nonce, sizeof(nonce), "%x%s", num, myhash);
   blake.reset(nonce, strlen(nonce), 32);
   blake.finalize(hashedNonce, 32);
   return hashedNonce;
