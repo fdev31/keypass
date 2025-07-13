@@ -27,7 +27,6 @@ except Exception as e:
 lib.c_dump_single_password.argtypes = [
     ctypes.c_char_p,  # label
     ctypes.c_char_p,  # password
-    ctypes.c_int,  # password_size
     ctypes.c_char,  # layout
     ctypes.c_ubyte,  # version
     ctypes.c_int,  # index
@@ -39,7 +38,6 @@ lib.c_parse_single_password.argtypes = [
     ctypes.c_char_p,  # rawdata
     ctypes.c_char_p,  # label
     ctypes.c_char_p,  # password
-    ctypes.POINTER(ctypes.c_int),  # password_size
     ctypes.POINTER(ctypes.c_char),  # layout
     ctypes.POINTER(ctypes.c_ubyte),  # version
     ctypes.c_int,  # index
@@ -73,7 +71,6 @@ def dump_single_password(
     result = lib.c_dump_single_password(
         label,
         password,
-        0,
         ctypes.c_char(layout_char),
         ctypes.c_ubyte(version),
         index,
@@ -91,52 +88,36 @@ def parse_single_password(rawdata: str, index: int) -> dict[str, any]:
     """
     Wrapper for c_parse_single_password function.
     """
-    # Allocate buffers for output parameters
-    label_buffer = ctypes.create_string_buffer(1024)
-    password_buffer = ctypes.create_string_buffer(1024)
-    password_size = ctypes.c_int(0)
-    layout = ctypes.c_char(b"\0")
-    version = ctypes.c_ubyte(0)
 
-    # Debug output before calling
-    print(f"Calling parse with index {index}, data length: {len(rawdata)}")
+    # Allocate buffers for output parameters
+    password_buffer = ctypes.create_string_buffer(40)
+    label_buffer = ctypes.create_string_buffer(40)
+    # password_size = ctypes.c_int(0)
+    layout = ctypes.c_char(0)
+    version = ctypes.c_ubyte(0)
 
     # Make the call
     success = lib.c_parse_single_password(
         ctypes.c_char_p(rawdata.encode("utf-8")),
         label_buffer,
         password_buffer,
-        ctypes.byref(password_size),
         ctypes.byref(layout),
         ctypes.byref(version),
         ctypes.c_int(index),
     )
 
     # Debug output after calling
-    print(f"C function returned: {success}")
-    print(f"Password size: {password_size.value}")
+    print(f"C function returned: {success}", label_buffer.value, password_buffer.value)
 
     if success:
         # Try a different approach to access buffer contents
-        label_str = ""
-        i = 0
-        while i < 1024 and label_buffer[i] != b"\0":
-            label_str += label_buffer[i].decode("utf-8", errors="replace")
-            i += 1
-
-        password_str = ""
-        i = 0
-        while i < 1024 and password_buffer[i] != b"\0":
-            password_str += password_buffer[i].decode("utf-8", errors="replace")
-            i += 1
-
-        print(f"Extracted label: '{label_str}'")
-        print(f"Extracted password: '{password_str}'")
+        label_str = label_buffer.value.decode("utf-8")
+        password_str = password_buffer.value.decode("utf-8")
 
         return {
             "label": label_str,
             "password": password_str,
-            "layout": layout.value.decode("utf-8", errors="replace"),
+            "layout": ord(layout.value),
             "version": version.value,
         }
 
@@ -218,11 +199,12 @@ def main():
             result = parse_single_password(args.inline, args.index)
             printResult(result)
         else:
-            for line in sys.stdin:
-                code = line.strip().encode("utf-8")
+            for i, line in enumerate(sys.stdin):
+                code = line.strip()
+                print("···%s•••" % code)
                 if code:
                     try:
-                        result = parse_single_password(code, args.index)
+                        result = parse_single_password(code, args.index + i)
                         print(f"Code: {code}")
                         printResult(result)
                     except Exception as e:
