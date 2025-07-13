@@ -19,13 +19,13 @@ def get_password_from_gopass(path):
     """Retrieve password from gopass using the provided path"""
     try:
         result = subprocess.run(
-            ["gopass", "show", path], capture_output=True, text=True, check=True
+            ["gopass", "show", "-o", path], capture_output=True, text=True, check=True
         )
         lines = result.stdout.strip().split("\n")
         # remove lines starting with a "[a-z]+: " prefix
         regex = re.compile(r"^\w+: ")
         lines = list(filter(lambda x: not regex.match(x), lines))
-        return lines[0]
+        return lines[-1]
     except subprocess.CalledProcessError as e:
         logging.error(f"Failed to retrieve password for {path}: {e}")
         return None
@@ -70,7 +70,8 @@ def dumpBackupline(index, name, layout, password):
 
 # Example usage
 if __name__ == "__main__":
-    sys.stderr.write("Enter passphrase:\n")
+    sys.stderr.write("Enter passphrase: ")
+    sys.stderr.flush()
     passphrase = getpass("").strip()
 
     # read exported data from a JSON file
@@ -85,11 +86,17 @@ if __name__ == "__main__":
         """)
     else:
         dump = "--dump" in sys.argv
+        debug = "--debug" in sys.argv
+        if debug:
+            dump = True
         if not dump:
             url = f"http://4.3.2.1/passphrase?p={urllib.parse.quote(passphrase)}"
             requests.get(url)
         else:
             print("\n#KPDUMP")
-        export_passwords(exported, dumpBackupline if dump else sync2key)
+        if debug:
+            export_passwords(exported, print)
+        else:
+            export_passwords(exported, dumpBackupline if dump else sync2key)
         if dump:
             print("#/KPDUMP")
