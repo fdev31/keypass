@@ -20,6 +20,7 @@
 char *generateRandomString(int length) {
   // generate a string of "length" containing A-Za-z0-9
   static char buffer[100];
+  randomizeBuffer((uint8_t *)buffer, 100);
   if (length > 99)
     length = 99;
   for (int i = 0; i < length; i++) {
@@ -32,7 +33,7 @@ char *generateRandomString(int length) {
       buffer[i] = '0' + (randomChar - 52); // Digits
     }
   }
-  buffer[length + 1] = 0;
+  buffer[length] = 0;
   return buffer;
 }
 
@@ -77,9 +78,9 @@ int main(int argc, char *argv[]) {
   }
   */
   printf("#KPDUMP\n");
-  for (int i = 0; i < 31; i++) {
-    sprintf(name, "Password number %d", i + 1);
-    String line = dumpSinglePassword(name, generateRandomString(i), i,
+  for (int i = 0; i < 32; i++) {
+    sprintf(name, "Password length %d", i);
+    String line = dumpSinglePassword(name, generateRandomString(i), i + 1,
                                      random() % 3 - 1, 1, i);
     printf("%s\n", line.c_str());
   }

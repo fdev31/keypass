@@ -1,4 +1,9 @@
 #!/bin/sh
 ./generate plop | grep -v '^#' | ./decoderaw plop
 echo " ~ single ~"
-./encoderaw abc 0 2 NNNNNNNNNNNNNNNNNNNNNNNNNNNNNX PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPX | ./decoderaw abc
+./encoderaw abc 0 2 MAXIMUM_LABEL_LENGTH_END_IN__X MAXIMUM_PASSWORD_SIZE_END_IN___X | ./decoderaw abc
+echo "Previous should be same as:"
+export KPASS=1
+./encoderaw abc 0 2 MAXIMUM_LABEL_LENGTH_END_IN__X MAXIMUM_PASSWORD_SIZE_END_IN___X | ./decoderaw abc
+echo "Should show garbage:"
+./encoderaw abc 1 2 MAXIMUM_LABEL_LENGTH_END_IN__X MAXIMUM_PASSWORD_SIZE_END_IN___X | ./decoderaw abc

@@ -64,9 +64,11 @@ char *bytes_to_json_string(const unsigned char *bytes, size_t len) {
       result[pos++] = '\\';
       result[pos++] = 't';
     } else if (c < 32 || c >= 127) {
+      result[pos++] = '\\';
+      result[pos++] = 'x';
       // Use \u escaping for control chars and non-ASCII
-      sprintf(result + pos, "\\u%04x", c);
-      pos += 6;
+      sprintf(result + pos, "%02x", c);
+      pos += 2;
     } else {
       // Regular printable ASCII
       result[pos++] = c;

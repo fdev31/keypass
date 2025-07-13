@@ -11,7 +11,7 @@ all: synchro $(BINS)
 synchro:
 	./sync
 
-generate: $(OBJS) encode.o
+generate: $(OBJS) generate.o
 	$(CXX) -o $@ $^
 
 encoderaw: $(OBJS) encoderaw.o
