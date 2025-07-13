@@ -1,4 +1,4 @@
 #!/bin/sh
 ./generate plop | grep -v '^#' | ./decoderaw plop
 echo " ~ single ~"
-./encoderaw abc 0 2 NNNNNNNNNNNNNNNNNNNNNNNNNNNNX PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPX | ./decoderaw abc
+./encoderaw abc 0 2 NNNNNNNNNNNNNNNNNNNNNNNNNNNNNX PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPX | ./decoderaw abc
