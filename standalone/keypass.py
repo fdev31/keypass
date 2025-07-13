@@ -8,7 +8,7 @@ import argparse
 # Load the shared library
 try:
     # Try to load with different extensions based on platform
-    for lib_name in ["./keypass.so", "./keypass.dylib", "./keypass.dll"]:
+    for lib_name in ["./libkeypass.so", "./libkeypass.dylib", "./libkeypass.dll"]:
         try:
             lib = ctypes.CDLL(lib_name)
             break
@@ -66,12 +66,11 @@ def dump_single_password(
     Returns:
         A bytes object with the encrypted/formatted password data
     """
-    layout_char = layout
 
     result = lib.c_dump_single_password(
         label,
         password,
-        ctypes.c_char(layout_char),
+        ctypes.c_char(layout),
         ctypes.c_ubyte(version),
         index,
     )

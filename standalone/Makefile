@@ -6,7 +6,7 @@ CFLAGS = -I. -ICrypto -ggdb -W -Wall -fPIC
 BINS = generate encoderaw decoderaw
 
 
-all: synchro $(BINS) libkeypass.so keypass.so
+all: synchro $(BINS) libkeypass.so
 
 synchro:
 	./sync
@@ -20,10 +20,7 @@ encoderaw: $(OBJS) encoderaw.o
 decoderaw: $(OBJS) decoderaw.o restore.o
 	$(CXX) -o $@ $^
 
-libkeypass.so: synchro
-	python setup.py build_ext --inplace
-
-keypass.so: Crypto/BLAKE2s.o Crypto/BlockCipher.o Crypto/ChaCha.o Crypto/Cipher.o Crypto/Crypto.o Crypto/Hash.o String.o _keypass.o crypto.o importexport.o utils.o
+libkeypass.so: Crypto/BLAKE2s.o Crypto/BlockCipher.o Crypto/ChaCha.o Crypto/Cipher.o Crypto/Crypto.o Crypto/Hash.o String.o _keypass.o crypto.o importexport.o utils.o
 	$(CXX) -shared -o $@ $^
 
 %.o: %.cpp

@@ -10,6 +10,13 @@ import json
 import requests
 import logging
 
+
+try:
+    import keypass
+except ImportError:
+    keypass = None
+
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -63,12 +70,18 @@ def sync2key(index, name, layout, password):
 
 
 def dumpBackupline(index, name, layout, password):
-    # "Syntax: <passphrase> <slot> <layout> <name> <pass>")
-    print(
-        subprocess.getstatusoutput(
+    if keypass:
+        if layout == -1:
+            layout = 255
+        txt = keypass.dump_single_password(
+            name.encode("utf-8"), password.encode("utf-8"), layout, 1, index
+        ).decode("utf-8")
+    else:
+        txt = subprocess.getstatusoutput(
             f"./standalone/encoderaw {passphrase} {index} {layout} {shlex.quote(name)} {shlex.quote(password)}"
         )[1]
-    )
+    # "Syntax: <passphrase> <slot> <layout> <name> <pass>")
+    print(txt)
 
 
 # Example usage
@@ -76,6 +89,8 @@ if __name__ == "__main__":
     sys.stderr.write("Enter passphrase: ")
     sys.stderr.flush()
     passphrase = getpass("").strip()
+    if keypass:
+        keypass.set_passphrase(passphrase)
 
     # read exported data from a JSON file
     try:
