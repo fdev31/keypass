@@ -53,20 +53,6 @@ lib.c_set_passphrase.restype = None
 def dump_single_password(
     label: str, password: str, layout: int, version: int, index: int
 ) -> bytes:
-    """
-    Wrapper for c_dump_single_password function.
-
-    Args:
-        label: The password label
-        password: The password string
-        layout: Single character layout identifier
-        version: The version byte
-        index: The index value
-
-    Returns:
-        A bytes object with the encrypted/formatted password data
-    """
-
     result = lib.c_dump_single_password(
         label,
         password,
@@ -76,10 +62,11 @@ def dump_single_password(
     )
 
     if result:
-        # Get the size of the data, assuming it's null-terminated
-        # or you have a function to get the size.
-        # Here, we'll find the length of the c-string.
-        return result
+        # Copy the data to a Python-managed bytes object
+        data = ctypes.string_at(result)
+        # If the C library has a function to free this memory, call it here
+        # For example: lib.c_free_password_data(result)
+        return data
     return None
 
 
