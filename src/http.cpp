@@ -109,7 +109,7 @@ static void handleEditPass(AsyncWebServerRequest *request) {
     if (editPassword(id, name, password, layout)) {
       request->send(200, "text/plain", "Password edited successfully");
     } else {
-      request->send(400, "text/plain", "Invalid 'id' parameter");
+      request->send(400, "text/plain", "Invalid parameter");
     }
   } else {
     request->send(400, "text/plain", "Missing 'id' parameter");

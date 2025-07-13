@@ -40,14 +40,13 @@ static Password readPassword(int id) {
   const char *key = mkEntryName(id);
   preferences.begin(key, true);
   size_t pass_version = preferences.getInt(F_FORMAT, 0);
-  strlcpy(password.name, preferences.getString(F_NAME).c_str(),
-          MAX_NAME_LEN - 1);
+  strlcpy(password.name, preferences.getString(F_NAME).c_str(), MAX_NAME_LEN);
   preferences.getBytes(F_PASSWORD, passBuffer, MAX_PASS_LEN);
   password.layout = preferences.getInt(F_LAYOUT, -1);
   preferences.end();
 
   if (pass_version == 0) { // unencrypted version 0
-    strlcpy((char *)password.password, (char *)passBuffer, MAX_PASS_LEN - 1);
+    strlcpy((char *)password.password, (char *)passBuffer, MAX_PASS_LEN);
   } else { // one version only
     decryptBuffer((uint8_t *)passBuffer, (char *)password.password, id,
                   MAX_PASS_LEN);
@@ -153,11 +152,11 @@ bool editPassword(int id, const char *name, const char *clear_pass,
   }
 
   if (name != nullptr) {
-    strlcpy(password.name, name, MAX_NAME_LEN - 1);
+    strlcpy(password.name, name, MAX_NAME_LEN);
   }
 
   if (clear_pass != nullptr) {
-    strlcpy((char *)password.password, clear_pass, MAX_PASS_LEN - 1);
+    strlcpy((char *)password.password, clear_pass, MAX_PASS_LEN);
   }
 
   // Save the updated password
