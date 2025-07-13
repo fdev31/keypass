@@ -49,8 +49,8 @@ static Password readPassword(int id) {
   if (pass_version == 0) { // unencrypted version 0
     strlcpy((char *)password.password, (char *)passBuffer, MAX_PASS_LEN - 1);
   } else { // one version only
-    decryptPassword((uint8_t *)passBuffer, (char *)password.password, id,
-                    MAX_PASS_LEN);
+    decryptBuffer((uint8_t *)passBuffer, (char *)password.password, id,
+                  MAX_PASS_LEN);
   }
   return password;
 #endif

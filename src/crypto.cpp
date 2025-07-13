@@ -10,16 +10,17 @@
 #include <cstring>
 
 static ChaCha chacha(20); // ChaCha20
+static uint8_t myhash[32];
 
 static const uint8_t *getNonce(int num) {
   static char nonce[12];
-  static uint8_t myhash[32];
+  static uint8_t hashedNonce[32];
   static BLAKE2s blake;
 
-  snprintf(nonce, sizeof(nonce), "nonce-%x", num);
+  snprintf(nonce, sizeof(nonce), "%x-%s", num, myhash);
   blake.reset(nonce, strlen(nonce), 32);
-  blake.finalize(myhash, 32);
-  return myhash;
+  blake.finalize(hashedNonce, 32);
+  return hashedNonce;
 }
 
 uint8_t tempBuffer[112];
@@ -32,13 +33,11 @@ void randomizeBuffer(uint8_t *buffer, int size) {
 
 bool setPassPhrase(const char *passphrase) {
   BLAKE2s blake;
-  uint8_t myhash[32];
   blake.reset(passphrase, strlen(passphrase), 32);
   blake.finalize(myhash, 32);
   return chacha.setKey((const uint8_t *)myhash, 32);
 }
 
-// TODO: rename to encryptBuffer
 void encryptBuffer(const char *password, uint8_t *result, int index, int size) {
   if (!result)
     return;
@@ -59,8 +58,7 @@ void encryptBuffer(const char *password, uint8_t *result, int index, int size) {
   chacha.encrypt(result, tempBuffer, blocks * STO_BLOCK_SIZE);
 }
 
-void decryptPassword(const uint8_t *password, char *result, int index,
-                     int size) {
+void decryptBuffer(const uint8_t *password, char *result, int index, int size) {
   uint8_t blocks = 0.5 + (size / STO_BLOCK_SIZE);
   chacha.setIV(getNonce(index), 12);
   chacha.decrypt((unsigned char *)result, password, blocks * STO_BLOCK_SIZE);

@@ -49,7 +49,7 @@ bool parseSinglePassword(const char *rawdata, char *label, char *password,
   // Convert hex dump to binary
   hexParse(rawdata, buffer, DUMP_LENGTH);
 
-  decryptPassword((const uint8_t *)buffer, (char *)buffer, index, DUMP_LENGTH);
+  decryptBuffer((const uint8_t *)buffer, (char *)buffer, index, DUMP_LENGTH);
 
   char salt = buffer[0];
 

@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
   randomizeBuffer(password, 10);
 
   encryptBuffer((const char *)password, result, 1, MAX_PASS_LEN);
-  decryptPassword(result, (char *)clear, 1, MAX_PASS_LEN);
+  decryptBuffer(result, (char *)clear, 1, MAX_PASS_LEN);
 
   int plaintext_len = MAX_PASS_LEN;
   printHex("\nOriginal", password, plaintext_len); // Include null terminator
