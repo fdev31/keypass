@@ -4,7 +4,7 @@ EXT = String.o Crypto/BLAKE2s.o Crypto/ChaCha.o Crypto/Poly1305.o Crypto/Cipher.
 OBJS = importexport.o crypto.o utils.o $(EXT)
 CFLAGS = -I. -ICrypto -ggdb
 
-all: synchro decode encode test encoderaw decoderaw
+all: synchro decode generate encoderaw decoderaw
 
 synchro:
 	./sync
@@ -12,7 +12,7 @@ synchro:
 decode: $(OBJS) decode.o
 	$(CXX) -o $@ $^
 
-encode: $(OBJS) encode.o
+generate: $(OBJS) encode.o
 	$(CXX) -o $@ $^
 
 encoderaw: $(OBJS) encoderaw.o
@@ -21,8 +21,6 @@ encoderaw: $(OBJS) encoderaw.o
 decoderaw: $(OBJS) decoderaw.o
 	$(CXX) -o $@ $^
 
-test: $(OBJS) main.o
-	$(CXX) -o $@ $^
 
 %.o: %.cpp
 	$(CXX) $(CFLAGS) -o $@ -c $^

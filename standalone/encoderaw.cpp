@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
 
-  uint8_t passBuffer[MAX_PASS_LEN];
+  char passBuffer[MAX_PASS_LEN];
   char name[MAX_NAME_LEN];
   int slot = atoi(argv[2]);
   int layout = atoi(argv[3]);
@@ -61,8 +61,8 @@ int main(int argc, char *argv[]) {
   randomizeBuffer((uint8_t *)passBuffer, MAX_PASS_LEN);
   memcpy(passBuffer, argv[5], strlen(argv[5]) + 1);
 
-  String line = dumpSinglePassword(name, (const char *)passBuffer,
-                                   strlen(argv[5]), layout, 1, slot);
+  String line =
+      dumpSinglePassword(name, passBuffer, strlen(argv[5]), layout, 1, slot);
   printf("%s\n", line.c_str());
 
   if (closeFile) {

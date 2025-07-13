@@ -9,7 +9,7 @@
 typedef struct {
   char name[MAX_NAME_LEN];
   int8_t layout;
-  byte password[MAX_PASS_LEN];
+  char password[MAX_PASS_LEN];
 } Password;
 
 extern AsyncWebServer server;
