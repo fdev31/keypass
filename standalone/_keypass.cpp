@@ -8,6 +8,8 @@ extern "C" {
 const char *c_dump_single_password(const char *label, const char *password,
                                    const char layout,
                                    const unsigned char version, int index) {
+
+  encryptBuffer(password, (uint8_t *)password, index, 32);
   String result = dumpSinglePassword(label, password, layout, version, index);
   // Note: This creates a memory leak unless you handle cleanup
   // In a real implementation, you'd need proper memory management
@@ -18,7 +20,10 @@ const char *c_dump_single_password(const char *label, const char *password,
 // Wrapper for parseSinglePassword
 bool c_parse_single_password(const char *rawdata, char *label, char *password,
                              char *layout, unsigned char *version, int index) {
-  return parseSinglePassword(rawdata, label, password, layout, version, index);
+  bool ret =
+      parseSinglePassword(rawdata, label, password, layout, version, index);
+  decryptBuffer((const uint8_t *)password, password, index, 32);
+  return ret;
 }
 
 void c_set_passphrase(const char *phrase) { setPassPhrase(phrase); }
