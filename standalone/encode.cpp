@@ -79,8 +79,8 @@ int main(int argc, char *argv[]) {
   printf("#KPDUMP\n");
   for (int i = 0; i < 31; i++) {
     sprintf(name, "Password number %d", i + 1);
-    String line =
-        dumpSinglePassword(name, generateRandomString(i), i, 0, 0, i);
+    String line = dumpSinglePassword(name, generateRandomString(i), i,
+                                     random() % 3 - 1, 1, i);
     printf("%s\n", line.c_str());
   }
   printf("#/KPDUMP\n");
