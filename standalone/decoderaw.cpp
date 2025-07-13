@@ -85,15 +85,28 @@ char *bytes_to_json_string(const unsigned char *bytes, size_t len) {
 typedef void (*PasswordCallback)(const char *name, const uint8_t *passwordData,
                                  char layout, unsigned char version, int slot);
 
+bool isFirstPrint = true;
+
 void printPasswordInfo(const char *name, const uint8_t *passwordData,
                        char layout, unsigned char version, int slot) {
-  printf("\n{\n");
+
+  if (getenv("KPASS")) {
+    encryptBuffer((const char *)passwordData, (uint8_t *)passwordData, slot,
+                  MAX_PASS_LEN);
+  }
+  if (isFirstPrint) {
+    printf("\n{\n");
+  } else {
+    printf(",\n{\n");
+  }
   printf("  \"version\": %d,\n", (int)version);
   printf("  \"layout\": %d,\n", (int)layout);
   printf("  \"name\": \"%s\",\n", name);
   printf("  \"password\": \"%s\"",
          bytes_to_json_string(passwordData, MAX_PASS_LEN));
-  printf("\n},\n");
+  printf("\n}");
+  if (isFirstPrint)
+    isFirstPrint = false;
 }
 
 int restorePasswords(const std::string &data, PasswordCallback callback) {
@@ -169,9 +182,9 @@ int main(int argc, char *argv[]) {
       fileContents += buffer;
     }
   }
-  printf("[\n");
+  printf("[");
   restorePasswords(fileContents, printPasswordInfo);
-  printf("{}\n]\n");
+  printf("\n]\n");
 
   if (closeFile) {
     fclose(inputFile);

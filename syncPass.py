@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import sys
 import re
 import subprocess
@@ -13,6 +14,8 @@ import logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
+os.environ["KPASS"] = "true"
 
 
 def get_password_from_gopass(path):

@@ -61,6 +61,11 @@ int main(int argc, char *argv[]) {
   randomizeBuffer((uint8_t *)passBuffer, MAX_PASS_LEN);
   memcpy(passBuffer, argv[5], strlen(argv[5]) + 1);
 
+  if (getenv("KPASS")) {
+    encryptBuffer((const char *)passBuffer, (uint8_t *)passBuffer, slot,
+                  MAX_PASS_LEN);
+  }
+
   String line =
       dumpSinglePassword(name, passBuffer, strlen(argv[5]), layout, 1, slot);
   printf("%s\n", line.c_str());
