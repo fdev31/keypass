@@ -94,7 +94,7 @@ void printPasswordInfo(const char *name, const uint8_t *passwordData,
                        char layout, unsigned char version, int slot) {
 
   if (getenv("KPASS")) {
-    encryptBuffer((const char *)passwordData, (uint8_t *)passwordData, slot,
+    decryptBuffer((uint8_t *)passwordData, (char *)passwordData, slot,
                   MAX_PASS_LEN);
   }
   if (isFirstPrint) {
