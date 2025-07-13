@@ -289,7 +289,7 @@ static void savePassData(const char *name, const uint8_t *passwordData,
 
 String restoreMCUPasswords(const String &data) {
   savePassCount = 0;
-  restorePasswords(data, savePassData);
+  restorePasswords(data, savePassData, true);
   return String("Restored ") + String(savePassCount) +
          " passwords successfully.";
 }

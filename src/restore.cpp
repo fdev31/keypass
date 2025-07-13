@@ -3,7 +3,8 @@
 #include "importexport.h"
 #include <Arduino.h>
 
-int restorePasswords(const String &data, PasswordCallback callback) {
+int restorePasswords(const String &data, PasswordCallback callback,
+                     bool header) {
   int slot = 0;
 
   uint8_t passwordData[MAX_PASS_LEN];
@@ -11,7 +12,7 @@ int restorePasswords(const String &data, PasswordCallback callback) {
   unsigned char version;
   char layout;
 
-  bool insideKpDump = false;
+  bool insideKpDump = !header;
 
   // Process each line from the data
   size_t pos = 0;
@@ -27,13 +28,15 @@ int restorePasswords(const String &data, PasswordCallback callback) {
     String passBlock = data.substring(pos, lineEnd);
 
     // Check for KPDUMP markers
-    if (passBlock == "#KPDUMP") {
-      insideKpDump = true;
-      pos = lineEnd + 1; // Move past the marker
-      continue;
-    } else if (passBlock == "#/KPDUMP") {
-      insideKpDump = false;
-      break; // End of dump data
+    if (header) {
+      if (passBlock == "#KPDUMP") {
+        insideKpDump = true;
+        pos = lineEnd + 1; // Move past the marker
+        continue;
+      } else if (passBlock == "#/KPDUMP") {
+        insideKpDump = false;
+        break; // End of dump data
+      }
     }
 
     // Only process lines if we're inside a KPDUMP

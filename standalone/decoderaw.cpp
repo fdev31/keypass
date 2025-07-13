@@ -1,6 +1,7 @@
 #include "constants.h"
 #include "crypto.h"
 #include "importexport.h"
+#include "restore.h"
 #include "utils.h"
 #include <ChaCha.h>
 #include <ctype.h>
@@ -109,43 +110,6 @@ void printPasswordInfo(const char *name, const uint8_t *passwordData,
     isFirstPrint = false;
 }
 
-int restorePasswords(const std::string &data, PasswordCallback callback) {
-  int slot = 0;
-
-  uint8_t passwordData[MAX_PASS_LEN];
-  char name[MAX_NAME_LEN];
-  unsigned char version;
-  char layout;
-
-  bool insideKpDump = false;
-
-  // Process each line from the data
-  size_t pos = 0;
-  while (slot < MAX_PASSWORDS && pos < data.length()) {
-    size_t lineEnd = data.find('\n', pos);
-
-    // Skip invalid lines
-    if (lineEnd - pos <= 1) {
-      pos = lineEnd + 1; // Move past the newline
-      continue;
-    }
-
-    std::string passBlock = data.substr(pos, lineEnd - pos);
-
-    parseSinglePassword(passBlock.c_str(), name, (char *)passwordData, NULL,
-                        &layout, &version, slot);
-
-    if (callback) {
-      callback(name, passwordData, layout, version, slot);
-    }
-    slot++;
-
-    pos = lineEnd + 1; // Move past the newline
-  }
-
-  return slot;
-}
-
 int main(int argc, char *argv[]) {
   FILE *inputFile = stdin;
   bool closeFile = false;
@@ -169,7 +133,7 @@ int main(int argc, char *argv[]) {
   int slot = 0;
   const int headerBytes = 3;
 
-  std::string fileContents;
+  String fileContents;
   if (inputFile == stdin) {
     // Read from stdin line by line
     while (fgets(line, MAX_LINE_LENGTH, inputFile)) {
@@ -183,7 +147,7 @@ int main(int argc, char *argv[]) {
     }
   }
   printf("[");
-  restorePasswords(fileContents, printPasswordInfo);
+  restorePasswords(fileContents, printPasswordInfo, false);
   printf("\n]\n");
 
   if (closeFile) {

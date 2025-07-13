@@ -17,7 +17,7 @@ generate: $(OBJS) encode.o
 encoderaw: $(OBJS) encoderaw.o
 	$(CXX) -o $@ $^
 
-decoderaw: $(OBJS) decoderaw.o
+decoderaw: $(OBJS) decoderaw.o restore.o
 	$(CXX) -o $@ $^
 
 %.o: %.cpp
