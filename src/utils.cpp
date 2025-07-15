@@ -1,5 +1,7 @@
-#include <Arduino.h>
+#include "utils.h"
+#include "streamadapter.h"
 #include <stdint.h>
+#include <stdio.h>
 
 const char *mkEntryName(int num) {
   static char name[16];
@@ -7,17 +9,14 @@ const char *mkEntryName(int num) {
   return name;
 }
 
-String hexDump(const uint8_t *data, size_t len) {
-  String result = "";
+void hexDump(StringStreamAdapter &stream, const uint8_t *data, size_t len) {
   char hexChars[3]; // Two characters for the hex value plus null terminator
 
   for (size_t i = 0; i < len; i++) {
     // Convert each byte to a two-character hex representation
     sprintf(hexChars, "%02X", data[i]);
-    result += hexChars;
+    stream.write((const char *)hexChars);
   }
-
-  return result;
 }
 
 // Parse a hex string back into binary data

@@ -1,11 +1,17 @@
 #!/bin/sh
+LABEL=MAXIMUM_LABEL_LENGTH_END_IN_X
+PASS=MAXIMUM_PASSWORD_SIZE_END_IN___X
 ./generate plop | grep -v '^#' | ./decoderaw plop
 echo " ~ single ~"
-./encoderaw abc 0 2 MAXIMUM_LABEL_LENGTH_END_IN__X MAXIMUM_PASSWORD_SIZE_END_IN___X | ./decoderaw abc
+./encoderaw abc 2 $LABEL $PASS | ./decoderaw abc
 echo "Previous should be same as:"
 export KPASS=1
-./encoderaw abc 0 2 MAXIMUM_LABEL_LENGTH_END_IN__X MAXIMUM_PASSWORD_SIZE_END_IN___X | ./decoderaw abc
-echo "Should show garbage:"
-./encoderaw abc 1 2 MAXIMUM_LABEL_LENGTH_END_IN__X MAXIMUM_PASSWORD_SIZE_END_IN___X | ./decoderaw abc
+./encoderaw abc 2 $LABEL $PASS| ./decoderaw abc
 echo "Python version:"
-./keypass.py -c plop dump -l toto -p pass --index 0 | ./keypass.py -c plop parse
+./keypass.py -c plop dump -l toto -p pass | ./keypass.py -c plop parse
+
+echo -n "Max label length: "
+echo -n $LABEL | wc -c
+
+echo -n "Max pass length: "
+echo -n $PASS | wc -c

@@ -5,6 +5,8 @@ String::String(const char *cstr) : _str(cstr) {}
 String::String(const String &other) : _str(other._str) {}
 String::~String() {}
 
+void String::clear() { _str.clear(); }
+
 String &String::operator+=(const String &str) {
   _str += str._str;
   return *this;

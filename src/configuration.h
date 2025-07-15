@@ -18,7 +18,6 @@ const unsigned long SLEEP_TIME = 500; // sleep period in sleep mode
 #define ENABLE_GRAPHICS true
 #define FLIP_SCREEN 1
 #define DEBUG 0
-#define FORMAT_VERSION 1
 
 // WARN: deprecated options (non default will break)
 #define USE_EEPROM_API 0

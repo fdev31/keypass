@@ -1,3 +1,4 @@
+#include "Arduino.h"
 #include "constants.h"
 #include "crypto.h"
 #include "importexport.h"
@@ -56,29 +57,15 @@ int main(int argc, char *argv[]) {
 
   printf("# Processing passwords...\n");
 
-  /*
-  std::string fileContents;
-  if (inputFile == stdin) {
-    // Read from stdin line by line
-    while (fgets(line, MAX_LINE_LENGTH, inputFile)) {
-      fileContents += line;
-    }
-  } else {
-    // Read the entire file using your existing function (for non-stdin cases)
-    char buffer[1024];
-    while (fgets(buffer, sizeof(buffer), inputFile)) {
-      fileContents += buffer;
-    }
-  }
-  */
-  printf("#KPDUMP\n");
+  printf(DUMP_START "\n");
   for (int i = 0; i < 32; i++) {
     sprintf(name, "Password length %d", i);
-    String line = dumpSinglePassword(name, generateRandomString(i),
-                                     random() % 3 - 1, 1, i);
-    printf("%s\n", line.c_str());
+    StringStreamAdapter s;
+    dumpSinglePassword(s, name, generateRandomString(i), random() % 3 - 1,
+                       getNonce());
+    printf("%s\n", s.c_str());
   }
-  printf("#/KPDUMP\n");
+  printf(DUMP_END "\n");
 
   if (closeFile) {
     fclose(inputFile);

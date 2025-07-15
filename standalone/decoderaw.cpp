@@ -25,7 +25,7 @@
  * @return Newly allocated null-terminated string (caller must free)
  *         or NULL if allocation fails
  */
-char *bytes_to_json_string(const unsigned char *bytes, size_t len) {
+char *bytes_to_json_string(const char *bytes, size_t len) {
   if (bytes == NULL) {
     return NULL;
   }
@@ -85,26 +85,23 @@ char *bytes_to_json_string(const unsigned char *bytes, size_t len) {
   return result;
 }
 
-typedef void (*PasswordCallback)(const char *name, const uint8_t *passwordData,
-                                 char layout, unsigned char version, int slot);
-
 bool isFirstPrint = true;
 
-void printPasswordInfo(const char *name, const uint8_t *passwordData,
-                       char layout, unsigned char version, int slot) {
+void printPasswordInfo(const char *name, const char *passwordData, int layout,
+                       int slot, uint8_t *nonce) {
 
-  if (getenv("KPASS")) {
-    decryptBuffer((uint8_t *)passwordData, (char *)passwordData, slot,
-                  MAX_PASS_LEN);
-  }
+  // if (getenv("KPASS")) {
+  //   decryptBuffer((uint8_t *)passwordData, (char *)passwordData, slot,
+  //                 passwordData + 1,
+  //                 MAX_PASS_LEN);
+  // }
   if (isFirstPrint) {
     printf("\n{\n");
   } else {
     printf(",\n{\n");
   }
-  printf("  \"version\": %d,\n", (int)version);
-  printf("  \"layout\": %d,\n", (int)layout);
   printf("  \"name\": \"%s\",\n", name);
+  printf("  \"layout\": %d,\n", (int)layout);
   printf("  \"password\": \"%s\"",
          bytes_to_json_string(passwordData, MAX_PASS_LEN));
   printf("\n}");

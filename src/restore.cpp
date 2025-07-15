@@ -1,16 +1,17 @@
 #include "restore.h"
 #include "constants.h"
 #include "importexport.h"
+#include "streamadapter.h"
 #include <Arduino.h>
 
 int restorePasswords(const String &data, PasswordCallback callback,
                      bool header) {
   int slot = 0;
 
-  uint8_t passwordData[MAX_PASS_LEN];
+  char *passwordData[MAX_PASS_LEN];
   char name[MAX_NAME_LEN];
-  unsigned char version;
-  char layout;
+  uint8_t *nonce;
+  int layout;
 
   bool insideKpDump = !header;
 
@@ -29,11 +30,11 @@ int restorePasswords(const String &data, PasswordCallback callback,
 
     // Check for KPDUMP markers
     if (header) {
-      if (passBlock == "#KPDUMP") {
+      if (passBlock == DUMP_START) {
         insideKpDump = true;
         pos = lineEnd + 1; // Move past the marker
         continue;
-      } else if (passBlock == "#/KPDUMP") {
+      } else if (passBlock == DUMP_END) {
         insideKpDump = false;
         break; // End of dump data
       }
@@ -41,12 +42,13 @@ int restorePasswords(const String &data, PasswordCallback callback,
 
     // Only process lines if we're inside a KPDUMP
     if (insideKpDump) {
+      const char *rawBlock = passBlock.c_str();
+      nonce = ((uint8_t *)rawBlock) + 1;
 
-      parseSinglePassword(passBlock.c_str(), name, (char *)passwordData,
-                          &layout, &version, slot);
+      parseSinglePassword(rawBlock, name, (char *)passwordData, &layout);
 
       if (callback) {
-        callback(name, passwordData, layout, version, slot);
+        callback(name, (const char *)passwordData, layout, slot, nonce);
       }
       slot++;
     }

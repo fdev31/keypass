@@ -1,8 +1,8 @@
 .PHONY: all clean synchro
 
 EXT = String.o Crypto/BLAKE2s.o Crypto/ChaCha.o Crypto/Poly1305.o Crypto/Cipher.o Crypto/Hash.o Crypto/Crypto.o Crypto/BlockCipher.o
-OBJS = importexport.o crypto.o utils.o $(EXT)
-CFLAGS = -I. -ICrypto -ggdb -W -Wall -fPIC
+OBJS = streamadapter.o importexport.o crypto.o utils.o $(EXT)
+CFLAGS = -I. -ICrypto -ggdb -W -Wall -fPIC -DENCRYPTED_PASS=0
 BINS = generate encoderaw decoderaw
 
 

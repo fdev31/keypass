@@ -154,9 +154,8 @@ static void handlePassPhrase(AsyncWebServerRequest *request) {
 }
 
 static void handlePassDump(AsyncWebServerRequest *request) {
-  String dumpData = dumpPasswords();
   AsyncResponseStream *response = request->beginResponseStream("text/plain");
-  response->print(dumpData);
+  dumpPasswords(response);
   request->send(response);
 }
 

@@ -3,12 +3,15 @@ import os
 import sys
 import re
 import subprocess
+import random
 from getpass import getpass
 import shlex
 import urllib.parse
 import json
 import requests
 import logging
+
+random.random()
 
 
 try:
@@ -74,7 +77,7 @@ def dumpBackupline(index, name, layout, password):
         if layout == -1:
             layout = 255
         txt = keypass.dump_single_password(
-            name.encode("utf-8"), password.encode("utf-8"), layout, 1, index
+            name.encode("utf-8"), password.encode("utf-8"), layout, 1
         ).decode("utf-8")
     else:
         txt = subprocess.getstatusoutput(
@@ -90,6 +93,7 @@ if __name__ == "__main__":
     sys.stderr.flush()
     passphrase = getpass("").strip()
     if keypass:
+        keypass.init()
         keypass.set_passphrase(passphrase)
 
     # read exported data from a JSON file

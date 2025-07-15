@@ -1,9 +1,13 @@
-#include <Arduino.h>
+#ifndef _IMPORTEXPORT_H
+#define _IMPORTEXPORT_H
 
-extern String dumpSinglePassword(const char *label, const char *password,
-                                 const char layout, const unsigned char version,
-                                 int index);
+#include "streamadapter.h"
+#include <stdint.h>
 
-extern bool parseSinglePassword(const char *rawdata, char *label,
-                                char *password, char *layout,
-                                unsigned char *version, int index);
+void dumpSinglePassword(StringStreamAdapter &stream, const char *label,
+                        const char *password, const char layout,
+                        uint8_t *nonce);
+bool parseSinglePassword(const char *rawdata, char *label, char *password,
+                         int *layout);
+
+#endif // _IMPORTEXPORT_H

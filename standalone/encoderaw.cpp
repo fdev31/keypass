@@ -1,3 +1,4 @@
+#include "Arduino.h"
 #include "constants.h"
 #include "crypto.h"
 #include "importexport.h"
@@ -30,27 +31,25 @@ int main(int argc, char *argv[]) {
       exit(-1);
     }
   } else {
-    fprintf(stderr, "Syntax: <passphrase> <slot> <layout> <name> <pass>\n");
+    fprintf(stderr, "Syntax: <passphrase> <layout> <name> <pass>\n");
     exit(-1);
   }
 
   char passBuffer[MAX_PASS_LEN];
   char name[MAX_NAME_LEN];
-  int slot = atoi(argv[2]);
-  int layout = atoi(argv[3]);
+  int layout = atoi(argv[2]);
+
+  uint8_t nonce[12];
+  randomizeBuffer(nonce, NONCE_LEN);
 
   randomizeBuffer((uint8_t *)name, MAX_NAME_LEN);
-  memcpy(name, argv[4], strlen(argv[4]) + 1);
+  memcpy(name, argv[3], strlen(argv[3]) + 1);
   randomizeBuffer((uint8_t *)passBuffer, MAX_PASS_LEN);
-  memcpy(passBuffer, argv[5], strlen(argv[5]) + 1);
+  memcpy(passBuffer, argv[4], strlen(argv[4]) + 1);
 
-  if (getenv("KPASS")) {
-    encryptBuffer((const char *)passBuffer, (uint8_t *)passBuffer, slot,
-                  MAX_PASS_LEN);
-  }
-
-  String line = dumpSinglePassword(name, passBuffer, layout, 1, slot);
-  printf("%s\n", line.c_str());
+  StringStreamAdapter s;
+  dumpSinglePassword(s, name, passBuffer, layout, nonce);
+  printf("%s\n", s.c_str());
 
   if (closeFile) {
     fclose(inputFile);

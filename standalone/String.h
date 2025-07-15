@@ -10,6 +10,7 @@ public:
   String(const String &other);
   ~String();
 
+  void clear();
   String &operator+=(const String &str);
   String &operator+=(const char *cstr);
   size_t indexOf(char c, size_t pos = 0) const;

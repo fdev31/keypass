@@ -27,9 +27,7 @@ except Exception as e:
 lib.c_dump_single_password.argtypes = [
     ctypes.c_char_p,  # label
     ctypes.c_char_p,  # password
-    ctypes.c_char,  # layout
-    ctypes.c_ubyte,  # version
-    ctypes.c_int,  # index
+    ctypes.c_int,  # layout
 ]
 lib.c_dump_single_password.restype = ctypes.c_char_p
 
@@ -39,8 +37,6 @@ lib.c_parse_single_password.argtypes = [
     ctypes.c_char_p,  # label
     ctypes.c_char_p,  # password
     ctypes.POINTER(ctypes.c_char),  # layout
-    ctypes.POINTER(ctypes.c_ubyte),  # version
-    ctypes.c_int,  # index
 ]
 lib.c_parse_single_password.restype = ctypes.c_bool
 
@@ -48,17 +44,23 @@ lib.c_parse_single_password.restype = ctypes.c_bool
 lib.c_set_passphrase.argtypes = [ctypes.c_char_p]  # phrase
 lib.c_set_passphrase.restype = None
 
+lib.c_srandom.argtypes = []
+lib.c_srandom.restype = None
+
 
 # Python wrapper functions
 def dump_single_password(
-    label: str, password: str, layout: int, version: int, index: int
+    label: str,
+    password: str,
+    layout: int,
+    version: int,
 ) -> bytes:
+    # copy password so we ensure 32 bytes are available in the array
     result = lib.c_dump_single_password(
         label,
         password,
-        ctypes.c_char(layout),
-        ctypes.c_ubyte(version),
-        index,
+        ctypes.c_int(layout),
+        ctypes.c_int(version),
     )
 
     if result:
@@ -67,10 +69,10 @@ def dump_single_password(
         # If the C library has a function to free this memory, call it here
         # For example: lib.c_free_password_data(result)
         return data
-    return None
+    return b""
 
 
-def parse_single_password(rawdata: str, index: int) -> dict[str, any]:
+def parse_single_password(rawdata: str) -> dict[str, any]:
     """
     Wrapper for c_parse_single_password function.
     """
@@ -89,13 +91,12 @@ def parse_single_password(rawdata: str, index: int) -> dict[str, any]:
         password_buffer,
         ctypes.byref(layout),
         ctypes.byref(version),
-        ctypes.c_int(index),
     )
 
     if success:
         # Try a different approach to access buffer contents
-        label_str = label_buffer.value.decode("utf-8")
-        password_str = password_buffer.value.decode("utf-8")
+        label_str = label_buffer.value
+        password_str = password_buffer.value
 
         return {
             "label": label_str,
@@ -104,7 +105,7 @@ def parse_single_password(rawdata: str, index: int) -> dict[str, any]:
             "version": version.value,
         }
 
-    return None
+    return {}
 
 
 def set_passphrase(phrase: str) -> None:
@@ -136,19 +137,9 @@ def main():
     dump_parser.add_argument(
         "--version", "-v", type=int, default=1, help="Version (default: 1)"
     )
-    dump_parser.add_argument(
-        "--index", "-i", type=int, default=0, help="Index (default: 0)"
-    )
 
     # Setup parse command
     parse_parser = subparsers.add_parser("parse", help="Parse codes from stdin")
-    parse_parser.add_argument(
-        "--index",
-        "-i",
-        type=int,
-        default=0,
-        help="Entry index for parsing (default: 0)",
-    )
     parse_parser.add_argument(
         "--inline", type=str, default="", help="Inline code (instead of stdin)"
     )
@@ -162,7 +153,6 @@ def main():
             args.password.encode("utf-8"),
             args.layout,
             args.version,
-            args.index,
         )
         if code:
             sys.stdout.buffer.write(code)
@@ -173,7 +163,7 @@ def main():
             print(result)
 
         if args.inline:
-            result = parse_single_password(args.inline, args.index)
+            result = parse_single_password(args.inline)
             printResult(result)
         else:
             counter = count()
@@ -182,7 +172,7 @@ def main():
                 code = line.strip()
                 if code and code[0] != "#":
                     try:
-                        result = parse_single_password(code, args.index + num)
+                        result = parse_single_password(code)
                         printResult(result)
                     except Exception as e:
                         print(f"Error parsing code {code}: {e}")
@@ -192,5 +182,10 @@ def main():
         parser.print_help()
 
 
+def init():
+    lib.srandom()
+
+
 if __name__ == "__main__":
+    init()
     main()

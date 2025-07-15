@@ -6,14 +6,14 @@
 extern "C" {
 #endif
 
+void c_srandom();
 void c_set_passphrase(const char *phrase);
 
 const char *c_dump_single_password(const char *label, const char *password,
-                                   char layout, unsigned char version,
-                                   int index);
+                                   char layout);
 
 bool c_parse_single_password(const char *rawdata, char *label, char *password,
-                             char *layout, unsigned char *version, int index);
+                             char *layout);
 
 #ifdef __cplusplus
 }

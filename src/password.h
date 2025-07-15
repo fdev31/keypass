@@ -23,6 +23,6 @@ extern String listPasswords();
 extern void factoryReset();
 extern bool setWifiPassword(const char *pass);
 extern bool setupPassphrase(const char *phrase);
-extern String dumpPasswords();
+extern void dumpPasswords(AsyncResponseStream *stream);
 extern String restoreMCUPasswords(const String &data);
 #endif

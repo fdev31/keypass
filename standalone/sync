@@ -4,7 +4,7 @@ ln -sf ../.pio/libdeps/esp32-c3/Crypto .
 
 # exit 0
 
-for n in ../src/crypto.* ../src/utils.* ../src/constants.h ../src/restore.* ../src/importexport.{h,cpp} ; do
+for n in ../src/streamadapter.{cpp,h} ../src/crypto.{cpp,h} ../src/utils.{cpp,h} ../src/constants.h ../src/restore.{cpp,h} ../src/importexport.{h,cpp} ; do
     fname=$(basename $n)
     ln -sf $n $fname
 done

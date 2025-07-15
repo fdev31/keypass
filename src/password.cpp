@@ -1,5 +1,6 @@
 #include "password.h"
 #include "Preferences.h"
+#include "WString.h"
 #include "configuration.h"
 #include "constants.h"
 #include "crypto.h"
@@ -9,10 +10,10 @@
 #include "indexPage.h"
 #include "main.h"
 #include "restore.h"
+#include "streamadapter.h"
 #include "utils.h"
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
-#include <StreamString.h>
 #include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,21 +36,38 @@ static Password readPassword(int id) {
   }
   return password;
 #else
-  static uint8_t passBuffer[MAX_PASS_LEN];
+  uint8_t passBuffer[MAX_PASS_LEN];
+  uint8_t nonce[NONCE_LEN];
   Preferences preferences;
   const char *key = mkEntryName(id);
   preferences.begin(key, true);
-  size_t pass_version = preferences.getInt(F_FORMAT, 0);
-  strlcpy(password.name, preferences.getString(F_NAME).c_str(), MAX_NAME_LEN);
-  preferences.getBytes(F_PASSWORD, passBuffer, MAX_PASS_LEN);
-  password.layout = preferences.getInt(F_LAYOUT, -1);
+  if (preferences.isKey(F_NAME) == false) {
+    preferences.end();
+    Password empty_password;
+    empty_password.name[0] = '\0'; // No password found
+    return empty_password;
+  }
+  int pass_version = preferences.getInt(F_FORMAT, -1);
+  if (pass_version == 1) {
+    strlcpy(password.name, preferences.getString(F_NAME).c_str(), MAX_NAME_LEN);
+    preferences.getBytes(F_PASSWORD, passBuffer, MAX_PASS_LEN);
+    preferences.getBytes(F_NONCE, nonce, NONCE_LEN);
+    password.layout = preferences.getInt(F_LAYOUT);
+  }
   preferences.end();
 
-  if (pass_version == 0) { // unencrypted version 0
+  if (pass_version == -1) {
+    password.name[0] = '\0'; // No password found
+  }
+
+  switch (pass_version) {
+  case 0:
     strlcpy((char *)password.password, (char *)passBuffer, MAX_PASS_LEN);
-  } else { // one version only
-    decryptBuffer((uint8_t *)passBuffer, (char *)password.password, id,
-                  MAX_PASS_LEN);
+    break;
+  case 1:
+    decryptBuffer((uint8_t *)passBuffer, (char *)password.password,
+                  MAX_PASS_LEN, nonce);
+    break;
   }
   return password;
 #endif
@@ -72,12 +90,14 @@ static void writePassword(int id, const Password &password) {
   preferences.begin(mkEntryName(id), false);
   preferences.putString(F_NAME, password.name);
   static uint8_t encrypted_password[MAX_PASS_LEN];
+  uint8_t *nonce = getNonce();
   int pass_len = strlen((const char *)password.password);
   randomizeBuffer((uint8_t *)password.password + pass_len + 1,
                   MAX_PASS_LEN - pass_len - 1);
-  encryptBuffer((char *)password.password, encrypted_password, id,
-                MAX_PASS_LEN);
+  encryptBuffer((char *)password.password, encrypted_password, MAX_PASS_LEN,
+                nonce);
   preferences.putBytes(F_PASSWORD, encrypted_password, MAX_PASS_LEN);
+  preferences.putBytes(F_NONCE, nonce, NONCE_LEN);
   preferences.putInt(F_FORMAT, FORMAT_VERSION);
   preferences.putInt(F_LAYOUT, password.layout);
   preferences.end();
@@ -233,57 +253,33 @@ bool setupPassphrase(const char *phrase) {
   return setPassPhrase(phrase);
 }
 
-String dumpPasswords() {
+void dumpPasswords(AsyncResponseStream *stream) {
   ping();
-  // Use the fixed block size for buffers
-  uint8_t passBuffer[MAX_PASS_LEN];
-  char layout;
-  char version;
-  Preferences preferences;
-  String result = String(DUMP_START) + "\n";
+  stream->println(DUMP_START);
 
-  for (int id = 0; id < MAX_PASSWORDS; id++) {
-    const char *key = mkEntryName(id);
+  StringStreamAdapter pString;
 
-    preferences.begin(key, true);
-    // Check if this password slot is used
-    String nameStr = preferences.getString(F_NAME);
-    if (nameStr.length() == 0) {
-      preferences.end();
+  bool endReached = false;
+  for (int id = 0; !endReached && id < MAX_PASSWORDS; id++) {
+    pString.clear();
+    Password password = readPassword(id);
+    if (!password.name[0]) {
+      endReached = true;
       break; // No more passwords stored
     }
 
-    // Get metadata
-    version = preferences.getInt(F_FORMAT, 0);
-    layout = preferences.getInt(F_LAYOUT, -1);
-
-    // Get password data (fixed-size encrypted block)
-    preferences.getBytes(F_PASSWORD, passBuffer, MAX_PASS_LEN);
-
-    String line = dumpSinglePassword(nameStr.c_str(), (const char *)passBuffer,
-                                     layout, version, id);
-    preferences.end();
-    result += line + "\n";
+    dumpSinglePassword(pString, password.name, (const char *)password.password,
+                       password.layout, getNonce());
+    stream->println(pString);
   }
-  result += DUMP_END;
-  result += "\n";
-
-  return result;
+  stream->println(DUMP_END);
 }
 
 static int savePassCount = 0;
 
-static void savePassData(const char *name, const uint8_t *passwordData,
-                         char layout, unsigned char version, int slot) {
-
-  Preferences preferences;
-  const char *entryName = mkEntryName(slot);
-  preferences.begin(entryName, false);
-  preferences.putInt(F_FORMAT, (int)version);
-  preferences.putInt(F_LAYOUT, (int)layout);
-  preferences.putString(F_NAME, name);
-  preferences.putBytes(F_PASSWORD, passwordData, MAX_PASS_LEN);
-  preferences.end();
+static void savePassData(const char *name, const char *passwordData, int layout,
+                         int slot, uint8_t *nonce) {
+  editPassword(slot, name, passwordData, layout);
   savePassCount++;
 }
 
