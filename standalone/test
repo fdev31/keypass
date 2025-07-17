@@ -8,7 +8,7 @@ echo "Previous should be same as:"
 export KPASS=1
 ./encoderaw abc 2 $LABEL $PASS| ./decoderaw abc
 echo "Python version:"
-./keypass.py -c plop dump -l toto -p pass | ./keypass.py -c plop parse
+./keypass.py -c plop dump -l toto -p pass -y -1 | ./keypass.py -c plop parse
 
 echo -n "Max label length: "
 echo -n $LABEL | wc -c
