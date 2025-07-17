@@ -86,12 +86,13 @@ static void writePassword(int id, const Password &password) {
   EEPROM.put(address, password);
   EEPROM.commit();
 #else
-  Preferences preferences;
-  preferences.begin(mkEntryName(id), false);
-  preferences.putString(F_NAME, password.name);
-  static uint8_t encrypted_password[MAX_PASS_LEN];
   uint8_t *nonce = getNonce();
   int pass_len = strlen((const char *)password.password);
+  static uint8_t encrypted_password[MAX_PASS_LEN];
+  Preferences preferences;
+
+  preferences.begin(mkEntryName(id), false);
+  preferences.putString(F_NAME, password.name);
   randomizeBuffer((uint8_t *)password.password + pass_len + 1,
                   MAX_PASS_LEN - pass_len - 1);
   encryptBuffer((char *)password.password, encrypted_password, MAX_PASS_LEN,
@@ -253,9 +254,9 @@ bool setupPassphrase(const char *phrase) {
   return setPassPhrase(phrase);
 }
 
-void dumpPasswords(AsyncResponseStream *stream) {
+void dumpPasswords(StringStreamAdapter *stream) {
   ping();
-  stream->println(DUMP_START);
+  stream->write(DUMP_START "\n");
 
   StringStreamAdapter pString;
 
@@ -270,9 +271,10 @@ void dumpPasswords(AsyncResponseStream *stream) {
 
     dumpSinglePassword(pString, password.name, (const char *)password.password,
                        password.layout, getNonce());
-    stream->println(pString);
+    stream->write(pString.c_str());
+    stream->write("\n");
   }
-  stream->println(DUMP_END);
+  stream->write("\n");
 }
 
 static int savePassCount = 0;

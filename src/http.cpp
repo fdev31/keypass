@@ -40,9 +40,6 @@ static void handleTypeRaw(AsyncWebServerRequest *request) {
 
 static void handleIndex(AsyncWebServerRequest *request) {
   ping();
-#ifdef ENABLE_GRAPHICS
-  printText(1, "Welcome!");
-#endif
   AsyncWebServerResponse *response =
       request->beginResponse(200, "text/html", index_html);
   response->addHeader("Cache-Control", "public,max-age=1");
@@ -155,7 +152,9 @@ static void handlePassPhrase(AsyncWebServerRequest *request) {
 
 static void handlePassDump(AsyncWebServerRequest *request) {
   AsyncResponseStream *response = request->beginResponseStream("text/plain");
-  dumpPasswords(response);
+  StringStreamAdapter stream;
+  dumpPasswords(&stream);
+  response->print(stream.toString());
   request->send(response);
 }
 
@@ -173,7 +172,7 @@ void handleRestore(AsyncWebServerRequest *request) {
   request->send(200, "text/plain", ret);
 }
 
-void setUpKeyboard(AsyncWebServer &server) {
+void setUpHttp(AsyncWebServer &server) {
 #if USE_EEPROM_API
   EEPROM.begin(sizeof(Password) * MAX_PASSWORDS);
 #endif
@@ -221,10 +220,4 @@ void setUpKeyboard(AsyncWebServer &server) {
           request->send(500, "text/plain", "Failed to allocate buffer");
         }
       });
-
-#ifdef ENABLE_GRAPHICS
-  Preferences prefs;
-  size_t entries_left = prefs.freeEntries();
-  printText(2, (String(entries_left) + String(" left.")).c_str());
-#endif
 }

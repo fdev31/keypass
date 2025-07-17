@@ -2,9 +2,10 @@
 #ifndef _PASSWORD_H
 #define _PASSWORD_H
 #include <ESPAsyncWebServer.h> //https://github.com/me-no-dev/ESPAsyncWebServer using the latest dev version from @me-no-dev
-#include <stdint.h>
-//
+
 #include "hid.h"
+#include "streamadapter.h"
+#include <stdint.h>
 
 typedef struct {
   char name[MAX_NAME_LEN];
@@ -13,7 +14,7 @@ typedef struct {
 } Password;
 
 extern AsyncWebServer server;
-extern void setUpKeyboard(AsyncWebServer &server);
+extern void dumpPasswords(StringStreamAdapter *stream);
 extern bool typeRawText(const char *text, int layout, bool sendNewline);
 extern bool typePassword(int id, int layout = -1, bool sendNewline = true);
 extern const char *fetchPassword(int id);
@@ -23,6 +24,5 @@ extern String listPasswords();
 extern void factoryReset();
 extern bool setWifiPassword(const char *pass);
 extern bool setupPassphrase(const char *phrase);
-extern void dumpPasswords(AsyncResponseStream *stream);
 extern String restoreMCUPasswords(const String &data);
 #endif

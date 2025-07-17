@@ -14,6 +14,8 @@
 #define SDA_PIN 5
 #define SCL_PIN 6
 
+#define BUGGY_OFFSET 0 // XXX: needed on some broken devices
+
 char DEBUG_BUFFER[100];
 char DEBUG_BUFFER2[100];
 
@@ -65,8 +67,8 @@ if (n > WIDTH && int(n / WIDTH) % 2) {
   u8g2.setDrawColor(0);
 */
 #if FLIP_SCREEN
-  u8g2.drawStr(WIDTH, HEIGHT, DEBUG_BUFFER);
-  u8g2.drawStr(WIDTH, HEIGHT / 2, DEBUG_BUFFER2);
+  u8g2.drawStr(WIDTH, HEIGHT + BUGGY_OFFSET, DEBUG_BUFFER);
+  u8g2.drawStr(WIDTH, (HEIGHT / 2) + BUGGY_OFFSET, DEBUG_BUFFER2);
 #else
   u8g2.drawStr(0, 0, DEBUG_BUFFER);
   u8g2.drawStr(5, 20, DEBUG_BUFFER2);
