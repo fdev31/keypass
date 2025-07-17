@@ -81,7 +81,8 @@ static void handleTypeRaw(AsyncWebServerRequest *request) {
 static void handleIndex(AsyncWebServerRequest *request) {
   ping();
   AsyncWebServerResponse *response =
-      request->beginResponse(200, "text/html", index_html);
+      request->beginResponse(200, "text/html", index_html, index_html_gz_len);
+  response->addHeader("Content-Encoding", "gzip");
   response->addHeader("Cache-Control", "public,max-age=1");
   request->send(response);
 }

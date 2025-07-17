@@ -15,13 +15,22 @@ sed -f - "$SOURCE_HTML" > ${TEST_INDEX} << EOF
 }
 s/^ *//g
 EOF
+
+# Compress the HTML with gzip
+gzip --best -c ${TEST_INDEX} > /tmp/index_html.gz
+
 cat <<EOF > $OUT
 #ifndef _INDEXPAGE_H
 #define _INDEXPAGE_H
-const static char index_html[] PROGMEM = R"=====(
+#include <stdint.h>
+#include <stddef.h>
+const size_t index_html_gz_len = $(stat -c%s /tmp/index_html.gz);
+const uint8_t index_html[$(stat -c%s /tmp/index_html.gz)] PROGMEM = {
 EOF
-cat ${TEST_INDEX} >> $OUT
+
+hexdump -v -e '16/1 "0x%02x, " "\n"' /tmp/index_html.gz | sed -e 's/0x  ,//g' -e 's/, $//' >> $OUT
+# cat ${TEST_INDEX} >> $OUT
 cat <<EOF >> $OUT
-)=====";
+};
 #endif
 EOF
