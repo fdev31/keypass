@@ -86,6 +86,9 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 if (connectButton.getText().toString().equals("Load")) {
                     webView.loadUrl(TARGET_URL);
+                    if (getSupportActionBar() != null) {
+                        getSupportActionBar().hide();
+                    }
                 }
                 else {
                     connectToWifi();
@@ -214,6 +217,9 @@ public class MainActivity extends AppCompatActivity {
                     updateButtonState();
                     webView.loadUrl(TARGET_URL);
                 });
+                if (getSupportActionBar() != null) {
+                    getSupportActionBar().hide();
+                }
             }
 
             @Override
