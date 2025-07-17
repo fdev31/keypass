@@ -44,7 +44,7 @@ void setup() {
 #endif
 #if ENABLE_HTTP
   captiveSetup();
-  setUpHttp(server);
+  setupHttp(server);
 #endif
 #if ENABLE_BLUETOOTH
   bluetoothSetup();

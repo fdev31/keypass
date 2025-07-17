@@ -16,7 +16,47 @@
 #include <unistd.h>
 
 // HTTP handler wrappers (dependent on AsyncWebServerRequest)
+//
+static void handleRestore(AsyncWebServerRequest *request, uint8_t *data,
+                          size_t len, size_t index, size_t total) {
+  if (index == 0) {
+    // First chunk - initialize the buffer
+    request->_tempObject = new StreamString();
+  }
 
+  if (request->_tempObject) {
+    StreamString *buffer =
+        reinterpret_cast<StreamString *>(request->_tempObject);
+    // Add this chunk to the buffer
+    buffer->write(data, len);
+
+    if (index + len == total) {
+      // This is the last chunk, process the complete data
+      if (!request->_tempObject) {
+        return request->send(400, "text/plain", "Nothing uploaded");
+      }
+
+      StreamString *buffer =
+          reinterpret_cast<StreamString *>(request->_tempObject);
+      String uploadData = buffer->readString();
+
+      String ret = restoreMCUPasswords(uploadData);
+
+      // Send response
+      request->send(200, "text/plain", ret);
+    }
+  } else {
+    request->send(500, "text/plain", "Failed to allocate buffer");
+  }
+}
+
+static void handleRestoreComplete(AsyncWebServerRequest *request) {
+  // This function is called when the request completes
+  // If we get here without the handler sending a response, send one now
+  if (!request->_tempObject) {
+    request->send(400, "text/plain", "No data received");
+  }
+}
 static void handleTypeRaw(AsyncWebServerRequest *request) {
   if (request->hasParam("text")) {
     const char *text = request->getParam("text")->value().c_str();
@@ -158,21 +198,7 @@ static void handlePassDump(AsyncWebServerRequest *request) {
   request->send(response);
 }
 
-void handleRestore(AsyncWebServerRequest *request) {
-  if (!request->_tempObject) {
-    return request->send(400, "text/plain", "Nothing uploaded");
-  }
-
-  StreamString *buffer = reinterpret_cast<StreamString *>(request->_tempObject);
-  String uploadData = buffer->readString();
-
-  String ret = restoreMCUPasswords(uploadData);
-
-  // Send response
-  request->send(200, "text/plain", ret);
-}
-
-void setUpHttp(AsyncWebServer &server) {
+void setupHttp(AsyncWebServer &server) {
 #if USE_EEPROM_API
   EEPROM.begin(sizeof(Password) * MAX_PASSWORDS);
 #endif
@@ -188,36 +214,8 @@ void setUpHttp(AsyncWebServer &server) {
   server.on("/updateWifiPass", HTTP_GET, handleWifiPass);
   server.on("/dump", HTTP_GET, handlePassDump);
   // http post http://4.3.2.1/restore  < /tmp/dump
-  server.on(
-      "/restore", HTTP_POST,
-      [](AsyncWebServerRequest *request) {
-        // This function is called when the request completes
-        // If we get here without the handler sending a response, send one now
-        if (!request->_tempObject) {
-          request->send(400, "text/plain", "No data received");
-        }
-      },
-      nullptr, // We're not using the normal handler here
-      [](AsyncWebServerRequest *request, uint8_t *data, size_t len,
-         size_t index, size_t total) {
-        // This is the body handler for non-multipart uploads
-        if (index == 0) {
-          // First chunk - initialize the buffer
-          request->_tempObject = new StreamString();
-        }
-
-        if (request->_tempObject) {
-          StreamString *buffer =
-              reinterpret_cast<StreamString *>(request->_tempObject);
-          // Add this chunk to the buffer
-          buffer->write(data, len);
-
-          if (index + len == total) {
-            // This is the last chunk, process the complete data
-            handleRestore(request);
-          }
-        } else {
-          request->send(500, "text/plain", "Failed to allocate buffer");
-        }
-      });
+  //
+  server.on("/restore", HTTP_POST, handleRestoreComplete,
+            nullptr, // We're not using the normal handler here
+            handleRestore);
 }
