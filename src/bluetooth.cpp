@@ -181,7 +181,6 @@ void sendChunkedResponse(const char *data, size_t dataLength,
   // Send the header
   NuPacket.write((uint8_t *)headerBuffer, headerSize);
   NuPacket.write((uint8_t *)"\n", 1);
-  delay(200); // Give client time to process
 
   // Send each chunk as raw data without markers
   size_t offset = 0;
@@ -196,9 +195,6 @@ void sendChunkedResponse(const char *data, size_t dataLength,
 
     // Update offset for next chunk
     offset += chunkSize;
-
-    // Delay between chunks
-    delay(300);
   }
 
   // No end marker needed - the header tells the client exactly how much data to
