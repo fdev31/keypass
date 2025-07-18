@@ -33,5 +33,9 @@
         <item name="colorOutline">@color/md_theme_light_outline</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimary</item>
+
+        <!-- Text colors for better contrast -->
+        <item name="android:textColorPrimary">@color/md_theme_light_onBackground</item>
+        <item name="android:textColorSecondary">@color/md_theme_light_onSurfaceVariant</item>
     </style>
 </resources>

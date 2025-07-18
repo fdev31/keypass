@@ -322,6 +322,9 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 
         TextInputEditText nameEditText = dialogView.findViewById(R.id.nameEditText);
         TextInputEditText passwordEditText = dialogView.findViewById(R.id.passwordEditText);
+        TextInputLayout passwordInputLayout = dialogView.findViewById(R.id.passwordInputLayout);
+
+        
         MaterialButton generatePasswordButton = dialogView.findViewById(R.id.generatePasswordButton);
         
         RadioGroup layoutRadioGroup = dialogView.findViewById(R.id.layoutRadioGroup);
@@ -337,6 +340,11 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
             nameEditText.setText(passwordToEdit.getName());
             Log.d(TAG, "Editing password: " + passwordToEdit.getName() + ", layout: " + passwordToEdit.getLayout());
             // Password field is not pre-filled for security reasons
+            // Fetch password from device if in edit mode
+            currentPasswordEditTextForFetch = passwordEditText;
+            String cmd = String.format("{\"cmd\":\"fetchPass\",\"id\":%d}", passwordToEdit.getId());
+            bleManager.send(cmd);
+            Log.d(TAG, "Sent fetchPass command for ID: " + passwordToEdit.getId());
             // Set appropriate radio button for layout
             switch (passwordToEdit.getLayout()) {
                 case -1:
@@ -551,11 +559,15 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         // For example, for the "dump" command, you might parse the text line by line
         // For the "fetchPass" command, you would set the text in the EditText
         if (currentPasswordEditTextForFetch != null) {
+            Log.d(TAG, "Setting fetched password: " + text);
             runOnUiThread(() -> {
                 currentPasswordEditTextForFetch.setText(text);
                 currentPasswordEditTextForFetch = null; // Clear the reference
             });
-        } else {
+            return; // Added this to prevent further processing for fetchPass
+        }
+        // Original else block content for dump command
+        {
             // Assuming the dump command returns passwords line by line
             // with format "id,name,layout"
             passwordList.clear();
@@ -604,7 +616,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                         currentPasswordEditTextForFetch = null; // Clear the reference
                     });
                 } else {
-                    Log.d(TAG, "Received status/message: " + status + ": " + message);
+                    Log.d(TAG, "Received status/message: " + status + ": " + message + ". currentPasswordEditTextForFetch was null or status not 200.");
                 }
             }
         } catch (JSONException e) {
