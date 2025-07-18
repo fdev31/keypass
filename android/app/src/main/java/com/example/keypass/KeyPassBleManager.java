@@ -16,6 +16,7 @@ import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.data.Data;
 
 public class KeyPassBleManager extends BleManager {
+    private static final String TAG = "KeyPassBleManager";
 
     public final static UUID NORDIC_UART_SERVICE_UUID = UUID.fromString("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
     private final static UUID UART_RX_CHARACTERISTIC_UUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
@@ -49,26 +50,34 @@ public class KeyPassBleManager extends BleManager {
     private class KeyPassBleManagerGattCallback extends BleManagerGattCallback {
         @Override
         protected void initialize() {
+            Log.d(TAG, "Initializing BLE manager");
             setNotificationCallback(txCharacteristic).with((device, data) -> {
                 if (dataCallback != null) {
                     handler.post(() -> dataCallback.onDataReceived(device, data));
                 }
             });
             enableNotifications(txCharacteristic).enqueue();
+            Log.d(TAG, "Notifications enabled");
         }
 
         @Override
         public boolean isRequiredServiceSupported(@NonNull final BluetoothGatt gatt) {
             final BluetoothGattService service = gatt.getService(NORDIC_UART_SERVICE_UUID);
             if (service != null) {
+                Log.d(TAG, "Nordic UART service found");
                 rxCharacteristic = service.getCharacteristic(UART_RX_CHARACTERISTIC_UUID);
                 txCharacteristic = service.getCharacteristic(UART_TX_CHARACTERISTIC_UUID);
+            } else {
+                Log.e(TAG, "Nordic UART service not found");
             }
-            return rxCharacteristic != null && txCharacteristic != null;
+            boolean supported = rxCharacteristic != null && txCharacteristic != null;
+            Log.d(TAG, "Service supported: " + supported);
+            return supported;
         }
 
         @Override
         protected void onServicesInvalidated() {
+            Log.d(TAG, "Services invalidated");
             rxCharacteristic = null;
             txCharacteristic = null;
         }
@@ -76,6 +85,7 @@ public class KeyPassBleManager extends BleManager {
 
     public void send(final String text) {
         if (rxCharacteristic != null) {
+            Log.d(TAG, "Sending: " + text);
             writeCharacteristic(rxCharacteristic, Data.from(text))
                     .with((device, data) -> {
                         if (dataCallback != null) {
@@ -83,6 +93,8 @@ public class KeyPassBleManager extends BleManager {
                         }
                     })
                     .enqueue();
+        } else {
+            Log.e(TAG, "Cannot send data, RX characteristic is null");
         }
     }
 

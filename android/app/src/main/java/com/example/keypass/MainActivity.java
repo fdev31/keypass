@@ -120,14 +120,16 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         // Mode switch listener
         modeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) { // BLE mode
+                Log.d(TAG, "Switching to BLE mode");
                 wifiLayout.setVisibility(View.GONE);
                 bleLayout.setVisibility(View.VISIBLE);
                 if (bleManager.isDeviceConnected()) {
-                    // already connected
+                    Log.d(TAG, "Device already connected");
                 } else {
                     startScan();
                 }
             } else { // WiFi mode
+                Log.d(TAG, "Switching to WiFi mode");
                 wifiLayout.setVisibility(View.VISIBLE);
                 bleLayout.setVisibility(View.GONE);
                 stopScan();
@@ -220,6 +222,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         if (isScanning) {
             return;
         }
+        Log.d(TAG, "Starting BLE scan");
         isScanning = true;
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
             return;
@@ -229,6 +232,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 
     private void stopScan() {
         if (isScanning) {
+            Log.d(TAG, "Stopping BLE scan");
             isScanning = false;
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
                 return;
@@ -243,7 +247,9 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
             if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
+            Log.d(TAG, "Scan result: " + result.getDevice().getName());
             if (result.getDevice().getName() != null && result.getDevice().getName().equals(DEVICE_NAME)) {
+                Log.d(TAG, "Found target device");
                 stopScan();
                 bleManager.connect(result.getDevice()).enqueue();
             }
@@ -256,12 +262,13 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 
         @Override
         public void onScanFailed(int errorCode) {
-            // Do nothing
+            Log.e(TAG, "Scan failed with error code: " + errorCode);
         }
     };
 
     @Override
     public void onDataReceived(@NonNull BluetoothDevice device, @NonNull Data data) {
+        Log.d(TAG, "onDataReceived: " + data.getStringValue(0));
         receivedDataBuffer.append(data.getStringValue(0));
         String bufferString = receivedDataBuffer.toString();
         if (bufferString.contains("\n")) {
@@ -282,6 +289,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     }
 
     private void processJson(String json) {
+        Log.d(TAG, "Processing JSON: " + json);
         try {
             JSONObject jsonObject = new JSONObject(json);
             if (jsonObject.has("passwords")) {
@@ -394,49 +402,49 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 
     @Override
     public void onDeviceConnecting(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onDeviceConnecting");
+        Log.d(TAG, "onDeviceConnecting: " + device.getName());
     }
 
     @Override
     public void onDeviceConnected(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onDeviceConnected");
+        Log.d(TAG, "onDeviceConnected: " + device.getName());
     }
 
     @Override
     public void onDeviceFailedToConnect(@NonNull BluetoothDevice device, int reason) {
-        Log.d(TAG, "onDeviceFailedToConnect");
+        Log.e(TAG, "onDeviceFailedToConnect: " + device.getName() + ", reason: " + reason);
     }
 
     @Override
     public void onDeviceReady(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onDeviceReady");
-        bleManager.send("{\"cmd\":\"listPass\"}");
+        Log.d(TAG, "onDeviceReady: " + device.getName());
+        bleManager.send("{\"cmd\":\"list\"}");
     }
 
     @Override
     public void onDeviceDisconnecting(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onDeviceDisconnecting");
+        Log.d(TAG, "onDeviceDisconnecting: " + device.getName());
     }
 
     @Override
     public void onDeviceDisconnected(@NonNull BluetoothDevice device, int reason) {
-        Log.d(TAG, "onDeviceDisconnected");
+        Log.d(TAG, "onDeviceDisconnected: " + device.getName() + ", reason: " + reason);
     }
 
     public void onBondingRequired(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onBondingRequired");
+        Log.d(TAG, "onBondingRequired: " + device.getName());
     }
 
     public void onBondingSucceeded(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onBondingSucceeded");
+        Log.d(TAG, "onBondingSucceeded: " + device.getName());
     }
 
     public void onBondingFailed(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onBondingFailed");
+        Log.d(TAG, "onBondingFailed: " + device.getName());
     }
 
     public void onBondNotSupported(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onBondNotSupported");
+        Log.d(TAG, "onBondNotSupported: " + device.getName());
     }
 }
 
