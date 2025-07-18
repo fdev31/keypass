@@ -1,6 +1,7 @@
 #include "bluetooth.h"
 #include "NimBLEDevice.h"
 #include "NuPacket.hpp"
+#include "WiFi.h"
 #include "configuration.h"
 #include "constants.h"
 #include "crypto.h"
@@ -30,6 +31,8 @@ struct ChunkState {
   int chunksSent;         // Number of chunks already sent
   int chunksPerIteration; // How many chunks to send per loop
 };
+
+static bool previousBleConnected = false;
 
 static ChunkState chunkState = {.inProgress = false,
                                 .data = nullptr,
@@ -88,6 +91,16 @@ void bluetoothSetup() {
 }
 void bluetoothLoop() {
   char buffer[100];
+
+#if ENABLE_HTTP
+  bool isConnected = NuPacket.isConnected();
+
+  if (isConnected && isConnected != previousBleConnected) {
+    WiFi.mode(WIFI_OFF);
+    printText(1, "WiFi OFF");
+  }
+  previousBleConnected = isConnected;
+#endif
 
   sprintf(buffer, "BLE %s", NuPacket.isConnected() ? "on" : "off");
   printText(2, buffer);
