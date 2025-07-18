@@ -53,6 +53,9 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
     private KeyPassBleManager bleManager;
     private boolean isPassphraseVisible = false;
 
+    private StringBuilder receivedDataBuffer = new StringBuilder();
+    private int expectedDataSize = -1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -239,9 +242,69 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
         String text = data.getStringValue(0);
         if (text == null) return;
 
-        Log.d(TAG, "onDataReceived: " + text);
+        Log.d(TAG, "onDataReceived chunk: " + text);
+        receivedDataBuffer.append(text);
+
+        processReceivedData();
+    }
+
+    private void processReceivedData() {
+        while (true) {
+            if (expectedDataSize == -1) {
+                int newlineIndex = receivedDataBuffer.indexOf("\n");
+                if (newlineIndex != -1) {
+                    String header = receivedDataBuffer.substring(0, newlineIndex);
+                    receivedDataBuffer.delete(0, newlineIndex + 1);
+
+                    String[] headerParts = header.split(",");
+                    if (headerParts.length == 3) {
+                        try {
+                            expectedDataSize = Integer.parseInt(headerParts[0].trim());
+                            Log.d(TAG, "Parsed header. Total size: " + expectedDataSize + " bytes. Buffer now has " + receivedDataBuffer.length() + " bytes.");
+                        } catch (NumberFormatException e) {
+                            Log.e(TAG, "Could not parse header numbers: " + header + ". Clearing buffer.", e);
+                            expectedDataSize = -1;
+                            receivedDataBuffer.setLength(0);
+                            break; // Malformed header, stop processing this buffer
+                        }
+                    } else {
+                        Log.e(TAG, "Invalid header format: " + header + ". Expected 'total_size,num_chunks,chunk_size'. Clearing buffer.");
+                        expectedDataSize = -1;
+                        receivedDataBuffer.setLength(0);
+                        break; // Invalid header, stop processing this buffer
+                    }
+                } else {
+                    // No complete header yet, wait for more data
+                    break;
+                }
+            }
+
+            // If we have an expected size, try to complete the message
+            if (expectedDataSize != -1) {
+                if (receivedDataBuffer.length() >= expectedDataSize) {
+                    Log.d(TAG, "Complete chunked message received. Buffer size: " + receivedDataBuffer.length() + ", Expected size: " + expectedDataSize);
+                    String fullMessage = receivedDataBuffer.substring(0, expectedDataSize);
+                    receivedDataBuffer.delete(0, expectedDataSize);
+
+                    processJson(fullMessage);
+
+                    expectedDataSize = -1; // Reset for next message
+                    // Continue loop to check if there's another message in the buffer
+                } else {
+                    // Not enough data for the full message yet, wait for more data
+                    break;
+                }
+            } else {
+                // No expected size and no header found, nothing more to process for now
+                break;
+            }
+        }
+    }
+
+    private void processJson(String json) {
+        Log.d(TAG, "Processing JSON: " + json);
         try {
-            JSONObject jsonResponse = new JSONObject(text);
+            JSONObject jsonResponse = new JSONObject(json);
             if (jsonResponse.has("dump")) {
                 backupOutputEditText.setText(jsonResponse.getString("dump"));
             } else if (jsonResponse.has("passphrase")) {
@@ -249,11 +312,11 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
             } else if (jsonResponse.has("status")) {
                 showToast("Command Status: " + jsonResponse.getString("status"));
             } else {
-                showToast("Received: " + text);
+                showToast("Received: " + json);
             }
         } catch (JSONException e) {
-            Log.e(TAG, "Error parsing JSON response: " + text, e);
-            showToast("Received non-JSON data or error: " + text);
+            Log.e(TAG, "Error parsing JSON response: " + json, e);
+            showToast("Received non-JSON data or error: " + json);
         }
     }
 
