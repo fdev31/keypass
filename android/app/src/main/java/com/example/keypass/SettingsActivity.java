@@ -51,6 +51,7 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
     private EditText passphraseOutputEditText;
 
     private KeyPassBleManager bleManager;
+    private boolean isPassphraseVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,17 +126,28 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
         });
 
         showPassphraseButton.setOnClickListener(v -> {
+            isPassphraseVisible = !isPassphraseVisible;
             String storedPassphrase = prefs.getString(PREF_PASSPHRASE, "");
-            if (storedPassphrase.isEmpty()) {
-                showToast("No passphrase set.");
-                passphraseOutputEditText.setText("No passphrase set.");
+
+            if (isPassphraseVisible) {
+                if (storedPassphrase.isEmpty()) {
+                    passphraseOutputEditText.setText("No passphrase set.");
+                    showToast("No passphrase set.");
+                } else {
+                    passphraseOutputEditText.setText(storedPassphrase);
+                }
+                showPassphraseButton.setText("Hide Passphrase");
             } else {
-                passphraseOutputEditText.setText(storedPassphrase);
+                passphraseOutputEditText.setText("********"); // Mask the passphrase
+                showPassphraseButton.setText("Show Passphrase");
             }
         });
 
+        // Initially mask the passphrase
+        passphraseOutputEditText.setText("********");
+
         passphraseOutputEditText.setOnClickListener(v -> {
-            showToast("Use 'Reset Passphrase' to change or set the passphrase.");
+            showToast("Use 'Show Passphrase' button to view.");
         });
 
         // Initial UI state based on BLE connection
