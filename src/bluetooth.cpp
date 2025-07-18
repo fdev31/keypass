@@ -87,6 +87,10 @@ void bluetoothSetup() {
   NuPacket.start();
 }
 void bluetoothLoop() {
+  char buffer[100];
+
+  sprintf(buffer, "BLE %s", NuPacket.isConnected() ? "on" : "off");
+  printText(2, buffer);
 
   // Process incoming packets
   if (NuPacket.isConnected()) {
@@ -95,7 +99,6 @@ void bluetoothLoop() {
       int chunksToSend = min(chunkState.chunksPerIteration,
                              chunkState.totalChunks - chunkState.chunksSent);
 
-      char buffer[100];
       sprintf(buffer, "S %d %d/%d", chunksToSend, chunkState.chunksSent,
               chunkState.totalChunks);
       printText(2, buffer);
@@ -125,36 +128,35 @@ void bluetoothLoop() {
           break;
         }
       }
-    }
+    } else {
+      // Handle incoming data - THIS PART WAS MISSING
+      size_t packetSize;
+      const uint8_t *data = NuPacket.read(packetSize);
 
-    // Handle incoming data - THIS PART WAS MISSING
-    size_t packetSize;
-    const uint8_t *data = NuPacket.read(packetSize);
+      if (data && packetSize > 0) {
+        // Create a null-terminated string from the received data
+        char *command = (char *)malloc(packetSize + 1);
+        if (command) {
+          memcpy(command, data, packetSize);
+          command[packetSize] = '\0';
 
-    if (data && packetSize > 0) {
-      // Create a null-terminated string from the received data
-      char *command = (char *)malloc(packetSize + 1);
-      if (command) {
-        memcpy(command, data, packetSize);
-        command[packetSize] = '\0';
+          // Buffer for response
+          uint8_t responseBuffer[200]; // Use smaller buffer size
+          size_t responseSize = 0;
+          if (chunkState.inProgress) {
+            printText(2, "ERROR: Chunking already in progress");
+          } else {
+            // Process the command and generate a response
+            processCommand(command, responseBuffer, responseSize);
 
-        // Buffer for response
-        uint8_t responseBuffer[200]; // Use smaller buffer size
-        size_t responseSize = 0;
-        if (chunkState.inProgress) {
-          printText(2, "ERROR: Chunking already in progress");
-        } else {
-          // Process the command and generate a response
-          processCommand(command, responseBuffer, responseSize);
-
-          // Send the response if there is one and we haven't already sent it
-          // via chunking
-          if (responseSize > 0) {
-            NuPacket.write(responseBuffer, responseSize);
+            // Send the response if there is one and we haven't already sent it
+            // via chunking
+            if (responseSize > 0) {
+              NuPacket.write(responseBuffer, responseSize);
+            }
           }
+          free(command);
         }
-
-        free(command);
       }
     }
   }
