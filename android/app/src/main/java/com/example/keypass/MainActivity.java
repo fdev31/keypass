@@ -1,6 +1,7 @@
 package com.example.keypass;
 
 import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
@@ -76,6 +77,8 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     private static final String PREF_MODE = "mode"; // true for BLE, false for WiFi
     private static final String PREF_HIDE_PASSWORDS = "hide_passwords";
     private static final String PREF_PASSPHRASE = "app_passphrase";
+    private static final String PREF_LAST_CONNECTED_DEVICE_ADDRESS = "last_connected_device_address";
+    private static final String PREF_PASSWORD_LIST = "password_list";
 
     private static final String[] REQUIRED_PERMISSIONS = new String[]{
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -146,6 +149,9 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 
         // Setup BLE
         setupBle();
+
+        // Load saved password list
+        loadPasswordList();
 
         // Load saved mode
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -290,6 +296,19 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         bleManager.setDataCallback(this);
         scanner = BluetoothLeScannerCompat.getScanner();
 
+        // Attempt to reconnect to the last connected device
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String lastConnectedDeviceAddress = prefs.getString(PREF_LAST_CONNECTED_DEVICE_ADDRESS, null);
+        if (lastConnectedDeviceAddress != null) {
+            BluetoothDevice device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(lastConnectedDeviceAddress);
+            if (device != null) {
+                Log.d(TAG, "Attempting to reconnect to last connected device: " + lastConnectedDeviceAddress);
+                bleManager.connect(device).enqueue();
+            } else {
+                Log.w(TAG, "Last connected device not found: " + lastConnectedDeviceAddress);
+            }
+        }
+
         passwordRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         passwordAdapter = new PasswordAdapter(passwordList,
                 password -> { // on item click
@@ -324,9 +343,9 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         TextInputEditText passwordEditText = dialogView.findViewById(R.id.passwordEditText);
         TextInputLayout passwordInputLayout = dialogView.findViewById(R.id.passwordInputLayout);
 
-        
+
         MaterialButton generatePasswordButton = dialogView.findViewById(R.id.generatePasswordButton);
-        
+
         RadioGroup layoutRadioGroup = dialogView.findViewById(R.id.layoutRadioGroup);
         RadioButton layoutBitlocker = dialogView.findViewById(R.id.layoutBitlocker);
         RadioButton layoutFR = dialogView.findViewById(R.id.layoutFR);
@@ -412,6 +431,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
             String cmd = String.format("{\"cmd\":\"editPass\",\"id\":%d,\"name\":\"%s\",\"password\":\"%s\",\"layout\":%d}", id, name, password, layout);
             bleManager.send(cmd);
             dialog.dismiss();
+            savePasswordList();
         });
 
         dialog.show();
@@ -522,13 +542,13 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         if (expectedDataSize > 0 && receivedDataBuffer.length() >= expectedDataSize) {
             Log.d(TAG, "Complete chunked message received. Buffer size: " + receivedDataBuffer.length() + ", Expected size: " + expectedDataSize);
             String fullMessage = receivedDataBuffer.substring(0, expectedDataSize);
-            
+
             receivedDataBuffer.delete(0, expectedDataSize);
 
             processFullMessage(fullMessage);
 
             expectedDataSize = -1;
-            
+
             if (receivedDataBuffer.length() > 0) {
                 Log.d(TAG, "More data in buffer, processing again.");
                 processReceivedData();
@@ -589,6 +609,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                 }
             }
             runOnUiThread(() -> passwordAdapter.notifyDataSetChanged());
+            savePasswordList();
         }
     }
 
@@ -607,6 +628,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                     passwordList.add(new Password(uid, name, layout));
                 }
                 runOnUiThread(() -> passwordAdapter.notifyDataSetChanged());
+                savePasswordList();
             } else if (jsonObject.has("s") && jsonObject.has("m")) {
                 int status = jsonObject.getInt("s");
                 String message = jsonObject.getString("m");
@@ -655,6 +677,47 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         editor.putString(PREF_SSID, ssid);
         editor.apply();
         startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+    }
+
+    private void savePasswordList() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        JSONArray jsonArray = new JSONArray();
+        for (Password p : passwordList) {
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put("id", p.getId());
+                jsonObject.put("name", p.getName());
+                jsonObject.put("layout", p.getLayout());
+                jsonArray.put(jsonObject);
+            } catch (JSONException e) {
+                Log.e(TAG, "Error converting password to JSON", e);
+            }
+        }
+        editor.putString(PREF_PASSWORD_LIST, jsonArray.toString());
+        editor.apply();
+        Log.d(TAG, "Password list saved.");
+    }
+
+    private void loadPasswordList() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String json = prefs.getString(PREF_PASSWORD_LIST, null);
+        if (json != null) {
+            try {
+                JSONArray jsonArray = new JSONArray(json);
+                passwordList.clear();
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    int id = jsonObject.getInt("id");
+                    String name = jsonObject.getString("name");
+                    int layout = jsonObject.optInt("layout", -1);
+                    passwordList.add(new Password(id, name, layout));
+                }
+                Log.d(TAG, "Password list loaded.");
+            } catch (JSONException e) {
+                Log.e(TAG, "Error loading password list from JSON", e);
+            }
+        }
     }
 
     @Override
@@ -734,6 +797,10 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
         Log.d(TAG, "onDeviceConnected: " + deviceName);
         bleStatusTextView.setText("BLE Status: Connected to " + deviceName);
+
+        // Save the connected device's address
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putString(PREF_LAST_CONNECTED_DEVICE_ADDRESS, device.getAddress()).apply();
     }
 
     @Override

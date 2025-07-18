@@ -15,7 +15,7 @@ const unsigned long SLEEP_TIME = 500; // sleep period in sleep mode
 
 #define ENABLE_FULL_ENCRYPTION 1 // also encrypt names
 #define ENABLE_BLUETOOTH true
-// #define ENABLE_HTTP true
+#define ENABLE_HTTP true
 #define ENABLE_GRAPHICS true
 #define FLIP_SCREEN 1
 #define DEBUG 0
