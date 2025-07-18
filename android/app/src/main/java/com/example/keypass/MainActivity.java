@@ -237,7 +237,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                     bleManager.send(cmd);
                 },
                 password -> { // on item long click
-                    // TODO: implement edit/delete
+                    showEditPasswordDialog(password);
                 });
         passwordRecyclerView.setAdapter(passwordAdapter);
 
@@ -251,6 +251,10 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     }
 
     private void showAddPasswordDialog() {
+        showEditPasswordDialog(null); // Call with null for add mode
+    }
+
+    private void showEditPasswordDialog(Password passwordToEdit) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = this.getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_add_password, null);
@@ -266,6 +270,27 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         Button savePasswordButton = dialogView.findViewById(R.id.savePasswordButton);
 
         AlertDialog dialog = builder.create();
+
+        // Pre-fill if in edit mode
+        if (passwordToEdit != null) {
+            nameEditText.setText(passwordToEdit.getName());
+            // Password field is not pre-filled for security reasons
+            // Set appropriate radio button for layout
+            switch (passwordToEdit.getLayout()) {
+                case -1:
+                    layoutBitlocker.setChecked(true);
+                    break;
+                case 0:
+                    layoutFR.setChecked(true);
+                    break;
+                case 1:
+                    layoutUS.setChecked(true);
+                    break;
+            }
+            dialog.setTitle("Edit Password");
+        } else {
+            dialog.setTitle("Add New Password");
+        }
 
         generatePasswordButton.setOnClickListener(v -> {
             // Prompt for length if password field is empty
@@ -312,11 +337,9 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                 return;
             }
 
-            // For new passwords, assign a temporary ID or let the microcontroller assign it
-            // For now, let's assume a new password will have an ID of -1 or a unique temporary ID
-            // The microcontroller should assign the actual ID upon saving.
-            // For this implementation, we'll use -1 to indicate a new password.
-            String cmd = String.format("{\"cmd\":\"editPass\",\"id\":%d,\"name\":\"%s\",\"password\":\"%s\",\"layout\":%d}", -1, name, password, layout);
+            int id = (passwordToEdit != null) ? passwordToEdit.getId() : -1; // Use existing ID or -1 for new
+
+            String cmd = String.format("{\"cmd\":\"editPass\",\"id\":%d,\"name\":\"%s\",\"password\":\"%s\",\"layout\":%d}", id, name, password, layout);
             bleManager.send(cmd);
             dialog.dismiss();
         });
@@ -457,7 +480,10 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                 passwordList.clear();
                 for (int i = 0; i < passwords.length(); i++) {
                     JSONObject password = passwords.getJSONObject(i);
-                    passwordList.add(new Password(password.getInt("uid"), password.getString("name")));
+                    int uid = password.getInt("uid");
+                    String name = password.getString("name");
+                    int layout = password.optInt("layout", -1); // Default to -1 if not present
+                    passwordList.add(new Password(uid, name, layout));
                 }
                 runOnUiThread(() -> passwordAdapter.notifyDataSetChanged());
             }
@@ -635,10 +661,18 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 class Password {
     private int id;
     private String name;
+    private int layout;
 
     public Password(int id, String name) {
         this.id = id;
         this.name = name;
+        this.layout = -1; // Default to Bitlocker
+    }
+
+    public Password(int id, String name, int layout) {
+        this.id = id;
+        this.name = name;
+        this.layout = layout;
     }
 
     public int getId() {
@@ -647,5 +681,9 @@ class Password {
 
     public String getName() {
         return name;
+    }
+
+    public int getLayout() {
+        return layout;
     }
 }
