@@ -27,6 +27,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -62,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     private static final String PREFS_NAME = "KeyPassPrefs";
     private static final String PREF_SSID = "ssid";
     private static final String PREF_MODE = "mode"; // true for BLE, false for WiFi
+    private static final String PREF_HIDE_PASSWORDS = "hide_passwords";
 
     private static final String[] REQUIRED_PERMISSIONS = new String[]{
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -263,6 +265,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         EditText nameEditText = dialogView.findViewById(R.id.nameEditText);
         EditText passwordEditText = dialogView.findViewById(R.id.passwordEditText);
         Button generatePasswordButton = dialogView.findViewById(R.id.generatePasswordButton);
+        ImageButton togglePasswordVisibilityButton = dialogView.findViewById(R.id.togglePasswordVisibilityButton);
         RadioGroup layoutRadioGroup = dialogView.findViewById(R.id.layoutRadioGroup);
         RadioButton layoutBitlocker = dialogView.findViewById(R.id.layoutBitlocker);
         RadioButton layoutFR = dialogView.findViewById(R.id.layoutFR);
@@ -271,9 +274,23 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 
         AlertDialog dialog = builder.create();
 
+        // Get hide passwords preference
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        boolean hidePasswords = prefs.getBoolean(PREF_HIDE_PASSWORDS, false); // Default to false
+
+        // Set initial password visibility
+        if (hidePasswords) {
+            passwordEditText.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            togglePasswordVisibilityButton.setImageResource(android.R.drawable.ic_menu_view); // Eye icon
+        } else {
+            passwordEditText.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+            togglePasswordVisibilityButton.setImageResource(android.R.drawable.ic_menu_close_clear_cancel); // Slash eye icon
+        }
+
         // Pre-fill if in edit mode
         if (passwordToEdit != null) {
             nameEditText.setText(passwordToEdit.getName());
+            Log.d(TAG, "Editing password: " + passwordToEdit.getName() + ", layout: " + passwordToEdit.getLayout());
             // Password field is not pre-filled for security reasons
             // Set appropriate radio button for layout
             switch (passwordToEdit.getLayout()) {
@@ -291,6 +308,18 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         } else {
             dialog.setTitle("Add New Password");
         }
+
+        togglePasswordVisibilityButton.setOnClickListener(v -> {
+            if (passwordEditText.getInputType() == (android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+                passwordEditText.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                togglePasswordVisibilityButton.setImageResource(android.R.drawable.ic_menu_close_clear_cancel); // Slash eye icon
+            } else {
+                passwordEditText.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                togglePasswordVisibilityButton.setImageResource(android.R.drawable.ic_menu_view); // Eye icon
+            }
+            // Move cursor to the end of the text
+            passwordEditText.setSelection(passwordEditText.getText().length());
+        });
 
         generatePasswordButton.setOnClickListener(v -> {
             // Prompt for length if password field is empty

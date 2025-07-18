@@ -38,6 +38,7 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
     private static final String PREFS_NAME = "KeyPassPrefs";
     private static final String PREF_CONFIRM_ACTIONS = "confirm_actions";
     private static final String PREF_HIDE_PASSWORDS = "hide_passwords";
+    private static final String PREF_PASSPHRASE = "app_passphrase";
 
     private Switch confirmActionsSwitch;
     private Switch hidePasswordsSwitch;
@@ -102,7 +103,7 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
         changeWifiPasswordButton.setOnClickListener(v -> {
             if (bleManager.isDeviceConnected()) {
                 showInputDialog("Change WiFi Password", "Enter new WiFi password:", "New WiFi Password", newPassword -> {
-                    sendCommand(String.format("{\"cmd\":\"updateWifiPass\",\"password\":\"%s\"}", newPassword));
+                    sendCommand(String.format("{\"cmd\":\"updateWifiPass\",\"newPass\":\"%s\"}", newPassword));
                 });
             } else {
                 showToast("Not connected to KeyPass device.");
@@ -110,13 +111,11 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
         });
 
         resetPassphraseButton.setOnClickListener(v -> {
-            if (bleManager.isDeviceConnected()) {
-                showConfirmationDialog("Reset Passphrase", "Are you sure you want to reset the passphrase? This cannot be undone.", () -> {
-                    sendCommand("resetPassphrase");
-                });
-            } else {
-                showToast("Not connected to KeyPass device.");
-            }
+            showInputDialog("Reset Passphrase", "Enter new passphrase:", "New Passphrase", newPassphrase -> {
+                prefs.edit().putString(PREF_PASSPHRASE, newPassphrase).apply();
+                showToast("Passphrase reset successfully.");
+                passphraseOutputEditText.setText(newPassphrase); // Update displayed passphrase
+            });
         });
 
         factoryResetButton.setOnClickListener(v -> {
@@ -130,10 +129,12 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
         });
 
         showPassphraseButton.setOnClickListener(v -> {
-            if (bleManager.isDeviceConnected()) {
-                sendCommand("showPassphrase");
+            String storedPassphrase = prefs.getString(PREF_PASSPHRASE, "");
+            if (storedPassphrase.isEmpty()) {
+                showToast("No passphrase set.");
+                passphraseOutputEditText.setText("No passphrase set.");
             } else {
-                showToast("Not connected to KeyPass device.");
+                passphraseOutputEditText.setText(storedPassphrase);
             }
         });
 
