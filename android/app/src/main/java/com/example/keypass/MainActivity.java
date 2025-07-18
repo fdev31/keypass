@@ -12,6 +12,7 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.provider.Settings;
@@ -27,6 +28,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -182,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         });
 
         connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         String lastSsid = prefs.getString(PREF_SSID, "KeyPass");
@@ -309,21 +311,26 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         if (expectedDataSize == -1) {
             int newlineIndex = receivedDataBuffer.indexOf("\n");
             if (newlineIndex != -1) {
-                String potentialHeader = receivedDataBuffer.substring(0, newlineIndex);
+                String header = receivedDataBuffer.substring(0, newlineIndex);
                 receivedDataBuffer.delete(0, newlineIndex + 1);
 
-                try {
-                    JSONObject jsonObject = new JSONObject(potentialHeader);
-                    if (jsonObject.has("total_size")) {
-                        expectedDataSize = jsonObject.getInt("total_size");
-                        Log.d(TAG, "Parsed chunk header. Expecting " + expectedDataSize + " bytes. Buffer now has " + receivedDataBuffer.length() + " bytes.");
+                String[] headerParts = header.split(",");
+                if (headerParts.length == 3) {
+                    try {
+                        expectedDataSize = Integer.parseInt(headerParts[0].trim());
+                        // int numChunks = Integer.parseInt(headerParts[1].trim()); // Not currently used
+                        // int chunkSize = Integer.parseInt(headerParts[2].trim()); // Not currently used
+                        Log.d(TAG, "Parsed header. Total size: " + expectedDataSize + " bytes. Buffer now has " + receivedDataBuffer.length() + " bytes.");
                         checkBufferForCompleteMessage();
-                    } else {
-                        Log.d(TAG, "Processing simple message.");
-                        processJson(potentialHeader);
+                    } catch (NumberFormatException e) {
+                        Log.e(TAG, "Could not parse header numbers: " + header + ". Clearing buffer.", e);
+                        expectedDataSize = -1;
+                        receivedDataBuffer.setLength(0); // Clear buffer to avoid processing bad data
                     }
-                } catch (JSONException e) {
-                    Log.e(TAG, "Could not parse potential header/message: " + potentialHeader, e);
+                } else {
+                    Log.e(TAG, "Invalid header format: " + header + ". Expected 'total_size,num_chunks,chunk_size'. Clearing buffer.");
+                    expectedDataSize = -1;
+                    receivedDataBuffer.setLength(0); // Clear buffer if header is not in expected format
                 }
             }
         } else {
@@ -429,7 +436,9 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
             public void onAvailable(@NonNull Network network) {
                 super.onAvailable(network);
                 Log.d(TAG, "Found a Wi-Fi network without internet, binding to it.");
-                connectivityManager.bindProcessToNetwork(network);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                    connectivityManager.bindProcessToNetwork(network);
+                }
                 runOnUiThread(() -> {
                     Toast.makeText(getApplicationContext(), "KeyPass network connected", Toast.LENGTH_SHORT).show();
                     updateButtonState();
@@ -444,7 +453,9 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
             public void onLost(@NonNull Network network) {
                 super.onLost(network);
                 Log.d(TAG, "Lost connection to the network.");
-                connectivityManager.bindProcessToNetwork(null);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                    connectivityManager.bindProcessToNetwork(null);
+                }
                 runOnUiThread(() -> {
                     Toast.makeText(getApplicationContext(), "KeyPass network disconnected", Toast.LENGTH_SHORT).show();
                     updateButtonState();
@@ -468,58 +479,68 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 
     @Override
     public void onDeviceConnecting(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onDeviceConnecting: " + device.getName());
-        bleStatusTextView.setText("BLE Status: Connecting to " + device.getName() + "...");
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onDeviceConnecting: " + deviceName);
+        bleStatusTextView.setText("BLE Status: Connecting to " + deviceName + "...");
     }
 
     @Override
     public void onDeviceConnected(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onDeviceConnected: " + device.getName());
-        bleStatusTextView.setText("BLE Status: Connected to " + device.getName());
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onDeviceConnected: " + deviceName);
+        bleStatusTextView.setText("BLE Status: Connected to " + deviceName);
     }
 
     @Override
     public void onDeviceFailedToConnect(@NonNull BluetoothDevice device, int reason) {
-        Log.e(TAG, "onDeviceFailedToConnect: " + device.getName() + ", reason: " + reason);
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.e(TAG, "onDeviceFailedToConnect: " + deviceName + ", reason: " + reason);
         bleStatusTextView.setText("BLE Status: Failed to connect (" + reason + ")");
     }
 
     @Override
     public void onDeviceReady(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onDeviceReady: " + device.getName());
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onDeviceReady: " + deviceName);
         bleStatusTextView.setText("BLE Status: Ready");
         bleManager.send("{\"cmd\":\"list\"}");
     }
 
     @Override
     public void onDeviceDisconnecting(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onDeviceDisconnecting: " + device.getName());
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onDeviceDisconnecting: " + deviceName);
         bleStatusTextView.setText("BLE Status: Disconnecting...");
     }
 
     @Override
     public void onDeviceDisconnected(@NonNull BluetoothDevice device, int reason) {
-        Log.d(TAG, "onDeviceDisconnected: " + device.getName() + ", reason: " + reason);
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onDeviceDisconnected: " + deviceName + ", reason: " + reason);
         bleStatusTextView.setText("BLE Status: Disconnected");
     }
 
     public void onBondingRequired(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onBondingRequired: " + device.getName());
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onBondingRequired: " + deviceName);
         bleStatusTextView.setText("BLE Status: Bonding Required");
     }
 
     public void onBondingSucceeded(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onBondingSucceeded: " + device.getName());
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onBondingSucceeded: " + deviceName);
         bleStatusTextView.setText("BLE Status: Bonding Succeeded");
     }
 
     public void onBondingFailed(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onBondingFailed: " + device.getName());
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onBondingFailed: " + deviceName);
         bleStatusTextView.setText("BLE Status: Bonding Failed");
     }
 
     public void onBondNotSupported(@NonNull BluetoothDevice device) {
-        Log.d(TAG, "onBondNotSupported: " + device.getName());
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onBondNotSupported: " + deviceName);
         bleStatusTextView.setText("BLE Status: Bond Not Supported");
     }
 }
