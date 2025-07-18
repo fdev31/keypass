@@ -535,7 +535,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
             
             receivedDataBuffer.delete(0, expectedDataSize);
 
-            processJson(fullMessage);
+            processFullMessage(fullMessage);
 
             expectedDataSize = -1;
             
@@ -551,8 +551,55 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         Log.d(TAG, "onDataSent: " + data.getStringValue(0));
     }
 
+    private void processFullMessage(String message) {
+        Log.d(TAG, "Processing full message");
+        try {
+            // First, try to process as JSON
+            JSONObject jsonObject = new JSONObject(message);
+            processJson(message);
+        } catch (JSONException e) {
+            // If JSON parsing fails, treat it as plain text
+            Log.d(TAG, "Message is not a valid JSON, processing as plain text.");
+            processText(message);
+        }
+    }
+
+    private void processText(String text) {
+        // Handle plain text response here
+        // For example, for the "dump" command, you might parse the text line by line
+        // For the "fetchPass" command, you would set the text in the EditText
+        if (currentPasswordEditTextForFetch != null) {
+            runOnUiThread(() -> {
+                currentPasswordEditTextForFetch.setText(text);
+                currentPasswordEditTextForFetch = null; // Clear the reference
+            });
+        } else {
+            // Assuming the dump command returns passwords line by line
+            // with format "id,name,layout"
+            passwordList.clear();
+            String[] lines = text.split("\n");
+            for (String line : lines) {
+                String[] parts = line.split(",");
+                if (parts.length >= 2) {
+                    try {
+                        int id = Integer.parseInt(parts[0]);
+                        String name = parts[1];
+                        int layout = -1; // Default layout
+                        if (parts.length > 2) {
+                            layout = Integer.parseInt(parts[2]);
+                        }
+                        passwordList.add(new Password(id, name, layout));
+                    } catch (NumberFormatException ex) {
+                        Log.e(TAG, "Error parsing password line: " + line, ex);
+                    }
+                }
+            }
+            runOnUiThread(() -> passwordAdapter.notifyDataSetChanged());
+        }
+    }
+
     private void processJson(String json) {
-        Log.d(TAG, "Processing JSON: " + json);
+        Log.d(TAG, "Processing JSON response");
         try {
             JSONObject jsonObject = new JSONObject(json);
             if (jsonObject.has("passwords")) {
