@@ -90,6 +90,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     private BluetoothLeScannerCompat scanner;
     private boolean isScanning = false;
     private StringBuilder receivedDataBuffer = new StringBuilder();
+    private int expectedDataSize = -1;
 
 
     @Override
@@ -269,18 +270,44 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 
     @Override
     public void onDataReceived(@NonNull BluetoothDevice device, @NonNull Data data) {
-        Log.d(TAG, "onDataReceived: " + data.getStringValue(0));
-        receivedDataBuffer.append(data.getStringValue(0));
-        String bufferString = receivedDataBuffer.toString();
-        if (bufferString.contains("\n")) {
-            String[] parts = bufferString.split("\n");
-            for (int i = 0; i < parts.length - 1; i++) {
-                processJson(parts[i]);
+        String text = data.getStringValue(0);
+        Log.d(TAG, "onDataReceived: " + text);
+        receivedDataBuffer.append(text);
+
+        if (expectedDataSize == -1) {
+            int newlineIndex = receivedDataBuffer.indexOf("\n");
+            if (newlineIndex != -1) {
+                String potentialHeader = receivedDataBuffer.substring(0, newlineIndex);
+                receivedDataBuffer.delete(0, newlineIndex + 1);
+
+                try {
+                    JSONObject jsonObject = new JSONObject(potentialHeader);
+                    if (jsonObject.has("total_size")) {
+                        expectedDataSize = jsonObject.getInt("total_size");
+                        Log.d(TAG, "Parsed chunk header. Expecting " + expectedDataSize + " bytes.");
+                        checkBufferForCompleteMessage();
+                    } else {
+                        Log.d(TAG, "Processing simple message.");
+                        processJson(potentialHeader);
+                    }
+                } catch (JSONException e) {
+                    Log.e(TAG, "Could not parse potential header/message: " + potentialHeader, e);
+                }
             }
-            receivedDataBuffer = new StringBuilder();
-            if (!bufferString.endsWith("\n")) {
-                receivedDataBuffer.append(parts[parts.length - 1]);
-            }
+        } else {
+            checkBufferForCompleteMessage();
+        }
+    }
+
+    private void checkBufferForCompleteMessage() {
+        if (expectedDataSize > 0 && receivedDataBuffer.length() >= expectedDataSize) {
+            Log.d(TAG, "Complete chunked message received. Size: " + receivedDataBuffer.length());
+            String fullMessage = receivedDataBuffer.substring(0, expectedDataSize);
+            receivedDataBuffer.delete(0, expectedDataSize);
+
+            processJson(fullMessage);
+
+            expectedDataSize = -1;
         }
     }
 
