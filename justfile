@@ -28,7 +28,7 @@ apk-build:
     cd android && ./gradlew assembleDebug
 
 # Install the debug APK on a connected device/emulator
-apk-install: build
+apk-install: apk-build
     cd android && ./gradlew installDebug
 
 # Run the application on a connected device/emulator

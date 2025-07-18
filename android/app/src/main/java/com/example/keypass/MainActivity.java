@@ -13,6 +13,7 @@ import android.net.NetworkRequest;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.ParcelUuid;
 import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -42,6 +43,7 @@ import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.observer.ConnectionObserver;
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat;
 import no.nordicsemi.android.support.v18.scanner.ScanCallback;
+import no.nordicsemi.android.support.v18.scanner.ScanFilter;
 import no.nordicsemi.android.support.v18.scanner.ScanResult;
 import no.nordicsemi.android.support.v18.scanner.ScanSettings;
 
@@ -227,7 +229,9 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        scanner.startScan(new ArrayList<>(), new ScanSettings.Builder().build(), scanCallback);
+        List<ScanFilter> filters = new ArrayList<>();
+        filters.add(new ScanFilter.Builder().setServiceUuid(new ParcelUuid(KeyPassBleManager.NORDIC_UART_SERVICE_UUID)).build());
+        scanner.startScan(filters, new ScanSettings.Builder().build(), scanCallback);
     }
 
     private void stopScan() {
@@ -247,12 +251,9 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
             if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
-            Log.d(TAG, "Scan result: " + result.getDevice().getName());
-            if (result.getDevice().getName() != null && result.getDevice().getName().equals(DEVICE_NAME)) {
-                Log.d(TAG, "Found target device");
-                stopScan();
-                bleManager.connect(result.getDevice()).enqueue();
-            }
+            Log.d(TAG, "Found target device with UUID: " + result.getDevice().getName());
+            stopScan();
+            bleManager.connect(result.getDevice()).enqueue();
         }
 
         @Override
