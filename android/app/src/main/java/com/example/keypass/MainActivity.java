@@ -337,7 +337,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                 return;
             }
 
-            int id = (passwordToEdit != null) ? passwordToEdit.getId() : -1; // Use existing ID or -1 for new
+            int id = (passwordToEdit != null) ? passwordToEdit.getId() : passwordList.size(); // Use existing ID or list size for new
 
             String cmd = String.format("{\"cmd\":\"editPass\",\"id\":%d,\"name\":\"%s\",\"password\":\"%s\",\"layout\":%d}", id, name, password, layout);
             bleManager.send(cmd);
