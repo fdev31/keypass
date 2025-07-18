@@ -14,9 +14,30 @@
 
 // JSON response buffer size
 #define JSON_BUFFER_SIZE 2048
-#define CHUNK_SIZE 512 // Size of each chunk
-#define MAX_CHUNKS 20  // Maximum number of chunks (adjust based on your needs)
-#define CHUNK_HEADER_SIZE 128 // Size of chunk header information
+#define CHUNK_SIZE 20  // Size of each data chunk
+#define MAX_CHUNKS 200 // Maximum number of chunks
+#define CHUNKS_PER_ITERATION 3
+static String
+    persistentChunkData; // Stores the data being chunked to keep it in scope
+//
+// Global chunking state
+struct ChunkState {
+  bool inProgress;        // Whether chunking is in progress
+  const char *data;       // Pointer to data being sent
+  size_t dataLength;      // Total data length
+  size_t offset;          // Current offset in the data
+  int totalChunks;        // Total number of chunks
+  int chunksSent;         // Number of chunks already sent
+  int chunksPerIteration; // How many chunks to send per loop
+};
+
+static ChunkState chunkState = {.inProgress = false,
+                                .data = nullptr,
+                                .dataLength = 0,
+                                .offset = 0,
+                                .totalChunks = 0,
+                                .chunksSent = 0,
+                                .chunksPerIteration = CHUNKS_PER_ITERATION};
 
 // Command parsing and response functions
 void processCommand(const char *command, uint8_t *responseBuffer,
@@ -65,9 +86,48 @@ void bluetoothSetup() {
   // Start Nordic UART Service with NuPacket
   NuPacket.start();
 }
-
 void bluetoothLoop() {
+
+  // Process incoming packets
   if (NuPacket.isConnected()) {
+    // Process chunking if in progress
+    if (chunkState.inProgress) {
+      int chunksToSend = min(chunkState.chunksPerIteration,
+                             chunkState.totalChunks - chunkState.chunksSent);
+
+      char buffer[100];
+      sprintf(buffer, "S %d %d/%d", chunksToSend, chunkState.chunksSent,
+              chunkState.totalChunks);
+      printText(2, buffer);
+
+      for (int i = 0; i < chunksToSend; i++) {
+        // Calculate this chunk's size
+        size_t chunkSize =
+            ((chunkState.dataLength - chunkState.offset) < CHUNK_SIZE)
+                ? (chunkState.dataLength - chunkState.offset)
+                : CHUNK_SIZE;
+
+        // Send the raw data chunk
+        NuPacket.write((uint8_t *)(chunkState.data + chunkState.offset),
+                       chunkSize);
+
+        // Update offset and count for next chunk
+        chunkState.offset += chunkSize;
+        chunkState.chunksSent++;
+
+        sprintf(buffer, "C%d/%d %d", chunkState.chunksSent,
+                chunkState.totalChunks, chunkSize);
+        printText(2, buffer);
+
+        if (chunkState.chunksSent >= chunkState.totalChunks) {
+          chunkState.inProgress = false;
+          printText(2, "TC");
+          break;
+        }
+      }
+    }
+
+    // Handle incoming data - THIS PART WAS MISSING
     size_t packetSize;
     const uint8_t *data = NuPacket.read(packetSize);
 
@@ -79,16 +139,19 @@ void bluetoothLoop() {
         command[packetSize] = '\0';
 
         // Buffer for response
-        uint8_t responseBuffer[CHUNK_SIZE]; // Use smaller buffer size
+        uint8_t responseBuffer[200]; // Use smaller buffer size
         size_t responseSize = 0;
+        if (chunkState.inProgress) {
+          printText(2, "ERROR: Chunking already in progress");
+        } else {
+          // Process the command and generate a response
+          processCommand(command, responseBuffer, responseSize);
 
-        // Process the command and generate a response
-        processCommand(command, responseBuffer, responseSize);
-
-        // Send the response if there is one and we haven't already sent it via
-        // chunking
-        if (responseSize > 0) {
-          NuPacket.write(responseBuffer, responseSize);
+          // Send the response if there is one and we haven't already sent it
+          // via chunking
+          if (responseSize > 0) {
+            NuPacket.write(responseBuffer, responseSize);
+          }
         }
 
         free(command);
@@ -96,6 +159,7 @@ void bluetoothLoop() {
     }
   }
 }
+
 void processCommand(const char *command, uint8_t *responseBuffer,
                     size_t &responseSize) {
   // Parse JSON command
@@ -153,49 +217,52 @@ void sendResponse(int status, const char *message, uint8_t *responseBuffer,
   // Serialize JSON to buffer
   responseSize = serializeJson(doc, (char *)responseBuffer, JSON_BUFFER_SIZE);
 }
+// API Handler implementations
 void sendChunkedResponse(const char *data, size_t dataLength,
                          uint8_t *responseBuffer, size_t &responseSize) {
-  // Configuration
-  const size_t MAX_CHUNK_DATA = 200; // Chunk size
-  const size_t MAX_TOTAL_SIZE = MAX_CHUNKS * MAX_CHUNK_DATA;
+  // Check if chunking is already in progress
+  if (chunkState.inProgress) {
+    printText(2, "ERROR: Chunking already in progress");
+    responseSize = 0;
+    return;
+  }
 
   // Ensure we don't exceed maximum size
+  const size_t MAX_TOTAL_SIZE = MAX_CHUNKS * CHUNK_SIZE;
   if (dataLength > MAX_TOTAL_SIZE) {
     dataLength = MAX_TOTAL_SIZE;
   }
 
-  // Calculate number of chunks needed
-  int totalChunks = (dataLength + MAX_CHUNK_DATA - 1) / MAX_CHUNK_DATA;
+  // Copy the data to our persistent buffer
+  persistentChunkData = String(data, dataLength);
 
+  char buffer[100];
+  sprintf(buffer, "S %d ", dataLength);
+  printText(2, buffer);
+
+  // Initialize chunking state
+  chunkState.inProgress = true;
+  chunkState.data = persistentChunkData.c_str(); // Point to our persistent copy
+  chunkState.dataLength = dataLength;
+  chunkState.offset = 0;
+  chunkState.totalChunks = (dataLength + CHUNK_SIZE - 1) / CHUNK_SIZE;
+  chunkState.chunksSent = 0;
+  chunkState.chunksPerIteration = CHUNKS_PER_ITERATION;
+
+  sprintf(buffer, "C %d*%d", chunkState.totalChunks, CHUNK_SIZE);
+  printText(2, buffer);
+
+  // Send header
   char header[256];
-  snprintf(header, sizeof(header), "%d,%d,%d\n", dataLength, totalChunks,
-           MAX_CHUNK_DATA);
-
+  snprintf(header, sizeof(header), "%d,%d,%d\n", dataLength,
+           chunkState.totalChunks, CHUNK_SIZE);
   NuPacket.write((uint8_t *)header, strlen(header));
 
-  // Send each chunk as raw data without markers
-  size_t offset = 0;
-  for (int i = 1; i <= totalChunks; i++) {
-    // Calculate this chunk's size
-    size_t chunkSize = ((dataLength - offset) < MAX_CHUNK_DATA)
-                           ? (dataLength - offset)
-                           : MAX_CHUNK_DATA;
-
-    // Send the raw data chunk
-    NuPacket.write((uint8_t *)(data + offset), chunkSize);
-
-    // Update offset for next chunk
-    offset += chunkSize;
-  }
-
-  // No end marker needed - the header tells the client exactly how much data to
-  // expect
+  printText(2, "I");
 
   // Set responseSize to 0 since we handled sending
   responseSize = 0;
 }
-
-// API Handler implementations
 bool handleTypeRawCommand(JsonDocument &doc, uint8_t *responseBuffer,
                           size_t &responseSize) {
   if (!doc.containsKey("text")) {
@@ -306,16 +373,6 @@ bool handleEditPassCommand(JsonDocument &doc, uint8_t *responseBuffer,
   return true;
 }
 
-bool handleListCommand(JsonDocument &doc, uint8_t *responseBuffer,
-                       size_t &responseSize) {
-  // Get the password list
-  String json = listPasswords();
-
-  // Always use chunking for consistency
-  sendChunkedResponse(json.c_str(), json.length(), responseBuffer,
-                      responseSize);
-  return true;
-}
 bool handleFactoryResetCommand(JsonDocument &doc, uint8_t *responseBuffer,
                                size_t &responseSize) {
   factoryReset();
@@ -361,8 +418,33 @@ bool handlePassPhraseCommand(JsonDocument &doc, uint8_t *responseBuffer,
   return true;
 }
 
+bool handleListCommand(JsonDocument &doc, uint8_t *responseBuffer,
+                       size_t &responseSize) {
+  // If chunking is in progress, return an error
+  if (chunkState.inProgress) {
+    sendResponse(503, "Transfer already in progress", responseBuffer,
+                 responseSize);
+    return true;
+  }
+
+  // Get the password list
+  String json = listPasswords();
+
+  // Start chunked transfer
+  sendChunkedResponse(json.c_str(), json.length(), responseBuffer,
+                      responseSize);
+  return true;
+}
+
 bool handlePassDumpCommand(JsonDocument &doc, uint8_t *responseBuffer,
                            size_t &responseSize) {
+  // If chunking is in progress, return an error
+  if (chunkState.inProgress) {
+    sendResponse(503, "Transfer already in progress", responseBuffer,
+                 responseSize);
+    return true;
+  }
+
   // Create a temporary String to hold the JSON data
   String jsonData;
 
@@ -371,7 +453,7 @@ bool handlePassDumpCommand(JsonDocument &doc, uint8_t *responseBuffer,
   dumpPasswords(&stream);
   jsonData = stream.toString();
 
-  // Send the complete JSON using chunking
+  // Start the chunked transfer
   sendChunkedResponse(jsonData.c_str(), jsonData.length(), responseBuffer,
                       responseSize);
   return true;

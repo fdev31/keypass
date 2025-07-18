@@ -321,7 +321,6 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                         // int numChunks = Integer.parseInt(headerParts[1].trim()); // Not currently used
                         // int chunkSize = Integer.parseInt(headerParts[2].trim()); // Not currently used
                         Log.d(TAG, "Parsed header. Total size: " + expectedDataSize + " bytes. Buffer now has " + receivedDataBuffer.length() + " bytes.");
-                        checkBufferForCompleteMessage();
                     } catch (NumberFormatException e) {
                         Log.e(TAG, "Could not parse header numbers: " + header + ". Clearing buffer.", e);
                         expectedDataSize = -1;
