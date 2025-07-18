@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     private static final String PREF_SSID = "ssid";
     private static final String PREF_MODE = "mode"; // true for BLE, false for WiFi
     private static final String PREF_HIDE_PASSWORDS = "hide_passwords";
+    private static final String PREF_PASSPHRASE = "app_passphrase";
 
     private static final String[] REQUIRED_PERMISSIONS = new String[]{
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -174,6 +175,48 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         if (!hasAllRequiredPermissions()) {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE);
         }
+
+        // Check if passphrase is set, if not, prompt user
+        String storedPassphrase = prefs.getString(PREF_PASSPHRASE, "");
+        if (storedPassphrase.isEmpty()) {
+            showPassphraseSetupDialog();
+        }
+    }
+
+    private void showPassphraseSetupDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Set Passphrase");
+        builder.setMessage("Please set a passphrase for your application. This will be used to encrypt/decrypt your data.");
+        builder.setCancelable(false); // Make it modal
+
+        final EditText input = new EditText(this);
+        input.setHint("Enter Passphrase");
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        builder.setView(input);
+
+        builder.setPositiveButton("Set Passphrase", (dialog, which) -> {
+            String newPassphrase = input.getText().toString();
+            if (newPassphrase.isEmpty()) {
+                Toast.makeText(this, "Passphrase cannot be empty!", Toast.LENGTH_SHORT).show();
+                showPassphraseSetupDialog(); // Re-show dialog if empty
+            } else {
+                SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                prefs.edit().putString(PREF_PASSPHRASE, newPassphrase).apply();
+                Toast.makeText(this, "Passphrase set successfully!", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+
+                // Send passphrase to microcontroller
+                if (bleManager != null && bleManager.isDeviceConnected()) {
+                    String cmd = String.format("{\"cmd\":\"passphrase\",\"p\":\"%s\"}", newPassphrase);
+                    bleManager.send(cmd);
+                    Log.d(TAG, "Sent passphrase to device: " + cmd);
+                } else {
+                    Log.w(TAG, "BLE Manager not connected, cannot send passphrase to device.");
+                }
+            }
+        });
+
+        builder.show();
     }
 
     private void setupWifi() {
@@ -664,6 +707,16 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
         Log.d(TAG, "onDeviceReady: " + deviceName);
         bleStatusTextView.setText("BLE Status: Ready");
+
+        // Send stored passphrase to device if available
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String storedPassphrase = prefs.getString(PREF_PASSPHRASE, "");
+        if (!storedPassphrase.isEmpty()) {
+            String cmd = String.format("{\"cmd\":\"passphrase\",\"p\":\"%s\"}", storedPassphrase);
+            bleManager.send(cmd);
+            Log.d(TAG, "Sent stored passphrase to device on ready: " + cmd);
+        }
+
         bleManager.send("{\"cmd\":\"list\"}");
     }
 

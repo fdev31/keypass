@@ -112,9 +112,19 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
 
         resetPassphraseButton.setOnClickListener(v -> {
             showInputDialog("Reset Passphrase", "Enter new passphrase:", "New Passphrase", newPassphrase -> {
+                Log.d(TAG, "New passphrase entered: " + newPassphrase);
                 prefs.edit().putString(PREF_PASSPHRASE, newPassphrase).apply();
                 showToast("Passphrase reset successfully.");
                 passphraseOutputEditText.setText(newPassphrase); // Update displayed passphrase
+
+                // Send passphrase to microcontroller
+                if (bleManager != null && bleManager.isDeviceConnected()) {
+                    String cmd = String.format("{\"cmd\":\"passphrase\",\"p\":\"%s\"}", newPassphrase);
+                    bleManager.send(cmd);
+                    Log.d(TAG, "Sent passphrase to device: " + cmd);
+                } else {
+                    Log.w(TAG, "BLE Manager not connected, cannot send passphrase to device.");
+                }
             });
         });
 
@@ -136,6 +146,10 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
             } else {
                 passphraseOutputEditText.setText(storedPassphrase);
             }
+        });
+
+        passphraseOutputEditText.setOnClickListener(v -> {
+            showToast("Use 'Reset Passphrase' to change or set the passphrase.");
         });
 
         // Initial UI state based on BLE connection
