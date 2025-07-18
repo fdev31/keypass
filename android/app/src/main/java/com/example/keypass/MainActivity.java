@@ -101,6 +101,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     private boolean isScanning = false;
     private StringBuilder receivedDataBuffer = new StringBuilder();
     private int expectedDataSize = -1;
+    private EditText currentPasswordEditTextForFetch;
 
 
     @Override
@@ -313,6 +314,13 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
             if (passwordEditText.getInputType() == (android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
                 passwordEditText.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
                 togglePasswordVisibilityButton.setImageResource(android.R.drawable.ic_menu_close_clear_cancel); // Slash eye icon
+
+                // If password field is empty and in edit mode, fetch password
+                if (passwordToEdit != null && passwordEditText.getText().toString().isEmpty()) {
+                    currentPasswordEditTextForFetch = passwordEditText;
+                    String cmd = String.format("{\"cmd\":\"fetchPass\",\"id\":%d}", passwordToEdit.getId());
+                    bleManager.send(cmd);
+                }
             } else {
                 passwordEditText.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
                 togglePasswordVisibilityButton.setImageResource(android.R.drawable.ic_menu_view); // Eye icon
@@ -515,6 +523,17 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                     passwordList.add(new Password(uid, name, layout));
                 }
                 runOnUiThread(() -> passwordAdapter.notifyDataSetChanged());
+            } else if (jsonObject.has("s") && jsonObject.has("m")) {
+                int status = jsonObject.getInt("s");
+                String message = jsonObject.getString("m");
+                if (currentPasswordEditTextForFetch != null && status == 200) {
+                    runOnUiThread(() -> {
+                        currentPasswordEditTextForFetch.setText(message);
+                        currentPasswordEditTextForFetch = null; // Clear the reference
+                    });
+                } else {
+                    Log.d(TAG, "Received status/message: " + status + ": " + message);
+                }
             }
         } catch (JSONException e) {
             Log.e(TAG, "Error parsing JSON", e);
