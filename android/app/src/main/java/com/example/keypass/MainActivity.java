@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     private static final String DEVICE_NAME = "KeyPass"; // The name of your BLE device
     private static final String PREFS_NAME = "KeyPassPrefs";
     private static final String PREF_SSID = "ssid";
+    private static final String PREF_MODE = "mode"; // true for BLE, false for WiFi
 
     private static final String[] REQUIRED_PERMISSIONS = new String[]{
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -81,6 +82,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     private Button addButton, settingsButton;
     private PasswordAdapter passwordAdapter;
     private List<Password> passwordList = new ArrayList<>();
+    private TextView bleStatusTextView;
 
     // Common UI
     private Switch modeSwitch;
@@ -113,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         passwordRecyclerView = findViewById(R.id.passwordRecyclerView);
         addButton = findViewById(R.id.addButton);
         settingsButton = findViewById(R.id.settingsButton);
+        bleStatusTextView = findViewById(R.id.bleStatusTextView);
 
         // Setup WiFi
         setupWifi();
@@ -120,8 +123,28 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         // Setup BLE
         setupBle();
 
+        // Load saved mode
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        boolean savedModeIsBle = prefs.getBoolean(PREF_MODE, false); // Default to WiFi
+
+        modeSwitch.setChecked(savedModeIsBle);
+        if (savedModeIsBle) {
+            wifiLayout.setVisibility(View.GONE);
+            bleLayout.setVisibility(View.VISIBLE);
+            if (!bleManager.isDeviceConnected()) {
+                startScan();
+            }
+        } else {
+            wifiLayout.setVisibility(View.VISIBLE);
+            bleLayout.setVisibility(View.GONE);
+        }
+
         // Mode switch listener
         modeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
+            editor.putBoolean(PREF_MODE, isChecked);
+            editor.apply();
+
             if (isChecked) { // BLE mode
                 Log.d(TAG, "Switching to BLE mode");
                 wifiLayout.setVisibility(View.GONE);
@@ -227,6 +250,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         }
         Log.d(TAG, "Starting BLE scan");
         isScanning = true;
+        bleStatusTextView.setText("BLE Status: Scanning...");
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
@@ -239,6 +263,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         if (isScanning) {
             Log.d(TAG, "Stopping BLE scan");
             isScanning = false;
+            bleStatusTextView.setText("BLE Status: Scan Stopped");
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
@@ -265,15 +290,22 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         @Override
         public void onScanFailed(int errorCode) {
             Log.e(TAG, "Scan failed with error code: " + errorCode);
+            bleStatusTextView.setText("BLE Status: Scan Failed (" + errorCode + ")");
         }
     };
 
     @Override
     public void onDataReceived(@NonNull BluetoothDevice device, @NonNull Data data) {
         String text = data.getStringValue(0);
-        Log.d(TAG, "onDataReceived: " + text);
+        if (text == null) return;
+
+        Log.d(TAG, "onDataReceived chunk: " + text);
         receivedDataBuffer.append(text);
 
+        processReceivedData();
+    }
+
+    private void processReceivedData() {
         if (expectedDataSize == -1) {
             int newlineIndex = receivedDataBuffer.indexOf("\n");
             if (newlineIndex != -1) {
@@ -284,7 +316,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                     JSONObject jsonObject = new JSONObject(potentialHeader);
                     if (jsonObject.has("total_size")) {
                         expectedDataSize = jsonObject.getInt("total_size");
-                        Log.d(TAG, "Parsed chunk header. Expecting " + expectedDataSize + " bytes.");
+                        Log.d(TAG, "Parsed chunk header. Expecting " + expectedDataSize + " bytes. Buffer now has " + receivedDataBuffer.length() + " bytes.");
                         checkBufferForCompleteMessage();
                     } else {
                         Log.d(TAG, "Processing simple message.");
@@ -301,13 +333,19 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 
     private void checkBufferForCompleteMessage() {
         if (expectedDataSize > 0 && receivedDataBuffer.length() >= expectedDataSize) {
-            Log.d(TAG, "Complete chunked message received. Size: " + receivedDataBuffer.length());
+            Log.d(TAG, "Complete chunked message received. Buffer size: " + receivedDataBuffer.length() + ", Expected size: " + expectedDataSize);
             String fullMessage = receivedDataBuffer.substring(0, expectedDataSize);
+            
             receivedDataBuffer.delete(0, expectedDataSize);
 
             processJson(fullMessage);
 
             expectedDataSize = -1;
+            
+            if (receivedDataBuffer.length() > 0) {
+                Log.d(TAG, "More data in buffer, processing again.");
+                processReceivedData();
+            }
         }
     }
 
@@ -431,48 +469,58 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     @Override
     public void onDeviceConnecting(@NonNull BluetoothDevice device) {
         Log.d(TAG, "onDeviceConnecting: " + device.getName());
+        bleStatusTextView.setText("BLE Status: Connecting to " + device.getName() + "...");
     }
 
     @Override
     public void onDeviceConnected(@NonNull BluetoothDevice device) {
         Log.d(TAG, "onDeviceConnected: " + device.getName());
+        bleStatusTextView.setText("BLE Status: Connected to " + device.getName());
     }
 
     @Override
     public void onDeviceFailedToConnect(@NonNull BluetoothDevice device, int reason) {
         Log.e(TAG, "onDeviceFailedToConnect: " + device.getName() + ", reason: " + reason);
+        bleStatusTextView.setText("BLE Status: Failed to connect (" + reason + ")");
     }
 
     @Override
     public void onDeviceReady(@NonNull BluetoothDevice device) {
         Log.d(TAG, "onDeviceReady: " + device.getName());
+        bleStatusTextView.setText("BLE Status: Ready");
         bleManager.send("{\"cmd\":\"list\"}");
     }
 
     @Override
     public void onDeviceDisconnecting(@NonNull BluetoothDevice device) {
         Log.d(TAG, "onDeviceDisconnecting: " + device.getName());
+        bleStatusTextView.setText("BLE Status: Disconnecting...");
     }
 
     @Override
     public void onDeviceDisconnected(@NonNull BluetoothDevice device, int reason) {
         Log.d(TAG, "onDeviceDisconnected: " + device.getName() + ", reason: " + reason);
+        bleStatusTextView.setText("BLE Status: Disconnected");
     }
 
     public void onBondingRequired(@NonNull BluetoothDevice device) {
         Log.d(TAG, "onBondingRequired: " + device.getName());
+        bleStatusTextView.setText("BLE Status: Bonding Required");
     }
 
     public void onBondingSucceeded(@NonNull BluetoothDevice device) {
         Log.d(TAG, "onBondingSucceeded: " + device.getName());
+        bleStatusTextView.setText("BLE Status: Bonding Succeeded");
     }
 
     public void onBondingFailed(@NonNull BluetoothDevice device) {
         Log.d(TAG, "onBondingFailed: " + device.getName());
+        bleStatusTextView.setText("BLE Status: Bonding Failed");
     }
 
     public void onBondNotSupported(@NonNull BluetoothDevice device) {
         Log.d(TAG, "onBondNotSupported: " + device.getName());
+        bleStatusTextView.setText("BLE Status: Bond Not Supported");
     }
 }
 
