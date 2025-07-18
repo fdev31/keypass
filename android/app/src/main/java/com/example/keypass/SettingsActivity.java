@@ -1,13 +1,307 @@
 package com.example.keypass;
 
+import android.bluetooth.BluetoothDevice;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.Manifest;
 import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Switch;
+import android.widget.TextView;
+import android.widget.Toast;
 
-public class SettingsActivity extends AppCompatActivity {
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import no.nordicsemi.android.ble.data.Data;
+import no.nordicsemi.android.ble.observer.ConnectionObserver;
+
+interface InputCallback {
+    void onInput(String input);
+}
+
+public class SettingsActivity extends AppCompatActivity implements KeyPassBleManager.DataCallback, ConnectionObserver {
+
+    private static final String TAG = "SettingsActivity";
+    private static final String PREFS_NAME = "KeyPassPrefs";
+    private static final String PREF_CONFIRM_ACTIONS = "confirm_actions";
+    private static final String PREF_HIDE_PASSWORDS = "hide_passwords";
+
+    private Switch confirmActionsSwitch;
+    private Switch hidePasswordsSwitch;
+    private Button backupPasswordsButton;
+    private EditText backupOutputEditText;
+    private Button changeWifiPasswordButton;
+    private Button resetPassphraseButton;
+    private Button factoryResetButton;
+    private Button showPassphraseButton;
+    private EditText passphraseOutputEditText;
+
+    private KeyPassBleManager bleManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
+
+        // Initialize UI elements
+        confirmActionsSwitch = findViewById(R.id.confirmActionsSwitch);
+        hidePasswordsSwitch = findViewById(R.id.hidePasswordsSwitch);
+        backupPasswordsButton = findViewById(R.id.backupPasswordsButton);
+        backupOutputEditText = findViewById(R.id.backupOutputEditText);
+        changeWifiPasswordButton = findViewById(R.id.changeWifiPasswordButton);
+        resetPassphraseButton = findViewById(R.id.resetPassphraseButton);
+        factoryResetButton = findViewById(R.id.factoryResetButton);
+        showPassphraseButton = findViewById(R.id.showPassphraseButton);
+        passphraseOutputEditText = findViewById(R.id.passphraseOutputEditText);
+
+        // Initialize SharedPreferences
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+
+        // Set initial state of switches and listeners
+        confirmActionsSwitch.setChecked(prefs.getBoolean(PREF_CONFIRM_ACTIONS, true)); // Default to true
+        confirmActionsSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean(PREF_CONFIRM_ACTIONS, isChecked).apply();
+            showToast("Confirm actions: " + (isChecked ? "Enabled" : "Disabled"));
+        });
+
+        hidePasswordsSwitch.setChecked(prefs.getBoolean(PREF_HIDE_PASSWORDS, false)); // Default to false
+        hidePasswordsSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean(PREF_HIDE_PASSWORDS, isChecked).apply();
+            showToast("Hide passwords: " + (isChecked ? "Enabled" : "Disabled"));
+            // TODO: Notify MainActivity to update password visibility
+        });
+
+        // Initialize BLE Manager (assuming it's a singleton or passed from MainActivity)
+        // For now, we'll create a new instance, but ideally, it should be shared.
+        bleManager = new KeyPassBleManager(this);
+        bleManager.setConnectionObserver(this);
+        bleManager.setDataCallback(this);
+
+        // Set button listeners
+        backupPasswordsButton.setOnClickListener(v -> {
+            if (bleManager.isDeviceConnected()) {
+                sendCommand("dump");
+            } else {
+                showToast("Not connected to KeyPass device.");
+            }
+        });
+
+        changeWifiPasswordButton.setOnClickListener(v -> {
+            if (bleManager.isDeviceConnected()) {
+                showInputDialog("Change WiFi Password", "Enter new WiFi password:", "New WiFi Password", newPassword -> {
+                    sendCommand(String.format("{\"cmd\":\"updateWifiPass\",\"password\":\"%s\"}", newPassword));
+                });
+            } else {
+                showToast("Not connected to KeyPass device.");
+            }
+        });
+
+        resetPassphraseButton.setOnClickListener(v -> {
+            if (bleManager.isDeviceConnected()) {
+                showConfirmationDialog("Reset Passphrase", "Are you sure you want to reset the passphrase? This cannot be undone.", () -> {
+                    sendCommand("resetPassphrase");
+                });
+            } else {
+                showToast("Not connected to KeyPass device.");
+            }
+        });
+
+        factoryResetButton.setOnClickListener(v -> {
+            if (bleManager.isDeviceConnected()) {
+                showConfirmationDialog("Factory Reset", "Are you sure you want to perform a factory reset? All data will be erased.", () -> {
+                    sendCommand("reset");
+                });
+            } else {
+                showToast("Not connected to KeyPass device.");
+            }
+        });
+
+        showPassphraseButton.setOnClickListener(v -> {
+            if (bleManager.isDeviceConnected()) {
+                sendCommand("showPassphrase");
+            } else {
+                showToast("Not connected to KeyPass device.");
+            }
+        });
+
+        // Initial UI state based on BLE connection
+        updateUIForBleConnection(bleManager.isDeviceConnected());
+    }
+
+    private void sendCommand(String command) {
+        if (confirmActionsSwitch.isChecked()) {
+            showConfirmationDialog("Confirm Action", "Send command: " + command + "?", () -> {
+                bleManager.send(command);
+            });
+        } else {
+            bleManager.send(command);
+        }
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private void showConfirmationDialog(String title, String message, Runnable onConfirm) {
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton("Yes", (dialog, which) -> onConfirm.run())
+                .setNegativeButton("No", null)
+                .show();
+    }
+
+    private void showInputDialog(String title, String message, String hint, InputCallback onInput) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(title);
+        builder.setMessage(message);
+
+        final EditText input = new EditText(this);
+        input.setHint(hint);
+        builder.setView(input);
+
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            String inputText = input.getText().toString();
+            onInput.onInput(inputText);
+        });
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+
+        builder.show();
+    }
+
+    // KeyPassBleManager.DataCallback methods
+    @Override
+    public void onDataReceived(@NonNull BluetoothDevice device, @NonNull Data data) {
+        String text = data.getStringValue(0);
+        if (text == null) return;
+
+        Log.d(TAG, "onDataReceived: " + text);
+        try {
+            JSONObject jsonResponse = new JSONObject(text);
+            if (jsonResponse.has("dump")) {
+                backupOutputEditText.setText(jsonResponse.getString("dump"));
+            } else if (jsonResponse.has("passphrase")) {
+                passphraseOutputEditText.setText(jsonResponse.getString("passphrase"));
+            } else if (jsonResponse.has("status")) {
+                showToast("Command Status: " + jsonResponse.getString("status"));
+            } else {
+                showToast("Received: " + text);
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing JSON response: " + text, e);
+            showToast("Received non-JSON data or error: " + text);
+        }
+    }
+
+    @Override
+    public void onDataSent(@NonNull BluetoothDevice device, @NonNull Data data) {
+        Log.d(TAG, "onDataSent: " + data.getStringValue(0));
+    }
+
+    // ConnectionObserver methods
+    @Override
+    public void onDeviceConnecting(@NonNull BluetoothDevice device) {
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onDeviceConnecting: " + deviceName);
+        updateUIForBleConnection(false);
+    }
+
+    @Override
+    public void onDeviceConnected(@NonNull BluetoothDevice device) {
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onDeviceConnected: " + deviceName);
+        updateUIForBleConnection(true);
+    }
+
+    @Override
+    public void onDeviceFailedToConnect(@NonNull BluetoothDevice device, int reason) {
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.e(TAG, "onDeviceFailedToConnect: " + deviceName + ", reason: " + reason);
+        updateUIForBleConnection(false);
+        showToast("Failed to connect to KeyPass device.");
+    }
+
+    @Override
+    public void onDeviceReady(@NonNull BluetoothDevice device) {
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onDeviceReady: " + deviceName);
+        updateUIForBleConnection(true);
+    }
+
+    @Override
+    public void onDeviceDisconnecting(@NonNull BluetoothDevice device) {
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onDeviceDisconnecting: " + deviceName);
+        updateUIForBleConnection(false);
+    }
+
+    @Override
+    public void onDeviceDisconnected(@NonNull BluetoothDevice device, int reason) {
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onDeviceDisconnected: " + deviceName + ", reason: " + reason);
+        updateUIForBleConnection(false);
+        showToast("Disconnected from KeyPass device.");
+    }
+
+    public void onBondingRequired(@NonNull BluetoothDevice device) {
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onBondingRequired: " + deviceName);
+    }
+
+    public void onBondingSucceeded(@NonNull BluetoothDevice device) {
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onBondingSucceeded: " + deviceName);
+    }
+
+    public void onBondingFailed(@NonNull BluetoothDevice device) {
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onBondingFailed: " + deviceName);
+    }
+
+    public void onBondNotSupported(@NonNull BluetoothDevice device) {
+        String deviceName = (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) ? "Unknown Device" : device.getName();
+        Log.d(TAG, "onBondNotSupported: " + deviceName);
+    }
+
+    private void updateUIForBleConnection(boolean isConnected) {
+        backupPasswordsButton.setEnabled(isConnected);
+        changeWifiPasswordButton.setEnabled(isConnected);
+        resetPassphraseButton.setEnabled(isConnected);
+        factoryResetButton.setEnabled(isConnected);
+        showPassphraseButton.setEnabled(isConnected);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Re-register BLE callbacks if needed, or ensure manager is connected
+        if (bleManager != null) {
+            bleManager.setConnectionObserver(this);
+            bleManager.setDataCallback(this);
+            updateUIForBleConnection(bleManager.isDeviceConnected());
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Unregister BLE callbacks to prevent leaks if not needed in background
+        if (bleManager != null) {
+            bleManager.setConnectionObserver(null);
+            bleManager.setDataCallback(null);
+        }
     }
 }
