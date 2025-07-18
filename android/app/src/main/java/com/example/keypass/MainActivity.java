@@ -369,7 +369,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                 passwordList.clear();
                 for (int i = 0; i < passwords.length(); i++) {
                     JSONObject password = passwords.getJSONObject(i);
-                    passwordList.add(new Password(password.getInt("id"), password.getString("name")));
+                    passwordList.add(new Password(password.getInt("uid"), password.getString("name")));
                 }
                 runOnUiThread(() -> passwordAdapter.notifyDataSetChanged());
             }
