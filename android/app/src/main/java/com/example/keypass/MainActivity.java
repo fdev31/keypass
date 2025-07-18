@@ -428,10 +428,24 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 
             int id = (passwordToEdit != null) ? passwordToEdit.getId() : passwordList.size(); // Use existing ID or list size for new
 
+            Password newOrUpdatedPassword = new Password(id, name, layout);
+
+            if (passwordToEdit == null) {
+                // Add new password
+                passwordList.add(newOrUpdatedPassword);
+            } else {
+                // Update existing password
+                int index = passwordList.indexOf(passwordToEdit);
+                if (index != -1) {
+                    passwordList.set(index, newOrUpdatedPassword);
+                }
+            }
+            runOnUiThread(() -> passwordAdapter.notifyDataSetChanged());
+            savePasswordList();
+
             String cmd = String.format("{\"cmd\":\"editPass\",\"id\":%d,\"name\":\"%s\",\"password\":\"%s\",\"layout\":%d}", id, name, password, layout);
             bleManager.send(cmd);
             dialog.dismiss();
-            savePasswordList();
         });
 
         dialog.show();
