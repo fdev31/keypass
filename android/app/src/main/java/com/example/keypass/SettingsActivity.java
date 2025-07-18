@@ -34,7 +34,7 @@ interface InputCallback {
 
 public class SettingsActivity extends AppCompatActivity implements KeyPassBleManager.DataCallback, ConnectionObserver {
 
-    private static final String TAG = "SettingsActivity";
+    private static final String TAG = "KeyPass::SettingsActivity";
     private static final String PREFS_NAME = "KeyPassPrefs";
     private static final String PREF_CONFIRM_ACTIONS = "confirm_actions";
     private static final String PREF_HIDE_PASSWORDS = "hide_passwords";
@@ -59,13 +59,16 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "SettingsActivity onCreate called.");
         setContentView(R.layout.activity_settings);
 
         // Initialize UI elements
         confirmActionsSwitch = findViewById(R.id.confirmActionsSwitch);
         hidePasswordsSwitch = findViewById(R.id.hidePasswordsSwitch);
         backupPasswordsButton = findViewById(R.id.backupPasswordsButton);
+        if (backupPasswordsButton == null) Log.e(TAG, "backupPasswordsButton is null!");
         backupOutputEditText = findViewById(R.id.backupOutputEditText);
+        if (backupOutputEditText == null) Log.e(TAG, "backupOutputEditText is null!");
         changeWifiPasswordButton = findViewById(R.id.changeWifiPasswordButton);
         resetPassphraseButton = findViewById(R.id.resetPassphraseButton);
         factoryResetButton = findViewById(R.id.factoryResetButton);
@@ -97,9 +100,12 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
 
         // Set button listeners
         backupPasswordsButton.setOnClickListener(v -> {
+            Log.d(TAG, "Backup Passwords button clicked.");
             if (bleManager.isDeviceConnected()) {
-                sendCommand("dump");
+                Log.d(TAG, "BLE Manager is connected. Sending dump command.");
+                bleManager.send("{\"cmd\":\"dump\"}");
             } else {
+                Log.d(TAG, "BLE Manager is NOT connected. Showing toast.");
                 showToast("Not connected to KeyPass device.");
             }
         });
@@ -239,10 +245,14 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
     // KeyPassBleManager.DataCallback methods
     @Override
     public void onDataReceived(@NonNull BluetoothDevice device, @NonNull Data data) {
+        Log.d(TAG, "onDataReceived: CALLED");
         String text = data.getStringValue(0);
-        if (text == null) return;
+        if (text == null) {
+            Log.d(TAG, "onDataReceived: Received null data");
+            return;
+        }
 
-        Log.d(TAG, "onDataReceived chunk: " + text);
+        Log.d(TAG, "onDataReceived raw chunk: " + text + " (length: " + text.length() + ")");
         receivedDataBuffer.append(text);
 
         processReceivedData();
@@ -284,9 +294,12 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
                 if (receivedDataBuffer.length() >= expectedDataSize) {
                     Log.d(TAG, "Complete chunked message received. Buffer size: " + receivedDataBuffer.length() + ", Expected size: " + expectedDataSize);
                     String fullMessage = receivedDataBuffer.substring(0, expectedDataSize);
+                    Log.d(TAG, "Processing full message: " + fullMessage);
                     receivedDataBuffer.delete(0, expectedDataSize);
 
                     processJson(fullMessage);
+
+                    Log.d(TAG, "Message passed to processJson: " + fullMessage);
 
                     expectedDataSize = -1; // Reset for next message
                     // Continue loop to check if there's another message in the buffer
@@ -302,11 +315,19 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
     }
 
     private void processJson(String json) {
-        Log.d(TAG, "Processing JSON: " + json);
+        Log.d(TAG, "processJson: Entry with JSON: " + json);
         try {
             JSONObject jsonResponse = new JSONObject(json);
             if (jsonResponse.has("dump")) {
-                backupOutputEditText.setText(jsonResponse.getString("dump"));
+                Log.d(TAG, "JSON has 'dump' key.");
+                String dumpData = jsonResponse.optString("dump", "DUMP_KEY_NOT_FOUND_OR_NULL");
+                Log.d(TAG, "Value of 'dump' key: " + dumpData);
+                if (backupOutputEditText != null) {
+                    backupOutputEditText.setText(dumpData);
+                    Log.d(TAG, "backupOutputEditText set to: " + dumpData);
+                } else {
+                    Log.e(TAG, "backupOutputEditText is null, cannot set text!");
+                }
             } else if (jsonResponse.has("passphrase")) {
                 passphraseOutputEditText.setText(jsonResponse.getString("passphrase"));
             } else if (jsonResponse.has("status")) {

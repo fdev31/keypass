@@ -577,13 +577,13 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 
     private void processFullMessage(String message) {
         Log.d(TAG, "Processing full message");
-        try {
-            // First, try to process as JSON
-            JSONObject jsonObject = new JSONObject(message);
+        // Check if the message looks like JSON
+        if (message.trim().startsWith("{") || message.trim().startsWith("[")) {
+            // Try to process as JSON
             processJson(message);
-        } catch (JSONException e) {
-            // If JSON parsing fails, treat it as plain text
-            Log.d(TAG, "Message is not a valid JSON, processing as plain text.");
+        } else {
+            // Assume it's plain text
+            Log.d(TAG, "Message does not look like JSON, processing as plain text.");
             processText(message);
         }
     }
@@ -643,6 +643,9 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                 }
                 runOnUiThread(() -> passwordAdapter.notifyDataSetChanged());
                 savePasswordList();
+            } else if (jsonObject.has("dump")) {
+                String dumpData = jsonObject.getString("dump");
+                processText(dumpData); // Process the dump data as plain text
             } else if (jsonObject.has("s") && jsonObject.has("m")) {
                 int status = jsonObject.getInt("s");
                 String message = jsonObject.getString("m");
@@ -757,6 +760,9 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
             @Override
             public void onAvailable(@NonNull Network network) {
                 super.onAvailable(network);
+                // TODO: check the network name
+                SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+                if(!prefs.getBoolean(PREF_MODE, false)) {
                 Log.d(TAG, "Found a Wi-Fi network without internet, binding to it.");
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                     connectivityManager.bindProcessToNetwork(network);
@@ -768,7 +774,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                 });
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().hide();
-                }
+                }}
             }
 
             @Override

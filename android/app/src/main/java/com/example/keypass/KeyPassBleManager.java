@@ -16,7 +16,7 @@ import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.data.Data;
 
 public class KeyPassBleManager extends BleManager {
-    private static final String TAG = "KeyPassBleManager";
+    private static final String TAG = "KeyPass::BleManager";
 
     private static KeyPassBleManager instance;
 
