@@ -53,4 +53,7 @@ apk-serve:
     cd android/app/build/outputs/apk/debug && python -m http.server 9090
 
 apk-logs:
-    cd android && adb logcat -v long
+    cd android && adb logcat -s "KeyPass:V"
+    # cd android && adb logcat -v long
+apk-fatal-logs:
+    cd android && adb logcat -s "AndroidRuntime:E" "FATAL EXCEPTION:E"

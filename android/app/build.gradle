@@ -8,10 +8,11 @@ android {
 
     defaultConfig {
         applicationId "com.example.keypass"
-        minSdk 21
+        minSdk 23
         targetSdk 34
         versionCode 1
         versionName "1.0"
+        multiDexEnabled true
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -39,4 +40,5 @@ dependencies {
     implementation 'no.nordicsemi.android:ble:2.10.2'
     implementation 'no.nordicsemi.android:ble-common:2.10.2'
     implementation 'no.nordicsemi.android.support.v18:scanner:1.6.0'
+    implementation 'androidx.multidex:multidex:2.0.1'
 }

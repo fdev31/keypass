@@ -19,33 +19,44 @@ import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.View;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.materialswitch.MaterialSwitch;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+
 import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.observer.ConnectionObserver;
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat;
@@ -78,8 +89,8 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     // WiFi UI
     private LinearLayout wifiLayout;
     private WebView webView;
-    private EditText ssidEditText;
-    private Button connectButton;
+    private TextInputEditText ssidEditText;
+    private MaterialButton connectButton;
     private LinearLayout connectionForm;
     private ConnectivityManager connectivityManager;
     private WifiManager wifiManager;
@@ -88,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     // BLE UI
     private LinearLayout bleLayout;
     private RecyclerView passwordRecyclerView;
-    private Button addButton, settingsButton;
+    private MaterialButton addButton, settingsButton;
     private PasswordAdapter passwordAdapter;
     private List<Password> passwordList = new ArrayList<>();
     private TextView bleStatusTextView;
@@ -102,13 +113,16 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     private boolean isScanning = false;
     private StringBuilder receivedDataBuffer = new StringBuilder();
     private int expectedDataSize = -1;
-    private EditText currentPasswordEditTextForFetch;
+    private TextInputEditText currentPasswordEditTextForFetch;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
         // Common UI
         modeSwitch = findViewById(R.id.modeSwitch);
@@ -134,7 +148,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         setupBle();
 
         // Load saved mode
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         boolean savedModeIsBle = prefs.getBoolean(PREF_MODE, false); // Default to WiFi
 
         modeSwitch.setChecked(savedModeIsBle);
@@ -151,7 +165,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 
         // Mode switch listener
         modeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
+            SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit();
             editor.putBoolean(PREF_MODE, isChecked);
             editor.apply();
 
@@ -160,7 +174,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                 wifiLayout.setVisibility(View.GONE);
                 bleLayout.setVisibility(View.VISIBLE);
                 if (bleManager.isDeviceConnected()) {
-                    Log.d(TAG, "Device already connected");
+                    Log.d(TAG, "Already connected");
                 } else {
                     startScan();
                 }
@@ -184,7 +198,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     }
 
     private void showPassphraseSetupDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this);
         builder.setTitle("Set Passphrase");
         builder.setMessage("Please set a passphrase for your application. This will be used to encrypt/decrypt your data.");
         builder.setCancelable(false); // Make it modal
@@ -200,7 +214,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                 Toast.makeText(this, "Passphrase cannot be empty!", Toast.LENGTH_SHORT).show();
                 showPassphraseSetupDialog(); // Re-show dialog if empty
             } else {
-                SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
                 prefs.edit().putString(PREF_PASSPHRASE, newPassphrase).apply();
                 Toast.makeText(this, "Passphrase set successfully!", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
@@ -236,7 +250,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String lastSsid = prefs.getString(PREF_SSID, "KeyPass");
         ssidEditText.setText(lastSsid);
 
@@ -301,35 +315,22 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     }
 
     private void showEditPasswordDialog(Password passwordToEdit) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        LayoutInflater inflater = this.getLayoutInflater();
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this);
+        LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_add_password, null);
         builder.setView(dialogView);
 
-        EditText nameEditText = dialogView.findViewById(R.id.nameEditText);
-        EditText passwordEditText = dialogView.findViewById(R.id.passwordEditText);
-        Button generatePasswordButton = dialogView.findViewById(R.id.generatePasswordButton);
-        ImageButton togglePasswordVisibilityButton = dialogView.findViewById(R.id.togglePasswordVisibilityButton);
+        TextInputEditText nameEditText = dialogView.findViewById(R.id.nameEditText);
+        TextInputEditText passwordEditText = dialogView.findViewById(R.id.passwordEditText);
+        MaterialButton generatePasswordButton = dialogView.findViewById(R.id.generatePasswordButton);
+        
         RadioGroup layoutRadioGroup = dialogView.findViewById(R.id.layoutRadioGroup);
         RadioButton layoutBitlocker = dialogView.findViewById(R.id.layoutBitlocker);
         RadioButton layoutFR = dialogView.findViewById(R.id.layoutFR);
         RadioButton layoutUS = dialogView.findViewById(R.id.layoutUS);
-        Button savePasswordButton = dialogView.findViewById(R.id.savePasswordButton);
+        MaterialButton savePasswordButton = dialogView.findViewById(R.id.savePasswordButton);
 
-        AlertDialog dialog = builder.create();
-
-        // Get hide passwords preference
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        boolean hidePasswords = prefs.getBoolean(PREF_HIDE_PASSWORDS, false); // Default to false
-
-        // Set initial password visibility
-        if (hidePasswords) {
-            passwordEditText.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-            togglePasswordVisibilityButton.setImageResource(android.R.drawable.ic_menu_view); // Eye icon
-        } else {
-            passwordEditText.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
-            togglePasswordVisibilityButton.setImageResource(android.R.drawable.ic_menu_close_clear_cancel); // Slash eye icon
-        }
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
 
         // Pre-fill if in edit mode
         if (passwordToEdit != null) {
@@ -353,29 +354,10 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
             dialog.setTitle("Add New Password");
         }
 
-        togglePasswordVisibilityButton.setOnClickListener(v -> {
-            if (passwordEditText.getInputType() == (android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
-                passwordEditText.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
-                togglePasswordVisibilityButton.setImageResource(android.R.drawable.ic_menu_close_clear_cancel); // Slash eye icon
-
-                // If password field is empty and in edit mode, fetch password
-                if (passwordToEdit != null && passwordEditText.getText().toString().isEmpty()) {
-                    currentPasswordEditTextForFetch = passwordEditText;
-                    String cmd = String.format("{\"cmd\":\"fetchPass\",\"id\":%d}", passwordToEdit.getId());
-                    bleManager.send(cmd);
-                }
-            } else {
-                passwordEditText.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-                togglePasswordVisibilityButton.setImageResource(android.R.drawable.ic_menu_view); // Eye icon
-            }
-            // Move cursor to the end of the text
-            passwordEditText.setSelection(passwordEditText.getText().length());
-        });
-
         generatePasswordButton.setOnClickListener(v -> {
             // Prompt for length if password field is empty
-            if (passwordEditText.getText().toString().isEmpty()) {
-                AlertDialog.Builder lengthBuilder = new AlertDialog.Builder(this);
+            if (Objects.requireNonNull(passwordEditText.getText()).toString().isEmpty()) {
+                MaterialAlertDialogBuilder lengthBuilder = new MaterialAlertDialogBuilder(this);
                 lengthBuilder.setTitle("Generate Password");
                 lengthBuilder.setMessage("Enter password length:");
                 final EditText lengthInput = new EditText(this);
@@ -402,8 +384,8 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         });
 
         savePasswordButton.setOnClickListener(v -> {
-            String name = nameEditText.getText().toString();
-            String password = passwordEditText.getText().toString();
+            String name = Objects.requireNonNull(nameEditText.getText()).toString();
+            String password = Objects.requireNonNull(passwordEditText.getText()).toString();
             int layout = -1; // Default to Bitlocker
             int checkedRadioButtonId = layoutRadioGroup.getCheckedRadioButtonId();
             if (checkedRadioButtonId == R.id.layoutFR) {
@@ -657,7 +639,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 
     private void connectToWifi() {
         String ssid = ssidEditText.getText().toString();
-        SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
+        SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit();
         editor.putString(PREF_SSID, ssid);
         editor.apply();
         startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
@@ -756,7 +738,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         bleStatusTextView.setText("BLE Status: Ready");
 
         // Send stored passphrase to device if available
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String storedPassphrase = prefs.getString(PREF_PASSPHRASE, "");
         if (!storedPassphrase.isEmpty()) {
             String cmd = String.format("{\"cmd\":\"passphrase\",\"p\":\"%s\"}", storedPassphrase);
