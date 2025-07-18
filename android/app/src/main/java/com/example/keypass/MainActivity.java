@@ -4,6 +4,7 @@ import android.Manifest;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -50,6 +51,8 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     private static final int PERMISSIONS_REQUEST_CODE = 1;
     private static final String TARGET_URL = "http://4.3.2.1/";
     private static final String DEVICE_NAME = "KeyPass"; // The name of your BLE device
+    private static final String PREFS_NAME = "KeyPassPrefs";
+    private static final String PREF_SSID = "ssid";
 
     private static final String[] REQUIRED_PERMISSIONS = new String[]{
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -119,7 +122,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
             if (isChecked) { // BLE mode
                 wifiLayout.setVisibility(View.GONE);
                 bleLayout.setVisibility(View.VISIBLE);
-                if (bleManager.isConnected()) {
+                if (bleManager.isDeviceConnected()) {
                     // already connected
                 } else {
                     startScan();
@@ -152,6 +155,10 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
 
         connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String lastSsid = prefs.getString(PREF_SSID, "KeyPass");
+        ssidEditText.setText(lastSsid);
 
         connectButton.setOnClickListener(v -> {
             if (!hasAllRequiredPermissions()) {
@@ -303,16 +310,86 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     private void updateButtonState() {
         if (hasAllRequiredPermissions()) {
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-            if (wifiInfo != null && wifiInfo.getSSID().replace("\"", "").equals(ssidEditText.getText().toString())) {
+            String currentSsid = wifiInfo != null ? wifiInfo.getSSID().replace("\"", "") : null;
+            String targetSsid = ssidEditText.getText().toString();
+
+            if (targetSsid.equals(currentSsid)) {
                 connectButton.setText("Load");
+                connectionForm.setVisibility(View.GONE);
             } else {
                 connectButton.setText("Connect");
+                connectionForm.setVisibility(View.VISIBLE);
             }
         }
     }
 
     private void connectToWifi() {
-        // ... (existing wifi connection logic)
+        String ssid = ssidEditText.getText().toString();
+        SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
+        editor.putString(PREF_SSID, ssid);
+        editor.apply();
+        startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateButtonState();
+        registerNetworkCallback();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterNetworkCallback();
+    }
+
+    private void registerNetworkCallback() {
+        final NetworkRequest request = new NetworkRequest.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build();
+
+        networkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(@NonNull Network network) {
+                super.onAvailable(network);
+                Log.d(TAG, "Found a Wi-Fi network without internet, binding to it.");
+                connectivityManager.bindProcessToNetwork(network);
+                runOnUiThread(() -> {
+                    Toast.makeText(getApplicationContext(), "KeyPass network connected", Toast.LENGTH_SHORT).show();
+                    updateButtonState();
+                    webView.loadUrl(TARGET_URL);
+                });
+                if (getSupportActionBar() != null) {
+                    getSupportActionBar().hide();
+                }
+            }
+
+            @Override
+            public void onLost(@NonNull Network network) {
+                super.onLost(network);
+                Log.d(TAG, "Lost connection to the network.");
+                connectivityManager.bindProcessToNetwork(null);
+                runOnUiThread(() -> {
+                    Toast.makeText(getApplicationContext(), "KeyPass network disconnected", Toast.LENGTH_SHORT).show();
+                    updateButtonState();
+                });
+            }
+        };
+
+        connectivityManager.registerNetworkCallback(request, networkCallback);
+    }
+
+    private void unregisterNetworkCallback() {
+        if (networkCallback != null) {
+            try {
+                connectivityManager.unregisterNetworkCallback(networkCallback);
+            } catch (IllegalArgumentException e) {
+                Log.w(TAG, "Network callback not registered.");
+            }
+            networkCallback = null;
+        }
     }
 
     @Override
@@ -363,4 +440,20 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     }
 }
 
+class Password {
+    private int id;
+    private String name;
 
+    public Password(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+}
