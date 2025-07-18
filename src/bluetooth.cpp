@@ -167,20 +167,11 @@ void sendChunkedResponse(const char *data, size_t dataLength,
   // Calculate number of chunks needed
   int totalChunks = (dataLength + MAX_CHUNK_DATA - 1) / MAX_CHUNK_DATA;
 
-  // Send a detailed header with all the information the client needs
-  StaticJsonDocument<256> headerDoc;
-  headerDoc["total_size"] = dataLength;
-  headerDoc["chunk_count"] = totalChunks;
-  headerDoc["chunk_size"] = MAX_CHUNK_DATA;
+  char header[256];
+  snprintf(header, sizeof(header), "%d,%d,%d\n", dataLength, totalChunks,
+           MAX_CHUNK_DATA);
 
-  // Serialize the header
-  char headerBuffer[256];
-  size_t headerSize =
-      serializeJson(headerDoc, headerBuffer, sizeof(headerBuffer));
-
-  // Send the header
-  NuPacket.write((uint8_t *)headerBuffer, headerSize);
-  NuPacket.write((uint8_t *)"\n", 1);
+  NuPacket.write((uint8_t *)header, strlen(header));
 
   // Send each chunk as raw data without markers
   size_t offset = 0;
