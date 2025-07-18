@@ -87,7 +87,7 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
 
         // Initialize BLE Manager (assuming it's a singleton or passed from MainActivity)
         // For now, we'll create a new instance, but ideally, it should be shared.
-        bleManager = new KeyPassBleManager(this);
+        bleManager = KeyPassBleManager.getInstance(this);
         bleManager.setConnectionObserver(this);
         bleManager.setDataCallback(this);
 
@@ -111,21 +111,7 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
         });
 
         resetPassphraseButton.setOnClickListener(v -> {
-            showInputDialog("Reset Passphrase", "Enter new passphrase:", "New Passphrase", newPassphrase -> {
-                Log.d(TAG, "New passphrase entered: " + newPassphrase);
-                prefs.edit().putString(PREF_PASSPHRASE, newPassphrase).apply();
-                showToast("Passphrase reset successfully.");
-                passphraseOutputEditText.setText(newPassphrase); // Update displayed passphrase
-
-                // Send passphrase to microcontroller
-                if (bleManager != null && bleManager.isDeviceConnected()) {
-                    String cmd = String.format("{\"cmd\":\"passphrase\",\"p\":\"%s\"}", newPassphrase);
-                    bleManager.send(cmd);
-                    Log.d(TAG, "Sent passphrase to device: " + cmd);
-                } else {
-                    Log.w(TAG, "BLE Manager not connected, cannot send passphrase to device.");
-                }
-            });
+            showResetPassphraseDialog();
         });
 
         factoryResetButton.setOnClickListener(v -> {
@@ -154,6 +140,44 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
 
         // Initial UI state based on BLE connection
         updateUIForBleConnection(bleManager.isDeviceConnected());
+    }
+
+    private void showResetPassphraseDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Set Passphrase");
+        builder.setMessage("Please set a passphrase for your application. This will be used to encrypt/decrypt your data.");
+        builder.setCancelable(true); // Allow dismissing
+
+        final EditText input = new EditText(this);
+        input.setHint("Enter Passphrase");
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        builder.setView(input);
+
+        builder.setPositiveButton("Set Passphrase", (dialog, which) -> {
+            String newPassphrase = input.getText().toString();
+            if (newPassphrase.isEmpty()) {
+                showToast("Passphrase cannot be empty!");
+                // Do not re-show dialog, user can click reset again
+            } else {
+                SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                prefs.edit().putString(PREF_PASSPHRASE, newPassphrase).apply();
+                showToast("Passphrase set successfully!");
+                passphraseOutputEditText.setText(newPassphrase); // Update displayed passphrase
+
+                // Send passphrase to microcontroller
+                if (bleManager != null && bleManager.isDeviceConnected()) {
+                    String cmd = String.format("{\"cmd\":\"passphrase\",\"p\":\"%s\"}", newPassphrase);
+                    bleManager.send(cmd);
+                    Log.d(TAG, "Sent passphrase to device: " + cmd);
+                } else {
+                    Log.w(TAG, "BLE Manager not connected, cannot send passphrase to device.");
+                }
+                dialog.dismiss();
+            }
+        });
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+
+        builder.show();
     }
 
     private void sendCommand(String command) {

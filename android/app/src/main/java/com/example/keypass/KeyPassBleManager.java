@@ -18,6 +18,8 @@ import no.nordicsemi.android.ble.data.Data;
 public class KeyPassBleManager extends BleManager {
     private static final String TAG = "KeyPassBleManager";
 
+    private static KeyPassBleManager instance;
+
     public final static UUID NORDIC_UART_SERVICE_UUID = UUID.fromString("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
     private final static UUID UART_RX_CHARACTERISTIC_UUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
     private final static UUID UART_TX_CHARACTERISTIC_UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
@@ -39,6 +41,21 @@ public class KeyPassBleManager extends BleManager {
     public KeyPassBleManager(@NonNull final Context context) {
         super(context);
         handler = new Handler(Looper.getMainLooper());
+        instance = this; // Set the instance when constructed
+    }
+
+    public static synchronized KeyPassBleManager getInstance(@NonNull final Context context) {
+        if (instance == null) {
+            instance = new KeyPassBleManager(context.getApplicationContext());
+        }
+        return instance;
+    }
+
+    public static synchronized KeyPassBleManager getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("KeyPassBleManager not initialized. Call getInstance(Context) first.");
+        }
+        return instance;
     }
 
     @NonNull

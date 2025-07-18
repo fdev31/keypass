@@ -271,7 +271,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     }
 
     private void setupBle() {
-        bleManager = new KeyPassBleManager(this);
+        bleManager = KeyPassBleManager.getInstance(this);
         bleManager.setConnectionObserver(this);
         bleManager.setDataCallback(this);
         scanner = BluetoothLeScannerCompat.getScanner();
