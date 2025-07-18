@@ -20,6 +20,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.view.LayoutInflater;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
@@ -27,6 +28,8 @@ import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,6 +42,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import no.nordicsemi.android.ble.data.Data;
@@ -238,12 +242,96 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         passwordRecyclerView.setAdapter(passwordAdapter);
 
         addButton.setOnClickListener(v -> {
-            // TODO: implement add password dialog
+            showAddPasswordDialog();
         });
 
         settingsButton.setOnClickListener(v -> {
             startActivity(new Intent(this, SettingsActivity.class));
         });
+    }
+
+    private void showAddPasswordDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = this.getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_add_password, null);
+        builder.setView(dialogView);
+
+        EditText nameEditText = dialogView.findViewById(R.id.nameEditText);
+        EditText passwordEditText = dialogView.findViewById(R.id.passwordEditText);
+        Button generatePasswordButton = dialogView.findViewById(R.id.generatePasswordButton);
+        RadioGroup layoutRadioGroup = dialogView.findViewById(R.id.layoutRadioGroup);
+        RadioButton layoutBitlocker = dialogView.findViewById(R.id.layoutBitlocker);
+        RadioButton layoutFR = dialogView.findViewById(R.id.layoutFR);
+        RadioButton layoutUS = dialogView.findViewById(R.id.layoutUS);
+        Button savePasswordButton = dialogView.findViewById(R.id.savePasswordButton);
+
+        AlertDialog dialog = builder.create();
+
+        generatePasswordButton.setOnClickListener(v -> {
+            // Prompt for length if password field is empty
+            if (passwordEditText.getText().toString().isEmpty()) {
+                AlertDialog.Builder lengthBuilder = new AlertDialog.Builder(this);
+                lengthBuilder.setTitle("Generate Password");
+                lengthBuilder.setMessage("Enter password length:");
+                final EditText lengthInput = new EditText(this);
+                lengthInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+                lengthBuilder.setView(lengthInput);
+                lengthBuilder.setPositiveButton("Generate", (dialogInterface, i) -> {
+                    try {
+                        int length = Integer.parseInt(lengthInput.getText().toString());
+                        if (length > 0) {
+                            passwordEditText.setText(generateRandomPassword(length));
+                        } else {
+                            Toast.makeText(this, "Length must be greater than 0", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(this, "Invalid length", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                lengthBuilder.setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.cancel());
+                lengthBuilder.show();
+            } else {
+                // If password field has text, just generate a new one with default length (e.g., 16)
+                passwordEditText.setText(generateRandomPassword(16));
+            }
+        });
+
+        savePasswordButton.setOnClickListener(v -> {
+            String name = nameEditText.getText().toString();
+            String password = passwordEditText.getText().toString();
+            int layout = -1; // Default to Bitlocker
+            int checkedRadioButtonId = layoutRadioGroup.getCheckedRadioButtonId();
+            if (checkedRadioButtonId == R.id.layoutFR) {
+                layout = 0;
+            } else if (checkedRadioButtonId == R.id.layoutUS) {
+                layout = 1;
+            }
+
+            if (name.isEmpty() || password.isEmpty()) {
+                Toast.makeText(this, "Name and Password cannot be empty", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // For new passwords, assign a temporary ID or let the microcontroller assign it
+            // For now, let's assume a new password will have an ID of -1 or a unique temporary ID
+            // The microcontroller should assign the actual ID upon saving.
+            // For this implementation, we'll use -1 to indicate a new password.
+            String cmd = String.format("{\"cmd\":\"editPass\",\"id\":%d,\"name\":\"%s\",\"password\":\"%s\",\"layout\":%d}", -1, name, password, layout);
+            bleManager.send(cmd);
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private String generateRandomPassword(int length) {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 
     private void startScan() {
