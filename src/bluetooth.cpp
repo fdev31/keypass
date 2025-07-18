@@ -209,16 +209,6 @@ void processCommand(const char *command, uint8_t *responseBuffer,
     sendResponse(404, "Unknown command", responseBuffer, responseSize);
   }
 }
-
-void sendResponse(int status, const char *message, uint8_t *responseBuffer,
-                  size_t &responseSize) {
-  StaticJsonDocument<256> doc;
-  doc["status"] = status;
-  doc["message"] = message;
-
-  // Serialize JSON to buffer
-  responseSize = serializeJson(doc, (char *)responseBuffer, JSON_BUFFER_SIZE);
-}
 // API Handler implementations
 void sendChunkedResponse(const char *data, size_t dataLength,
                          uint8_t *responseBuffer, size_t &responseSize) {
@@ -264,6 +254,27 @@ void sendChunkedResponse(const char *data, size_t dataLength,
 
   // Set responseSize to 0 since we handled sending
   responseSize = 0;
+}
+
+void sendResponse(int status, const char *message, uint8_t *responseBuffer,
+                  size_t &responseSize) {
+  StaticJsonDocument<256> doc;
+  doc["s"] = status;
+  doc["m"] = message;
+
+  // Create a temporary buffer for serialization
+  char jsonBuffer[JSON_BUFFER_SIZE];
+  size_t jsonSize = serializeJson(doc, jsonBuffer, JSON_BUFFER_SIZE);
+
+  // If the response is small enough, send it directly
+  if (jsonSize <= CHUNK_SIZE) {
+    // Copy to the provided response buffer for direct sending
+    memcpy(responseBuffer, jsonBuffer, jsonSize);
+    responseSize = jsonSize;
+  } else {
+    // For larger responses, use chunking
+    sendChunkedResponse(jsonBuffer, jsonSize, responseBuffer, responseSize);
+  }
 }
 bool handleTypeRawCommand(JsonDocument &doc, uint8_t *responseBuffer,
                           size_t &responseSize) {
@@ -371,7 +382,6 @@ bool handleEditPassCommand(JsonDocument &doc, uint8_t *responseBuffer,
   } else {
     sendResponse(400, "Invalid parameter", responseBuffer, responseSize);
   }
-
   return true;
 }
 
