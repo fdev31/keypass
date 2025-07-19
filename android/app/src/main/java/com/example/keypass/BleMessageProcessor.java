@@ -153,33 +153,43 @@ public class BleMessageProcessor {
     /**
      * Process a complete message
      */
+
     private void processFullMessage(String message) {
-        Log.d(TAG, "Processing full message");
+        Log.d(TAG, "Processing full message: " + message);
+
         // Check if the message looks like JSON
         if (message.trim().startsWith("{") || message.trim().startsWith("[")) {
-            // Try to process as JSON
-            processJson(message);
+            try {
+                // Try to process as JSON
+                processJson(message);
+            } catch (Exception e) {
+                Log.e(TAG, "Error processing as JSON, falling back to text", e);
+                processText(message);
+            }
         } else {
             // Assume it's plain text
             Log.d(TAG, "Message does not look like JSON, processing as plain text.");
             processText(message);
         }
     }
-
     /**
      * Process a JSON message
      */
+
     private void processJson(String json) {
-        Log.d(TAG, "Processing JSON response");
+        Log.d(TAG, "Processing JSON response: " + json);
         try {
             JSONObject jsonObject = new JSONObject(json);
+            Log.d(TAG, "JSON parsed successfully. Keys: " + jsonObject.keys());
 
             boolean handled = false;
 
             // Check for registered handlers
             for (Map.Entry<String, MessageHandler> entry : jsonHandlers.entrySet()) {
                 String key = entry.getKey();
+                Log.d(TAG, "Checking if JSON has key: " + key);
                 if (jsonObject.has(key)) {
+                    Log.d(TAG, "Found handler for key: " + key);
                     Object value = jsonObject.get(key);
                     entry.getValue().handleMessage(key, value);
                     handled = true;
@@ -188,15 +198,19 @@ public class BleMessageProcessor {
             }
 
             // If no specific handler was found, use default
-            if (!handled && defaultJsonHandler != null) {
-                defaultJsonHandler.handleMessage(null, jsonObject);
+            if (!handled) {
+                Log.d(TAG, "No specific handler found for this JSON message");
+                if (defaultJsonHandler != null) {
+                    defaultJsonHandler.handleMessage(null, jsonObject);
+                } else {
+                    Log.w(TAG, "No default JSON handler registered");
+                }
             }
 
         } catch (JSONException e) {
             Log.e(TAG, "Error parsing JSON response: " + json, e);
         }
     }
-
     /**
      * Process a plain text message
      */

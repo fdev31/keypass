@@ -57,13 +57,23 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
     private int expectedDataSize = -1;
 
     private void setupBleMessageHandlers() {
+
         BleMessageProcessor.getInstance().registerJsonHandler("dump", (key, value) -> {
-            String dumpData = value.toString();
-            Log.d(TAG, "Value of 'dump' key: " + dumpData);
+            Log.d(TAG, "Dump handler called with value: " + value);
+            String dumpData;
+            if (value instanceof JSONObject) {
+                dumpData = ((JSONObject) value).toString();
+            } else {
+                dumpData = value.toString();
+            }
+
+            Log.d(TAG, "Processing dump data: " + dumpData);
+
             if (backupOutputEditText != null) {
+                final String finalDumpData = dumpData;
                 runOnUiThread(() -> {
-                    backupOutputEditText.setText(dumpData);
-                    Log.d(TAG, "backupOutputEditText set to: " + dumpData);
+                    backupOutputEditText.setText(finalDumpData);
+                    Log.d(TAG, "backupOutputEditText set to: " + finalDumpData);
                 });
             } else {
                 Log.e(TAG, "backupOutputEditText is null, cannot set text!");
@@ -125,6 +135,7 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
 
         // Initialize BLE Manager (assuming it's a singleton or passed from MainActivity)
         // For now, we'll create a new instance, but ideally, it should be shared.
+        setupBleMessageHandlers();
         bleManager = KeyPassBleManager.getInstance(this);
         bleManager.setConnectionObserver(this);
         bleManager.setDataCallback(this);
@@ -134,7 +145,7 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
             Log.d(TAG, "Backup Passwords button clicked.");
             if (bleManager.isDeviceConnected()) {
                 Log.d(TAG, "BLE Manager is connected. Sending dump command.");
-                bleManager.send("{\"cmd\":\"dump\"}");
+                bleManager.send("{cmd:\"dump\"}");
             } else {
                 Log.d(TAG, "BLE Manager is NOT connected. Showing toast.");
                 showToast("Not connected to KeyPass device.");
@@ -346,17 +357,7 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
         Log.d(TAG, "processJson: Entry with JSON: " + json);
         try {
             JSONObject jsonResponse = new JSONObject(json);
-            if (jsonResponse.has("dump")) {
-                Log.d(TAG, "JSON has 'dump' key.");
-                String dumpData = jsonResponse.optString("dump", "DUMP_KEY_NOT_FOUND_OR_NULL");
-                Log.d(TAG, "Value of 'dump' key: " + dumpData);
-                if (backupOutputEditText != null) {
-                    backupOutputEditText.setText(dumpData);
-                    Log.d(TAG, "backupOutputEditText set to: " + dumpData);
-                } else {
-                    Log.e(TAG, "backupOutputEditText is null, cannot set text!");
-                }
-            } else if (jsonResponse.has("passphrase")) {
+            if (jsonResponse.has("passphrase")) {
                 passphraseOutputEditText.setText(jsonResponse.getString("passphrase"));
             } else if (jsonResponse.has("status")) {
                 showToast("Command Status: " + jsonResponse.getString("status"));
