@@ -119,6 +119,77 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
     private TextInputEditText currentPasswordEditTextForFetch;
 
 
+    private void setupBleMessageHandlers() {
+        BleMessageProcessor.getInstance().registerJsonHandler("passwords", (key, value) -> {
+            try {
+                JSONArray passwords = (JSONArray) value;
+                passwordList.clear();
+                for (int i = 0; i < passwords.length(); i++) {
+                    JSONObject password = passwords.getJSONObject(i);
+                    int uid = password.getInt("uid");
+                    String name = password.getString("name");
+                    int layout = password.optInt("layout", -1);
+                    passwordList.add(new Password(uid, name, layout));
+                }
+                runOnUiThread(() -> passwordAdapter.notifyDataSetChanged());
+                savePasswordList();
+            } catch (JSONException e) {
+                Log.e(TAG, "Error processing passwords JSON", e);
+            }
+        });
+
+    BleMessageProcessor.getInstance().registerJsonHandler("s", (key, value) -> {
+        try {
+            JSONObject jsonObject = (JSONObject) value;
+            int status = jsonObject.getInt("s");
+            String message = jsonObject.getString("m");
+            if (currentPasswordEditTextForFetch != null && status == 200) {
+                runOnUiThread(() -> {
+                    currentPasswordEditTextForFetch.setText(message);
+                    currentPasswordEditTextForFetch = null;
+                });
+            } else {
+                Log.d(TAG, "Received status/message: " + status + ": " + message);
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error processing status JSON", e);
+        }
+    });
+
+    // Default text handler for password list
+    BleMessageProcessor.getInstance().setDefaultTextHandler(text -> {
+        if (currentPasswordEditTextForFetch != null) {
+            runOnUiThread(() -> {
+                currentPasswordEditTextForFetch.setText(text);
+                currentPasswordEditTextForFetch = null;
+            });
+            return;
+        }
+
+        // Process password list
+        passwordList.clear();
+        String[] lines = text.split("\n");
+        for (String line : lines) {
+            String[] parts = line.split(",");
+            if (parts.length >= 2) {
+                try {
+                    int id = Integer.parseInt(parts[0]);
+                    String name = parts[1];
+                    int layout = -1;
+                    if (parts.length > 2) {
+                        layout = Integer.parseInt(parts[2]);
+                    }
+                    passwordList.add(new Password(id, name, layout));
+                } catch (NumberFormatException ex) {
+                    Log.e(TAG, "Error parsing password line: " + line, ex);
+                }
+            }
+        }
+        runOnUiThread(() -> passwordAdapter.notifyDataSetChanged());
+        savePasswordList();
+    });
+}
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -201,6 +272,7 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         if (storedPassphrase.isEmpty()) {
             showPassphraseSetupDialog();
         }
+        setupBleMessageHandlers();
     }
 
     private void showPassphraseSetupDialog() {
@@ -546,9 +618,8 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         if (text == null) return;
 
         Log.d(TAG, "onDataReceived chunk: " + text);
-        receivedDataBuffer.append(text);
-
-        processReceivedData();
+        // Use the shared message processor instead of local buffer
+        BleMessageProcessor.getInstance().processDataChunk(text);
     }
 
     private void processReceivedData() {
@@ -768,12 +839,26 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         super.onResume();
         updateButtonState();
         registerNetworkCallback();
+
+        // Re-register BLE callbacks and message handlers
+        if (bleManager != null) {
+            bleManager.setConnectionObserver(this);
+            bleManager.setDataCallback(this);
+            setupBleMessageHandlers();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         unregisterNetworkCallback();
+
+        // Unregister BLE callbacks and clear message handlers
+        if (bleManager != null) {
+            bleManager.setConnectionObserver(null);
+            bleManager.setDataCallback(null);
+        }
+        BleMessageProcessor.getInstance().clearHandlers();
     }
 
     private void registerNetworkCallback() {

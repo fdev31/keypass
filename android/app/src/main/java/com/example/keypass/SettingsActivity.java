@@ -422,10 +422,11 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
     @Override
     protected void onResume() {
         super.onResume();
-        // Re-register BLE callbacks if needed, or ensure manager is connected
+        // Re-register BLE callbacks and message handlers
         if (bleManager != null) {
             bleManager.setConnectionObserver(this);
             bleManager.setDataCallback(this);
+            setupBleMessageHandlers();
             updateUIForBleConnection(bleManager.isDeviceConnected());
         }
     }
@@ -433,10 +434,11 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
     @Override
     protected void onPause() {
         super.onPause();
-        // Unregister BLE callbacks to prevent leaks if not needed in background
+        // Unregister BLE callbacks and clear message handlers
         if (bleManager != null) {
             bleManager.setConnectionObserver(null);
             bleManager.setDataCallback(null);
         }
+        BleMessageProcessor.getInstance().clearHandlers();
     }
 }

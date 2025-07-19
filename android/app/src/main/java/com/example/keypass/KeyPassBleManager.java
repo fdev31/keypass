@@ -15,6 +15,22 @@ import java.util.UUID;
 import no.nordicsemi.android.ble.BleManager;
 import no.nordicsemi.android.ble.data.Data;
 
+public void registerJsonHandler(String key, BleMessageProcessor.MessageHandler handler) {
+    BleMessageProcessor.getInstance().registerJsonHandler(key, handler);
+}
+
+public void registerTextHandler(String prefix, BleMessageProcessor.TextHandler handler) {
+    BleMessageProcessor.getInstance().registerTextHandler(prefix, handler);
+}
+
+public void setDefaultJsonHandler(BleMessageProcessor.MessageHandler handler) {
+    BleMessageProcessor.getInstance().setDefaultJsonHandler(handler);
+}
+
+public void setDefaultTextHandler(BleMessageProcessor.TextHandler handler) {
+    BleMessageProcessor.getInstance().setDefaultTextHandler(handler);
+}
+
 public class KeyPassBleManager extends BleManager {
     private static final String TAG = "KeyPass::BleManager";
 
