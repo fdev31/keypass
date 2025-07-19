@@ -56,6 +56,37 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
     private StringBuilder receivedDataBuffer = new StringBuilder();
     private int expectedDataSize = -1;
 
+    private void setupBleMessageHandlers() {
+        BleMessageProcessor.getInstance().registerJsonHandler("dump", (key, value) -> {
+            String dumpData = value.toString();
+            Log.d(TAG, "Value of 'dump' key: " + dumpData);
+            if (backupOutputEditText != null) {
+                runOnUiThread(() -> {
+                    backupOutputEditText.setText(dumpData);
+                    Log.d(TAG, "backupOutputEditText set to: " + dumpData);
+                });
+            } else {
+                Log.e(TAG, "backupOutputEditText is null, cannot set text!");
+            }
+        });
+
+        BleMessageProcessor.getInstance().registerJsonHandler("passphrase", (key, value) -> {
+            String passphrase = value.toString();
+            runOnUiThread(() -> passphraseOutputEditText.setText(passphrase));
+        });
+
+        BleMessageProcessor.getInstance().registerJsonHandler("status", (key, value) -> {
+            String status = value.toString();
+            runOnUiThread(() -> showToast("Command Status: " + status));
+        });
+
+        // Default JSON handler
+        BleMessageProcessor.getInstance().setDefaultJsonHandler((key, value) -> {
+            runOnUiThread(() -> showToast("Received: " + value.toString()));
+        });
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -242,7 +273,6 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
         builder.show();
     }
 
-    // KeyPassBleManager.DataCallback methods
     @Override
     public void onDataReceived(@NonNull BluetoothDevice device, @NonNull Data data) {
         Log.d(TAG, "onDataReceived: CALLED");
@@ -253,11 +283,9 @@ public class SettingsActivity extends AppCompatActivity implements KeyPassBleMan
         }
 
         Log.d(TAG, "onDataReceived raw chunk: " + text + " (length: " + text.length() + ")");
-        receivedDataBuffer.append(text);
-
-        processReceivedData();
+        // Use the shared message processor
+        BleMessageProcessor.getInstance().processDataChunk(text);
     }
-
     private void processReceivedData() {
         while (true) {
             if (expectedDataSize == -1) {

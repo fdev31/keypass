@@ -2,6 +2,10 @@ package com.example.keypass;
 
 import android.util.Log;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -168,7 +172,7 @@ public class BleMessageProcessor {
     private void processJson(String json) {
         Log.d(TAG, "Processing JSON response");
         try {
-            org.json.JSONObject jsonObject = new org.json.JSONObject(json);
+            JSONObject jsonObject = new JSONObject(json);
 
             boolean handled = false;
 
@@ -188,7 +192,7 @@ public class BleMessageProcessor {
                 defaultJsonHandler.handleMessage(null, jsonObject);
             }
 
-        } catch (org.json.JSONException e) {
+        } catch (JSONException e) {
             Log.e(TAG, "Error parsing JSON response: " + json, e);
         }
     }
