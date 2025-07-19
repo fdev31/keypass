@@ -295,25 +295,34 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         bleManager.setConnectionObserver(this);
         bleManager.setDataCallback(this);
 
-        bleManager.setGattCallbacks(new BleManagerGattCallback() {
+        /*
+        bleManager.setGattCallbacks(new no.nordicsemi.android.ble.BleManagerGattCallback() {
             @Override
-            protected boolean isRequiredServiceSupported(@NonNull BluetoothGatt gatt) {
-                // Implementation from your existing code
-                return true;
+            protected boolean isRequiredServiceSupported(@NonNull android.bluetooth.BluetoothGatt gatt) {
+                // Check if the required UART service is supported
+                android.bluetooth.BluetoothGattService service = gatt.getService(KeyPassBleManager.NORDIC_UART_SERVICE_UUID);
+                if (service != null) {
+                    // Check for RX and TX characteristics
+                    return true;
+                }
+                return false;
             }
 
             @Override
             protected void initialize() {
-                // Request maximum security level
-                requestConnectionPriority(ConnectionPriority.HIGH);
+                // Request maximum MTU
+                requestMtu(517).enqueue();
 
-                // Request bonding (pairing) with the device
-                BluetoothDevice device = getBluetoothDevice();
-                if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
-                    createBond();
+                // Request high priority connection
+                requestConnectionPriority(android.bluetooth.BluetoothGatt.CONNECTION_PRIORITY_HIGH).enqueue();
+
+                // Optionally create bond
+                if (getBluetoothDevice().getBondState() != BluetoothDevice.BOND_BONDED) {
+                    createBond().enqueue();
                 }
             }
         });
+        */
                 scanner = BluetoothLeScannerCompat.getScanner();
 
         // Attempt to reconnect to the last connected device
@@ -663,9 +672,6 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
                 }
                 runOnUiThread(() -> passwordAdapter.notifyDataSetChanged());
                 savePasswordList();
-            } else if (jsonObject.has("dump")) {
-                String dumpData = jsonObject.getString("dump");
-                processText(dumpData); // Process the dump data as plain text
             } else if (jsonObject.has("s") && jsonObject.has("m")) {
                 int status = jsonObject.getInt("s");
                 String message = jsonObject.getString("m");
