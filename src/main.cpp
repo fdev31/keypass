@@ -27,7 +27,10 @@ void ping() {
   sleeping = 0;
 }
 
+extern void sendHIDInit();
+
 void setup() {
+  sendHIDInit();
   bootloader_random_enable();
   srand(millis());
 #ifdef ENABLE_GRAPHICS
