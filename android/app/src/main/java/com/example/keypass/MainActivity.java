@@ -294,7 +294,27 @@ public class MainActivity extends AppCompatActivity implements KeyPassBleManager
         bleManager = KeyPassBleManager.getInstance(this);
         bleManager.setConnectionObserver(this);
         bleManager.setDataCallback(this);
-        scanner = BluetoothLeScannerCompat.getScanner();
+
+        bleManager.setGattCallbacks(new BleManagerGattCallback() {
+            @Override
+            protected boolean isRequiredServiceSupported(@NonNull BluetoothGatt gatt) {
+                // Implementation from your existing code
+                return true;
+            }
+
+            @Override
+            protected void initialize() {
+                // Request maximum security level
+                requestConnectionPriority(ConnectionPriority.HIGH);
+
+                // Request bonding (pairing) with the device
+                BluetoothDevice device = getBluetoothDevice();
+                if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+                    createBond();
+                }
+            }
+        });
+                scanner = BluetoothLeScannerCompat.getScanner();
 
         // Attempt to reconnect to the last connected device
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);

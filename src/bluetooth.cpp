@@ -70,12 +70,71 @@ bool handlePassDumpCommand(JsonDocument &doc, uint8_t *responseBuffer,
 bool handleRestoreCommand(JsonDocument &doc, uint8_t *responseBuffer,
                           size_t &responseSize);
 
+#if 0
+class MySecurityCallbacks : public NimBLESecurityCallbacks {
+  bool onConfirmPIN(uint32_t pin) {
+    char buffer[100];
+    sprintf(buffer, "Confirm PIN: %06d", pin);
+    printText(3, buffer);
+    return true; // Accept the pairing
+  }
+
+  class MySecurityCallbacks : public NimBLESecurityCallbacks {
+  public:
+    uint32_t onPassKeyRequest() {
+      return 123456; // Static passkey (you could generate a random one)
+    }
+
+    void onPassKeyNotify(uint32_t pass_key) {
+      char buffer[100];
+      sprintf(buffer, "Passkey: %06d", pass_key);
+      printText(3, buffer);
+    }
+
+    bool onConfirmPIN(uint32_t pin) {
+      char buffer[100];
+      sprintf(buffer, "Confirm: %06d", pin);
+      printText(3, buffer);
+      return true; // Accept the pairing
+    }
+
+    bool onSecurityRequest() {
+      return true; // Accept pairing request from client
+    }
+
+    void onAuthenticationComplete(ble_gap_conn_desc *desc) {
+      if (desc->sec_state.encrypted) {
+        printText(3, "Paired & Encrypted");
+      } else {
+        printText(3, "Pairing failed");
+      }
+    }
+  };
+}
+#endif
 void bluetoothSetup() {
   // Initialize BLE stack
   NimBLEDevice::init(DEVICE_NAME);
 
+  NimBLEServer *pServer = NimBLEDevice::createServer();
+  // pServer->setSecurityCallbacks(new MySecurityCallbacks());
+
+  // Set security level
+  uint8_t secLevel = BLE_SM_PAIR_AUTHREQ_BOND | BLE_SM_PAIR_AUTHREQ_MITM |
+                     BLE_SM_PAIR_AUTHREQ_SC;
+  NimBLEDevice::setSecurityAuth(secLevel);
+
+  // Set I/O capabilities
+  NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_YESNO);
+
+  // Set security initialization vector size
+  NimBLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC |
+                                   BLE_SM_PAIR_KEY_DIST_ID);
+  NimBLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC |
+                                   BLE_SM_PAIR_KEY_DIST_ID);
+
   // Configure advertising
-  NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
+  NimBLEAdvertising *pAdvertising = pServer->getAdvertising();
   pAdvertising->setName(DEVICE_NAME);
   pAdvertising->addServiceUUID(NORDIC_UART_SERVICE_UUID);
 
@@ -162,8 +221,8 @@ void bluetoothLoop() {
             // Process the command and generate a response
             processCommand(command, responseBuffer, responseSize);
 
-            // Send the response if there is one and we haven't already sent it
-            // via chunking
+            // Send the response if there is one and we haven't already sent
+            // it via chunking
             if (responseSize > 0) {
               NuPacket.write(responseBuffer, responseSize);
             }
@@ -471,14 +530,15 @@ bool handlePassDumpCommand(JsonDocument &doc, uint8_t *responseBuffer,
   }
 
   // Create a temporary String to hold the plain text dump
-  String plainTextDump;
   StringStreamAdapter stream;
   dumpPasswords(&stream);
-  plainTextDump = stream.toString();
+  sendChunkedResponse(stream.c_str(), stream.length(), responseBuffer,
+                      responseSize);
+  return true;
 
   // Create a JSON object to wrap the plain text dump
-  StaticJsonDocument<2048> jsonDoc; // Adjust size as needed
-  jsonDoc["dump"] = plainTextDump;
+  StaticJsonDocument<20480> jsonDoc; // Adjust size as needed
+  jsonDoc["dump"] = stream.toString();
 
   String jsonString;
   serializeJson(jsonDoc, jsonString);

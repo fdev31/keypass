@@ -274,7 +274,7 @@ void dumpPasswords(StringStreamAdapter *stream) {
     stream->write(pString.c_str());
     stream->write("\n");
   }
-  stream->write("\n");
+  stream->write(DUMP_END "\n");
 }
 
 static int savePassCount = 0;
