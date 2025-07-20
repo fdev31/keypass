@@ -20,9 +20,9 @@ jobs:
       - name: Install PlatformIO
         run: pip install platformio
       - name: Build with PlatformIO
-        run: pio ci --lib="."
+        run: pio build
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: firmware
+          name: KeyPass-ESP32-C3
           path: .pio/build/esp32-c3/
