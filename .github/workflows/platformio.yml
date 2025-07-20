@@ -22,7 +22,7 @@ jobs:
       - name: Build with PlatformIO
         run: pio ci --lib="."
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: firmware
           path: .pio/build/esp32-c3/
