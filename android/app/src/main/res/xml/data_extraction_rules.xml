@@ -1,8 +1,0 @@
-<resources>
-    <data-extraction-rules>
-        <cloud-backup disableIfNoEncryptionCapabilities="true">
-            <include domain="file" path="."/>
-            <exclude domain="file" path="${applicationId}.no_backup"/>
-        </cloud-backup>
-    </data-extraction-rules>
-</resources>
