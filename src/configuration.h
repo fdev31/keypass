@@ -18,6 +18,16 @@ const unsigned long SLEEP_TIME = 500; // sleep period in sleep mode
 #define ENABLE_HTTP true
 #define ENABLE_GRAPHICS true
 #define FLIP_SCREEN 1
+#define BUGGY_DISPLAY true // Some devices have a non-standard control
+#if BUGGY_DISPLAY
+// common type A:
+// #define BUGGY_OFFSET_X 30
+// #define BUGGY_OFFSET_Y 12
+// common type B:
+// NOTE: adjust to your device:
+#define BUGGY_OFFSET_X 28
+#define BUGGY_OFFSET_Y 24
+#endif
 #define DEBUG 0
 
 // WARN: deprecated options (non default will break)

@@ -8,21 +8,23 @@
 #ifdef U8X8_HAVE_HW_SPI
 #include <SPI.h>
 #endif
-#ifdef U8X8_HAVE_HW_I2C
-#include <Wire.h>
-#endif
 #define SDA_PIN 5
 #define SCL_PIN 6
 
-#define BUGGY_OFFSET 0 // XXX: needed on some broken devices
+#if BUGGY_DISPLAY
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 6, 5);
+#else
+#define BUGGY_OFFSET_X 0
+#define BUGGY_OFFSET_Y 0
+U8G2_SSD1306_72X40_ER_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
+#endif
 
+bool dirty = true;
 char DEBUG_BUFFER[100];
 char DEBUG_BUFFER2[100];
 
-U8G2_SSD1306_72X40_ER_F_HW_I2C
-u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE); // EastRising 0.42" OLED
-//
 void printText(uint8_t bufid, const char *text) {
+  dirty = true;
   strlcpy(bufid == 1 ? DEBUG_BUFFER : DEBUG_BUFFER2, text, 100);
 }
 
@@ -39,16 +41,19 @@ void u8g2_prepare(void) {
 }
 
 void graphicsSetup(void) {
-  Wire.begin(SDA_PIN, SCL_PIN);
   DEBUG_BUFFER[0] = 0;
   DEBUG_BUFFER2[0] = 0;
   u8g2.begin();
+  u8g2.setContrast(255); // set contrast to maximum
 }
 
 #define HEIGHT 40
 #define WIDTH 72
 
 void graphicsLoop(void) {
+  if (!dirty)
+    return;
+  dirty = false;
   // picture loop
   u8g2.clearBuffer();
   u8g2_prepare();
@@ -67,8 +72,9 @@ if (n > WIDTH && int(n / WIDTH) % 2) {
   u8g2.setDrawColor(0);
 */
 #if FLIP_SCREEN
-  u8g2.drawStr(WIDTH, HEIGHT + BUGGY_OFFSET, DEBUG_BUFFER);
-  u8g2.drawStr(WIDTH, (HEIGHT / 2) + BUGGY_OFFSET, DEBUG_BUFFER2);
+  u8g2.drawStr(WIDTH + BUGGY_OFFSET_X, HEIGHT + BUGGY_OFFSET_Y, DEBUG_BUFFER);
+  u8g2.drawStr(WIDTH + BUGGY_OFFSET_X, (HEIGHT / 2) + BUGGY_OFFSET_Y,
+               DEBUG_BUFFER2);
 #else
   u8g2.drawStr(0, 0, DEBUG_BUFFER);
   u8g2.drawStr(5, 20, DEBUG_BUFFER2);
