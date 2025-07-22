@@ -68,6 +68,8 @@ bool handlePassPhraseCommand(JsonDocument &doc, uint8_t *responseBuffer,
                              size_t &responseSize);
 bool handlePassDumpCommand(JsonDocument &doc, uint8_t *responseBuffer,
                            size_t &responseSize);
+bool handlePassDumpOneCommand(JsonDocument &doc, uint8_t *responseBuffer,
+                              size_t &responseSize);
 bool handleRestoreCommand(JsonDocument &doc, uint8_t *responseBuffer,
                           size_t &responseSize);
 bool handleRestoreOneCommand(JsonDocument &doc, uint8_t *responseBuffer,
@@ -276,6 +278,8 @@ void processCommand(const char *command, uint8_t *responseBuffer,
     handled = handlePassPhraseCommand(doc, responseBuffer, responseSize);
   } else if (strcmp(cmd, "dump") == 0) {
     handled = handlePassDumpCommand(doc, responseBuffer, responseSize);
+  } else if (strcmp(cmd, "dumpOne") == 0) {
+    handled = handlePassDumpOneCommand(doc, responseBuffer, responseSize);
   } else if (strcmp(cmd, "restore") == 0) {
     handled = handleRestoreCommand(doc, responseBuffer, responseSize);
   } else if (strcmp(cmd, "restoreOne") == 0) {
@@ -521,6 +525,38 @@ bool handleListCommand(JsonDocument &doc, uint8_t *responseBuffer,
 
   // Start chunked transfer
   sendChunkedResponse(json.c_str(), json.length(), responseBuffer,
+                      responseSize);
+  return true;
+}
+
+bool handlePassDumpOneCommand(JsonDocument &doc, uint8_t *responseBuffer,
+                              size_t &responseSize) {
+  // If chunking is in progress, return an error
+  if (chunkState.inProgress) {
+    sendResponse(503, "Transfer already in progress", responseBuffer,
+                 responseSize);
+    return true;
+  }
+
+  // Create a temporary String to hold the plain text dump
+  StringStreamAdapter stream;
+  dumpOnePassword(doc["uid"].as<int>(), stream);
+  sendChunkedResponse(stream.c_str(), stream.length(), responseBuffer,
+                      responseSize);
+  return true;
+
+  // Create a JSON object to wrap the plain text dump
+  StaticJsonDocument<20480> jsonDoc; // Adjust size as needed
+  jsonDoc["dump"] = stream.toString();
+
+  String jsonString;
+  serializeJson(jsonDoc, jsonString);
+
+  // DEBUG: Print the JSON string before sending
+  printText(2, ("Sending dump JSON: " + jsonString).c_str());
+
+  // Start the chunked transfer
+  sendChunkedResponse(jsonString.c_str(), jsonString.length(), responseBuffer,
                       responseSize);
   return true;
 }

@@ -254,6 +254,17 @@ bool setupPassphrase(const char *phrase) {
   return setPassPhrase(phrase);
 }
 
+bool dumpOnePassword(int id, StringStreamAdapter &pString) {
+  Password password = readPassword(id);
+  if (!password.name[0]) {
+    return false;
+  }
+
+  dumpSinglePassword(pString, password.name, (const char *)password.password,
+                     password.layout, getNonce());
+  return true;
+}
+
 void dumpPasswords(StringStreamAdapter *stream) {
   ping();
   stream->write(DUMP_START "\n");
@@ -263,14 +274,10 @@ void dumpPasswords(StringStreamAdapter *stream) {
   bool endReached = false;
   for (int id = 0; !endReached && id < MAX_PASSWORDS; id++) {
     pString.clear();
-    Password password = readPassword(id);
-    if (!password.name[0]) {
+    if (!dumpOnePassword(id, pString)) {
       endReached = true;
-      break; // No more passwords stored
+      break;
     }
-
-    dumpSinglePassword(pString, password.name, (const char *)password.password,
-                       password.layout, getNonce());
     stream->write(pString.c_str());
     stream->write("\n");
   }

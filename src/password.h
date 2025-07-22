@@ -14,6 +14,7 @@ typedef struct {
 } Password;
 
 extern AsyncWebServer server;
+extern bool dumpOnePassword(int id, StringStreamAdapter &pString);
 extern void dumpPasswords(StringStreamAdapter *stream);
 extern bool typeRawText(const char *text, int layout, bool sendNewline);
 extern bool typePassword(int id, int layout = -1, bool sendNewline = true);
