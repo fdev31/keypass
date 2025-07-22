@@ -4,14 +4,26 @@
 #include "streamadapter.h"
 #include <Arduino.h>
 
+void restoreSinglePassword(const String &passBlock, PasswordCallback callback,
+                           int slot) {
+
+  uint8_t *nonce;
+  char name[MAX_NAME_LEN];
+  char *passwordData[MAX_PASS_LEN];
+  int layout;
+  const char *rawBlock = passBlock.c_str();
+  nonce = ((uint8_t *)rawBlock) + 1;
+
+  parseSinglePassword(rawBlock, name, (char *)passwordData, &layout);
+
+  if (callback) {
+    callback(name, (const char *)passwordData, layout, slot, nonce);
+  }
+}
+
 int restorePasswords(const String &data, PasswordCallback callback,
                      bool header) {
   int slot = 0;
-
-  char *passwordData[MAX_PASS_LEN];
-  char name[MAX_NAME_LEN];
-  uint8_t *nonce;
-  int layout;
 
   bool insideKpDump = !header;
 
@@ -42,14 +54,7 @@ int restorePasswords(const String &data, PasswordCallback callback,
 
     // Only process lines if we're inside a KPDUMP
     if (insideKpDump) {
-      const char *rawBlock = passBlock.c_str();
-      nonce = ((uint8_t *)rawBlock) + 1;
-
-      parseSinglePassword(rawBlock, name, (char *)passwordData, &layout);
-
-      if (callback) {
-        callback(name, (const char *)passwordData, layout, slot, nonce);
-      }
+      restoreSinglePassword(passBlock, callback, slot);
       slot++;
     }
 

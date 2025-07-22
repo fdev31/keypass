@@ -279,8 +279,8 @@ void dumpPasswords(StringStreamAdapter *stream) {
 
 static int savePassCount = 0;
 
-static void savePassData(const char *name, const char *passwordData, int layout,
-                         int slot, uint8_t *nonce) {
+void savePassData(const char *name, const char *passwordData, int layout,
+                  int slot, uint8_t *nonce) {
   editPassword(slot, name, passwordData, layout);
   savePassCount++;
 }

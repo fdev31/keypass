@@ -8,6 +8,7 @@
 #include "graphics.h"
 #include "hid.h"
 #include "password.h"
+#include "restore.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
@@ -69,6 +70,8 @@ bool handlePassDumpCommand(JsonDocument &doc, uint8_t *responseBuffer,
                            size_t &responseSize);
 bool handleRestoreCommand(JsonDocument &doc, uint8_t *responseBuffer,
                           size_t &responseSize);
+bool handleRestoreOneCommand(JsonDocument &doc, uint8_t *responseBuffer,
+                             size_t &responseSize);
 
 #if 0
 class MySecurityCallbacks : public NimBLESecurityCallbacks {
@@ -275,6 +278,8 @@ void processCommand(const char *command, uint8_t *responseBuffer,
     handled = handlePassDumpCommand(doc, responseBuffer, responseSize);
   } else if (strcmp(cmd, "restore") == 0) {
     handled = handleRestoreCommand(doc, responseBuffer, responseSize);
+  } else if (strcmp(cmd, "restoreOne") == 0) {
+    handled = handleRestoreOneCommand(doc, responseBuffer, responseSize);
   }
 
   if (!handled) {
@@ -562,5 +567,20 @@ bool handleRestoreCommand(JsonDocument &doc, uint8_t *responseBuffer,
   String uploadData = doc["data"];
   String ret = restoreMCUPasswords(uploadData);
   sendResponse(200, ret.c_str(), responseBuffer, responseSize);
+  return true;
+}
+
+bool handleRestoreOneCommand(JsonDocument &doc, uint8_t *responseBuffer,
+                             size_t &responseSize) {
+  if (!doc.containsKey("data")) {
+    sendResponse(400, "Missing 'data' parameter", responseBuffer, responseSize);
+    return true;
+  }
+
+  const int slotIndex = doc["uid"].as<int>();
+  String uploadData = doc["data"];
+  restoreSinglePassword(uploadData, savePassData, slotIndex);
+
+  sendResponse(200, "ok", responseBuffer, responseSize);
   return true;
 }

@@ -25,4 +25,7 @@ extern void factoryReset();
 extern bool setWifiPassword(const char *pass);
 extern bool setupPassphrase(const char *phrase);
 extern String restoreMCUPasswords(const String &data);
+
+extern void savePassData(const char *name, const char *passwordData, int layout,
+                         int slot, uint8_t *nonce);
 #endif
