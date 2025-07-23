@@ -540,24 +540,12 @@ bool handlePassDumpOneCommand(JsonDocument &doc, uint8_t *responseBuffer,
 
   // Create a temporary String to hold the plain text dump
   StringStreamAdapter stream;
-  dumpOnePassword(doc["uid"].as<int>(), stream);
-  sendChunkedResponse(stream.c_str(), stream.length(), responseBuffer,
-                      responseSize);
-  return true;
-
-  // Create a JSON object to wrap the plain text dump
-  StaticJsonDocument<20480> jsonDoc; // Adjust size as needed
-  jsonDoc["dump"] = stream.toString();
-
-  String jsonString;
-  serializeJson(jsonDoc, jsonString);
-
-  // DEBUG: Print the JSON string before sending
-  printText(2, ("Sending dump JSON: " + jsonString).c_str());
-
-  // Start the chunked transfer
-  sendChunkedResponse(jsonString.c_str(), jsonString.length(), responseBuffer,
-                      responseSize);
+  if (dumpOnePassword(doc["uid"].as<int>(), stream)) {
+    sendChunkedResponse(stream.c_str(), stream.length(), responseBuffer,
+                        responseSize);
+  } else {
+    sendChunkedResponse("", 1, responseBuffer, responseSize);
+  }
   return true;
 }
 
