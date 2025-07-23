@@ -161,7 +161,7 @@ void bluetoothLoop() {
 
   if (isConnected && isConnected != previousBleConnected) {
     WiFi.mode(WIFI_OFF);
-    printText(1, "WiFi OFF");
+    printText(1, "No WiFi");
   }
   previousBleConnected = isConnected;
 #endif
@@ -201,7 +201,7 @@ void bluetoothLoop() {
 
         if (chunkState.chunksSent >= chunkState.totalChunks) {
           chunkState.inProgress = false;
-          printText(2, "TC");
+          printText(2, "Done");
           break;
         }
       }
@@ -221,7 +221,7 @@ void bluetoothLoop() {
           uint8_t responseBuffer[200]; // Use smaller buffer size
           size_t responseSize = 0;
           if (chunkState.inProgress) {
-            printText(2, "ERROR: Chunking already in progress");
+            printText(2, "E: CIP");
           } else {
             // Process the command and generate a response
             processCommand(command, responseBuffer, responseSize);
@@ -295,7 +295,7 @@ void sendChunkedResponse(const char *data, size_t dataLength,
                          uint8_t *responseBuffer, size_t &responseSize) {
   // Check if chunking is already in progress
   if (chunkState.inProgress) {
-    printText(2, "ERROR: Chunking already in progress");
+    printText(2, "E: CIP2");
     responseSize = 0;
     return;
   }
@@ -573,7 +573,7 @@ bool handlePassDumpCommand(JsonDocument &doc, uint8_t *responseBuffer,
   serializeJson(jsonDoc, jsonString);
 
   // DEBUG: Print the JSON string before sending
-  printText(2, ("Sending dump JSON: " + jsonString).c_str());
+  printText(2, "SD...");
 
   // Start the chunked transfer
   sendChunkedResponse(jsonString.c_str(), jsonString.length(), responseBuffer,

@@ -135,10 +135,10 @@ bool typePassword(int id, int layout, bool sendNewline) {
     return false;
 
   ping();
+
 #ifdef ENABLE_GRAPHICS
   printText(1, "Typing");
 #endif
-
   password = readPassword(id);
   char *text = (char *)password.password;
 
@@ -146,6 +146,9 @@ bool typePassword(int id, int layout, bool sendNewline) {
   int effectiveLayout = (layout != -1) ? layout : password.layout;
 
   sendAnyKeymap(text, effectiveLayout, sendNewline);
+#ifdef ENABLE_GRAPHICS
+  printText(1, "Typed");
+#endif
   return true;
 }
 
