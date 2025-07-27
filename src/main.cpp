@@ -6,7 +6,6 @@
 #include "captive.h"
 #include "http.h"
 #endif
-#include "Preferences.h"
 #include "bootloader_random.h"
 #include "password.h"
 #include <Arduino.h>
@@ -39,9 +38,6 @@ void setup() {
 #ifdef ENABLE_GRAPHICS
   graphicsSetup();
   printText(1, "Welcome!");
-  Preferences prefs;
-  size_t entries_left = prefs.freeEntries();
-  printText(2, (String(entries_left) + String(" left.")).c_str());
 #endif
 #if USE_CH9329
   Serial.begin(9600);

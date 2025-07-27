@@ -22,6 +22,7 @@ gzip --best -c ${TEST_INDEX} > /tmp/index_html.gz
 cat <<EOF > $OUT
 #ifndef _INDEXPAGE_H
 #define _INDEXPAGE_H
+#include <Arduino.h>
 #include <stdint.h>
 #include <stddef.h>
 const size_t index_html_gz_len = $(stat -c%s /tmp/index_html.gz);
