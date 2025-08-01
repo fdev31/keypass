@@ -1,8 +1,7 @@
 #include "constants.h"
+#include "version.h"
 #ifndef _CONFIGURATION_H_
 #define _CONFIGURATION_H_
-
-#define VERSION "1.0.0"
 
 const unsigned long AUTOSLEEP_TIMEOUT = 100 * 1000; // auto-sleep delay
 const unsigned long SLEEP_WAKE_TIME = 10 * 1000;    // busy period in sleep mode

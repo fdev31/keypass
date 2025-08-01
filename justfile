@@ -1,10 +1,9 @@
-build:
-    ./genIndexPage.sh
+build: build-index
     pio run -t compiledb
     pio run
 
-upload:
-    ./genIndexPage.sh
+upload: build-index
+    ./scripts/update_version.sh
     pio run -t upload
 
 clean:
@@ -57,3 +56,15 @@ apk-logs:
     # cd android && adb logcat -v long
 apk-fatal-logs:
     cd android && adb logcat -s "AndroidRuntime:E" "FATAL EXCEPTION:E"
+
+
+build-index:
+    #!/usr/bin/env bash
+    if [[ ! -f "./src/indexPage.h" ]] || \
+       [[ "portal/index.html" -nt "./src/indexPage.h" ]] || \
+       [[ "portal/index.js" -nt "./src/indexPage.h" ]]; then
+        echo "Dependencies are newer, rebuilding..."
+        ./genIndexPage.sh
+    else
+        echo "Target is up to date"
+    fi
