@@ -1,19 +1,19 @@
-build: build-index
+keymaps := "./keymaps/fr ./keymaps/us"
+# Builds the firmware
+build: gen-index gen-version gen-keymap
     pio run -t compiledb
     pio run
 
-upload: build-index
-    ./scripts/update_version.sh
+# Upload to the MCU
+upload: build
     pio run -t upload
 
+# Remove all build files
 clean:
     rm -fr .pio
     cd android && ./gradlew clean
 
-keymap:
-    cd scripts && ./generate keymaps/fr
-
-
+# Attempt to setup Android license acknowledgments
 apk-setup:
     @echo "Setting up Android SDK permissions and accepting licenses..."
     sudo chown -R $(whoami):$(whoami) /opt/android-sdk
@@ -48,18 +48,23 @@ apk-test-connected:
 # Full build and install (default)
 default: build
 
+# Run a debug session
 apk-serve:
     cd android/app/build/outputs/apk/debug && python -m http.server 9090
 
+# Show android logs
 apk-logs:
     cd android && adb logcat -s "KeyPass:V"
     # cd android && adb logcat -v long
+
+# Show android fatal logs
 apk-fatal-logs:
     cd android && adb logcat -s "AndroidRuntime:E" "FATAL EXCEPTION:E"
 
 
-build-index:
-    #!/usr/bin/env bash
+# build the MCU indexPage.h from the .html & .css sources
+gen-index:
+    #!/usr/bin/env sh
     if [[ ! -f "./src/indexPage.h" ]] || \
        [[ "portal/index.html" -nt "./src/indexPage.h" ]] || \
        [[ "portal/index.js" -nt "./src/indexPage.h" ]]; then
@@ -68,3 +73,24 @@ build-index:
     else
         echo "Target is up to date"
     fi
+
+# update the version.h file with latest tag
+gen-version:
+    #!/usr/bin/env bash
+    # Get the latest tag from git
+    tag=$(git describe --tags --abbrev=0)
+    cat <<EOF >  ./src/version.h
+    #ifndef _VERSION_NUMBER
+    #define _VERSION_NUMBER
+    #define VERSION "$tag"
+    #endif
+    EOF
+
+# re-generate the keymaps definition
+gen-keymap:
+    #!/usr/bin/env sh
+    pushd scripts
+    ./parse_keymap.py {{keymaps}} | ./gen_structures.py > ../src/keymap.h
+    popd
+
+
