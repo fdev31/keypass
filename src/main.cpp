@@ -24,6 +24,11 @@ unsigned long lastClientTime;
 int sleeping = 0;
 int graphics_initialized = 1;
 
+#ifdef ENABLE_GRAPHICS
+unsigned long boot_time = 0;
+bool version_displayed = false;
+#endif
+
 void ping() {
   lastClientTime = millis();
   sleeping = 0;
@@ -37,7 +42,11 @@ void setup() {
   srand(millis());
 #ifdef ENABLE_GRAPHICS
   graphicsSetup();
-  printText(1, "Welcome!");
+  char version_string[50];
+  snprintf(version_string, sizeof(version_string), "%d:%s", HW_TYPE, VERSION);
+  printText(1, version_string);
+  boot_time = millis();
+  version_displayed = true;
 #endif
 #if USE_CH9329
   Serial.begin(9600);
@@ -70,6 +79,10 @@ void loop() {
   yield();
 #endif
 #ifdef ENABLE_GRAPHICS
+  if (version_displayed && (millis() - boot_time > 2000)) {
+    printText(1, "Welcome!");
+    version_displayed = false;
+  }
   // if (!sleeping) {
   if (!graphics_initialized) {
     graphicsSetup(); // Reinitialize graphics if needed

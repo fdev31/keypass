@@ -21,7 +21,7 @@ const unsigned long SLEEP_TIME = 500; // sleep period in sleep mode
 #define ENABLE_GRAPHICS true
 #define FLIP_SCREEN 1
 
-#define HW_TYPE 2
+#define HW_TYPE 1
 
 #if HW_TYPE == 0 // standard device
 #define BUGGY_OFFSET_X 0
