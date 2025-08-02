@@ -108,8 +108,7 @@ static void genKey(uint8_t key, uint8_t modifiers) {
 }
 
 void sendFunctionKey(uint8_t fKeyNum) {
-  // F1-F12 have USB HID key codes 0x3A to 0x45
-  uint8_t fKeyCode = fKeyNum ? 0x3A + (fKeyNum - 1) : 0x43;
+  uint8_t fKeyCode = 0x3A + (fKeyNum - 1);
   return genKey(fKeyCode, 0);
 }
 
@@ -149,10 +148,6 @@ void sendKey(char c, bool useFxKeys) {
       sendFunctionKey(10); // F10 for '0'
     } else if (c >= '1' && c <= '9') {
       sendFunctionKey(c - '0'); // Convert '1'-'9' to 1-9 for F1-F9
-    } else if (c == 'a' || c == 'A') {
-      sendFunctionKey(11); // F11 for 'A'
-    } else if (c == 'b' || c == 'B') {
-      sendFunctionKey(12); // F12 for 'B'
     }
   } else {
     // Use the normal keymap
