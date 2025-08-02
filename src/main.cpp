@@ -134,4 +134,5 @@ void loop() {
   //   sleeping = 1;
   // }
   // #endif
+  delay(50);
 }
