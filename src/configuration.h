@@ -18,7 +18,6 @@ const unsigned long SLEEP_TIME = 500; // sleep period in sleep mode
 #define ENABLE_BLUETOOTH true
 #define ENABLE_HTTP true
 #define ENABLE_GRAPHICS true
-#define FLIP_SCREEN 1
 
 #define HW_TYPE 1
 
@@ -40,4 +39,5 @@ const unsigned long SLEEP_TIME = 500; // sleep period in sleep mode
 // WARN: deprecated options (non default will break)
 #define USE_EEPROM_API 0
 #define USE_CH9329 1
+#define FLIP_SCREEN 1
 #endif
