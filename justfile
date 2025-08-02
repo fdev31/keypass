@@ -44,7 +44,7 @@ gen-version:
 gen-keymap:
     #!/usr/bin/env sh
     pushd scripts
-    ./parse_keymap.py {{keymaps}} | ./gen_structures.py > ../src/keymap.h
+    ./genkeymaps.py ./keymaps/{fr,us}  > ../src/keymap.h
     popd
 
 gen-icons:

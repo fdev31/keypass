@@ -114,6 +114,7 @@ static void sendAnyKeymap(const char *text, int layout, int newline) {
   } else {
     while (*text) {
       sendKeymap(*text++, layout);
+      delay(50);
     }
   }
   if (newline) {

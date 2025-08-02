@@ -37,35 +37,71 @@ static void sendHID(uint8_t values[], int length) {
 #endif
 
 void sendHIDInit() {
-  // reset factory defaults
-  // u_int8_t reset[] = {0x0c, 0};
-  // sendHID(reset, 2);
-  // delay(50);
-  // set usb String
-  // 9 = 2 + strlen(KeyPass)
-  uint8_t manufacturer[] = {0x0b, 0x00, 0x09, 'K', 'e',
-                            'y',  'P',  'a',  's', 's'};
+  // Set manufacturer string
+  uint8_t manufacturer[] = {0x0B, // Command (0x0B for setting USB strings)
+                            0x00, // String index (0 for manufacturer)
+                            0x09, // Length of string data
+                            'K',  'e', 'y', 'P', 'a', 's', 's'};
   sendHID(manufacturer, sizeof(manufacturer));
   delay(200);
-  uint8_t product[] = {0x0b, 0x01, 0x09, 'K', 'e', 'y', 'P', 'A', 'S', 'S'};
+
+  // Set product string
+  uint8_t product[] = {0x0B, // Command (0x0B for setting USB strings)
+                       0x01, // String index (1 for product)
+                       0x09, // Length of string data
+                       'K',  'e', 'y', 'P', 'A', 'S', 'S'};
   sendHID(product, sizeof(product));
-  u_int8_t save[] = {0x0c};
-  sendHID(save, 1);
   delay(200);
-  u_int8_t reset[] = {0x0f};
-  sendHID(reset, 1);
+
+  // Save configuration
+  uint8_t save[] = {
+      0x0C, // Save command
+      0x00  // Length (no data for save command)
+  };
+  sendHID(save, sizeof(save));
+  delay(200);
+
+  // Reset the device
+  uint8_t reset[] = {
+      0x0F, // Reset command
+      0x00  // Length (no data for reset command)
+  };
+  sendHID(reset, sizeof(reset));
   delay(200);
 }
 
 static void genKey(uint8_t key, uint8_t modifiers) {
 #if USE_CH9329
-  uint8_t press[] = {0x02, 0x08, modifiers, 0x00, key,
-                     0x00, 0x00, 0x00,      0x00, 0x00};
-  uint8_t rel[] = {0x02, 0x08, modifiers, 0x00, 0x00,
-                   0x00, 0x00, 0x00,      0x00, 0x00};
-  sendHID(press, sizeof(press));
-  delay(20);
-  sendHID(rel, sizeof(rel));
+  // Step 1: Press modifier first (if any)
+  if (modifiers != 0) {
+    uint8_t modPress[] = {0x02, 0x08, modifiers, 0x00, 0x00,
+                          0x00, 0x00, 0x00,      0x00, 0x00};
+    sendHID(modPress, sizeof(modPress));
+    delay(10); // Small delay after pressing modifier
+  }
+
+  // Step 2: Press key with modifier (if there's a key to press)
+  if (key != 0) {
+    uint8_t keyPress[] = {0x02, 0x08, modifiers, 0x00, key,
+                          0x00, 0x00, 0x00,      0x00, 0x00};
+    sendHID(keyPress, sizeof(keyPress));
+    delay(20); // Key press duration
+  }
+
+  // Step 3: Release key but maintain modifier
+  if (key != 0) {
+    uint8_t keyRelease[] = {0x02, 0x08, modifiers, 0x00, 0x00,
+                            0x00, 0x00, 0x00,      0x00, 0x00};
+    sendHID(keyRelease, sizeof(keyRelease));
+    delay(10); // Small delay after releasing key
+  }
+
+  // Step 4: Release modifier (if any was pressed)
+  if (modifiers != 0) {
+    uint8_t modRelease[] = {0x02, 0x08, 0x00, 0x00, 0x00,
+                            0x00, 0x00, 0x00, 0x00, 0x00};
+    sendHID(modRelease, sizeof(modRelease));
+  }
 #else
   dev.sendKey(key, modifiers);
 #endif
@@ -77,27 +113,49 @@ void sendFunctionKey(uint8_t fKeyNum) {
   return genKey(fKeyCode, 0);
 }
 
-void sendKey(char c, bool useFxKeys) {
-  if (useFxKeys) {
-#if 0
-    if (c == '0') {
-      sendFunctionKey(11);
-    } else {
-      sendFunctionKey(c - '0' + 1);
+// Function to lookup keycode and modifier for a character
+static int lookupKeyMapping(char c, KeyboardLayout layout, uint8_t *keycode,
+                            uint8_t *modifier) {
+  const KeyMapping *currentLayout = KEYBOARD_LAYOUTS[layout];
+
+  // Search through the layout table
+  for (int i = 0; currentLayout[i].ascii != 0; i++) {
+    if (currentLayout[i].ascii == c) {
+      *keycode = currentLayout[i].keycode;
+      *modifier = currentLayout[i].modifier;
+      return 1; // Found
     }
-#else
-    if (c == '0') {
-      sendFunctionKey(121);
-    } else {
-      sendFunctionKey(c - '1' + 112);
-    }
-#endif
-  } else {
-    // Use the normal keymap
-    genKey(KBD_MAP[0][(int)c][0], KBD_MAP[0][(int)c][1]);
   }
+
+  // Character not found
+  *keycode = 0;
+  *modifier = 0;
+  return 0;
 }
 
-void sendKeymap(char c, int keymap) {
-  genKey(KBD_MAP[keymap][(int)c][0], KBD_MAP[keymap][(int)c][1]);
+// Function to send a key based on character and layout
+void sendKeymap(char c, int layout) {
+  uint8_t keycode, modifier;
+
+  if (lookupKeyMapping(c, (KeyboardLayout)layout, &keycode, &modifier)) {
+    genKey(keycode, modifier);
+  }
+  // If character not found, nothing happens
+}
+
+void sendKey(char c, bool useFxKeys) {
+  if (useFxKeys) {
+    if (c == '0') {
+      sendFunctionKey(10); // F10 for '0'
+    } else if (c >= '1' && c <= '9') {
+      sendFunctionKey(c - '0'); // Convert '1'-'9' to 1-9 for F1-F9
+    } else if (c == 'a' || c == 'A') {
+      sendFunctionKey(11); // F11 for 'A'
+    } else if (c == 'b' || c == 'B') {
+      sendFunctionKey(12); // F12 for 'B'
+    }
+  } else {
+    // Use the normal keymap
+    sendKeymap(c, KBLAYOUT_US);
+  }
 }
