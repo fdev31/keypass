@@ -128,17 +128,28 @@ if (n > WIDTH && int(n / WIDTH) % 2) {
   u8g2.drawStr(0, 0, DEBUG_BUFFER);
   // u8g2.drawStr(5, 20, DEBUG_BUFFER2);
 #endif
+  int icon_width = icon_bluetooth.width;
+
+  int x_pos = BUGGY_OFFSET_X + icon_bluetooth.width - 4;
+  int y_pos = icon_bluetooth.height + BUGGY_OFFSET_Y;
+
   if (icon_statuses[ICON_BLUETOOTH])
-    drawBitmap(20 + BUGGY_OFFSET_X, BUGGY_OFFSET_Y + 16, &icon_bluetooth);
+    drawBitmap(x_pos, y_pos, &icon_bluetooth);
+
+  x_pos += icon_bluetooth.width - 2;
 
   if (icon_statuses[ICON_WIFI])
-    drawBitmap(20 + BUGGY_OFFSET_X + 16, BUGGY_OFFSET_Y + 16, &icon_wifi);
+    drawBitmap(x_pos, y_pos, &icon_wifi);
+
+  x_pos += icon_bluetooth.width - 2;
 
   if (icon_statuses[ICON_UP])
-    drawBitmap(20 + BUGGY_OFFSET_X + (16 * 2), BUGGY_OFFSET_Y + 16, &icon_up);
+    drawBitmap(x_pos, y_pos, &icon_up);
+
+  x_pos += icon_bluetooth.width - 2;
 
   if (icon_statuses[ICON_DOWN])
-    drawBitmap(20 + BUGGY_OFFSET_X + (16 * 3), BUGGY_OFFSET_Y + 16, &icon_down);
+    drawBitmap(x_pos, y_pos, &icon_down);
 
   u8g2.sendBuffer();
 }
