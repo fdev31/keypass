@@ -6,7 +6,13 @@
 #include "captive.h"
 #include "http.h"
 #endif
+#include "WiFi.h"
 #include "bootloader_random.h"
+#include "driver/adc.h"
+#include "driver/rtc_io.h"
+#include "esp_bt.h"
+#include "esp_sleep.h"
+#include "esp_wifi.h"
 #include "password.h"
 #include <Arduino.h>
 #include <Wire.h>
@@ -37,13 +43,15 @@ void ping() {
 extern void sendHIDInit();
 
 void setup() {
+  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+  esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_AUTO);
   sendHIDInit();
   bootloader_random_enable();
   srand(millis());
 #ifdef ENABLE_GRAPHICS
   graphicsSetup();
   char version_string[50];
-  snprintf(version_string, sizeof(version_string), "%d:%s", HW_TYPE, VERSION);
+  snprintf(version_string, sizeof(version_string), "%d@%s", HW_TYPE, VERSION);
   printText(1, version_string);
   boot_time = millis();
   version_displayed = true;
@@ -65,74 +73,60 @@ void setup() {
   lastClientTime = millis();
   Wire.begin(SDA_PIN, SCL_PIN);
 }
-
 void loop() {
-// START TO SLEEP SLEEP CODE
-// int should_sleep = millis() - lastClientTime >=
-//                    (sleeping ? SLEEP_WAKE_TIME : AUTOSLEEP_TIMEOUT);
+  int should_sleep = millis() - lastClientTime >=
+                     (sleeping ? SLEEP_WAKE_TIME : AUTOSLEEP_TIMEOUT);
 
-// if (!should_sleep) {
+  if (!should_sleep) {
 #if ENABLE_HTTP
-  captiveLoop();
-  yield();
+    captiveLoop();
+    yield();
 #endif
 #if ENABLE_BLUETOOTH
-  bluetoothLoop(); // Handle Bluetooth commands if needed
-  yield();
+    bluetoothLoop();
+    yield();
 #endif
 #ifdef ENABLE_GRAPHICS
-  if (version_displayed && (millis() - boot_time > 2000)) {
-    printText(1, "  _(^-^)_");
-    version_displayed = false;
+    if (version_displayed && (millis() - boot_time > 2000)) {
+      printText(1, "  _(^-^)_");
+      version_displayed = false;
+    }
+    if (!sleeping) {
+      if (!graphics_initialized) {
+        graphicsSetup();
+        graphics_initialized = 1;
+        yield();
+      }
+      graphicsLoop();
+      yield();
+    }
+#endif
   }
-  // if (!sleeping) {
-  if (!graphics_initialized) {
-    graphicsSetup(); // Reinitialize graphics if needed
-    graphics_initialized = 1;
+  if (!sleeping && should_sleep) {
+
+    // First put WiFi in power save mode to gracefully reduce activity
+    wifi_ps_type_t ps_type = WIFI_PS_MAX_MODEM;
+    esp_wifi_set_ps(ps_type);
+
+    yield();
+    delay(100); // Give WiFi time to enter power save
+
+#ifdef ENABLE_GRAPHICS
+    shutdownGraphics();
+#endif
     yield();
   }
-  graphicsLoop();
-  yield();
-  // }
+
+#if !DEBUG
+  if (should_sleep || sleeping) {
+    esp_deep_sleep_start();
+  }
 #endif
-  // }
 
-  // if (!sleeping && should_sleep) {
-  //   Serial.flush(); // Make sure serial output is complete before sleep
-  //   yield();
-  // #ifdef ENABLE_GRAPHICS
-  //   shutdownGraphics();
-  //   yield();
-  // #endif
-  //   wifi_ps_type_t ps_type = WIFI_PS_NONE;
-  //   esp_wifi_set_ps(ps_type);
-  //   yield();
-  // }
-
-#if 0
-    // Set AP beacon interval to ensure visibility
-    wifi_ap_config_t ap_config = {0};
-    wifi_config_t wifi_config = {0};
-    esp_wifi_get_config(WIFI_IF_AP, &wifi_config);
-    ap_config = wifi_config.ap;
-    ap_config.beacon_interval =
-        100; // Shorter beacon interval (default is 100ms)
-    wifi_config.ap = ap_config;
-    esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
-#endif
-  // if (should_sleep || sleeping) {
-  // #if !DEBUG
-  //   // Use timer wakeup to periodically refresh AP state
-  //   esp_sleep_enable_timer_wakeup(SLEEP_TIME * 1000);
-  //   delay(1);
-  //   yield();
-  //   esp_light_sleep_start(); // Enter light sleep mode
-
-  //   // Reset some states
-  //   lastClientTime = millis(); // Reset timer after waking up
-  //   graphics_initialized = 0;
-  //   sleeping = 1;
-  // }
-  // #endif
-  delay(50);
+  // Wake-up: reset states
+  if (should_sleep || sleeping) {
+    lastClientTime = millis();
+    graphics_initialized = 0;
+    sleeping = 1;
+  }
 }

@@ -7,6 +7,7 @@
 #include "crypto.h"
 #include "graphics.h"
 #include "hid.h"
+#include "main.h"
 #include "password.h"
 #include "restore.h"
 #include <Arduino.h>
@@ -202,6 +203,7 @@ void bluetoothLoop() {
       // Handle incoming data - THIS PART WAS MISSING
       size_t packetSize;
       const uint8_t *data = NuPacket.read(packetSize);
+      ping();
 
       if (data && packetSize > 0) {
         setIconStatus(ICON_DOWN, true);
