@@ -56,9 +56,11 @@ void setup() {
 #if ENABLE_HTTP
   captiveSetup();
   setupHttp(server);
+  setIconStatus(ICON_WIFI, true);
 #endif
 #if ENABLE_BLUETOOTH
   bluetoothSetup();
+  setIconStatus(ICON_BLUETOOTH, true);
 #endif
   lastClientTime = millis();
   Wire.begin(SDA_PIN, SCL_PIN);

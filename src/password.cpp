@@ -136,9 +136,9 @@ bool typePassword(int id, int layout, bool sendNewline) {
 
   ping();
 
-#ifdef ENABLE_GRAPHICS
-  printText(1, "Typing");
-#endif
+  // #ifdef ENABLE_GRAPHICS
+  //   printText(1, "Typing");
+  // #endif
   password = readPassword(id);
   char *text = (char *)password.password;
 
@@ -146,9 +146,9 @@ bool typePassword(int id, int layout, bool sendNewline) {
   int effectiveLayout = (layout != -1) ? layout : password.layout;
 
   sendAnyKeymap(text, effectiveLayout, sendNewline);
-#ifdef ENABLE_GRAPHICS
-  printText(1, "Typed");
-#endif
+  // #ifdef ENABLE_GRAPHICS
+  //   printText(1, "Typed");
+  // #endif
   return true;
 }
 
@@ -220,9 +220,9 @@ String listPasswords() {
 
 void factoryReset() {
   ping();
-#ifdef ENABLE_GRAPHICS
-  printText(1, "Reset");
-#endif
+  // #ifdef ENABLE_GRAPHICS
+  //   printText(1, "Reset");
+  // #endif
   Preferences preferences;
 
   for (int id = 0; id < MAX_PASSWORDS; id++) {

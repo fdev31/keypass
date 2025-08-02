@@ -154,20 +154,17 @@ void bluetoothSetup() {
   NuPacket.start();
 }
 void bluetoothLoop() {
-  char buffer[100];
-
 #if ENABLE_HTTP
   bool isConnected = NuPacket.isConnected();
 
   if (isConnected && isConnected != previousBleConnected) {
     WiFi.mode(WIFI_OFF);
-    printText(1, "No WiFi");
+    setIconStatus(ICON_WIFI, false);
   }
   previousBleConnected = isConnected;
 #endif
 
-  sprintf(buffer, "BLE %s", NuPacket.isConnected() ? "on" : "off");
-  printText(2, buffer);
+  setIconStatus(ICON_BLUETOOTH, NuPacket.isConnected());
 
   // Process incoming packets
   if (NuPacket.isConnected()) {
@@ -176,9 +173,8 @@ void bluetoothLoop() {
       int chunksToSend = min(chunkState.chunksPerIteration,
                              chunkState.totalChunks - chunkState.chunksSent);
 
-      sprintf(buffer, "S %d %d/%d", chunksToSend, chunkState.chunksSent,
-              chunkState.totalChunks);
-      printText(2, buffer);
+      setIconStatus(ICON_UP, true);
+      setIconStatus(ICON_DOWN, false);
 
       for (int i = 0; i < chunksToSend; i++) {
         // Calculate this chunk's size
@@ -195,22 +191,20 @@ void bluetoothLoop() {
         chunkState.offset += chunkSize;
         chunkState.chunksSent++;
 
-        sprintf(buffer, "C%d/%d %d", chunkState.chunksSent,
-                chunkState.totalChunks, chunkSize);
-        printText(2, buffer);
-
         if (chunkState.chunksSent >= chunkState.totalChunks) {
           chunkState.inProgress = false;
-          printText(2, "Done");
+          setIconStatus(ICON_UP, false);
           break;
         }
       }
     } else {
+      setIconStatus(ICON_UP, false);
       // Handle incoming data - THIS PART WAS MISSING
       size_t packetSize;
       const uint8_t *data = NuPacket.read(packetSize);
 
       if (data && packetSize > 0) {
+        setIconStatus(ICON_DOWN, true);
         // Create a null-terminated string from the received data
         char *command = (char *)malloc(packetSize + 1);
         if (command) {
@@ -220,9 +214,7 @@ void bluetoothLoop() {
           // Buffer for response
           uint8_t responseBuffer[200]; // Use smaller buffer size
           size_t responseSize = 0;
-          if (chunkState.inProgress) {
-            printText(2, "E: CIP");
-          } else {
+          if (!chunkState.inProgress) {
             // Process the command and generate a response
             processCommand(command, responseBuffer, responseSize);
 
@@ -295,7 +287,6 @@ void sendChunkedResponse(const char *data, size_t dataLength,
                          uint8_t *responseBuffer, size_t &responseSize) {
   // Check if chunking is already in progress
   if (chunkState.inProgress) {
-    printText(2, "E: CIP2");
     responseSize = 0;
     return;
   }
@@ -309,9 +300,7 @@ void sendChunkedResponse(const char *data, size_t dataLength,
   // Copy the data to our persistent buffer
   persistentChunkData = String(data, dataLength);
 
-  char buffer[100];
-  sprintf(buffer, "S %d ", dataLength);
-  printText(2, buffer);
+  setIconStatus(ICON_UP, true);
 
   // Initialize chunking state
   chunkState.inProgress = true;
@@ -322,16 +311,11 @@ void sendChunkedResponse(const char *data, size_t dataLength,
   chunkState.chunksSent = 0;
   chunkState.chunksPerIteration = CHUNKS_PER_ITERATION;
 
-  sprintf(buffer, "C %d*%d", chunkState.totalChunks, CHUNK_SIZE);
-  printText(2, buffer);
-
   // Send header
   char header[256];
   snprintf(header, sizeof(header), "%d,%d,%d\n", dataLength,
            chunkState.totalChunks, CHUNK_SIZE);
   NuPacket.write((uint8_t *)header, strlen(header));
-
-  printText(2, "I");
 
   // Set responseSize to 0 since we handled sending
   responseSize = 0;
@@ -571,9 +555,6 @@ bool handlePassDumpCommand(JsonDocument &doc, uint8_t *responseBuffer,
 
   String jsonString;
   serializeJson(jsonDoc, jsonString);
-
-  // DEBUG: Print the JSON string before sending
-  printText(2, "SD...");
 
   // Start the chunked transfer
   sendChunkedResponse(jsonString.c_str(), jsonString.length(), responseBuffer,

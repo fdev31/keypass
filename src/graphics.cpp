@@ -1,5 +1,6 @@
 #include "graphics.h"
 #include "configuration.h"
+#include "icons.h"
 #if ENABLE_GRAPHICS
 
 #include <Arduino.h>
@@ -21,11 +22,60 @@ U8G2_SSD1306_72X40_ER_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
 
 bool dirty = true;
 char DEBUG_BUFFER[100];
-char DEBUG_BUFFER2[100];
+// char DEBUG_BUFFER2[100];
+
+bool icon_statuses[icons_count] = {0};
+
+void setIconStatus(int index, bool enabled) {
+  if (enabled != icon_statuses[index]) {
+    icon_statuses[index] = enabled;
+    dirty = true;
+  }
+}
+
+#if FLIP_SCREEN
+void drawBitmap(int x, int y, const Bitmap *bitmap) {
+  if (!bitmap || !bitmap->data)
+    return;
+
+  int width = bitmap->width;
+  int height = bitmap->height;
+  int bytes_per_row = (width + 7) / 8;
+
+  // For direction 2 (upside down), we need to:
+  // 1. Start from the position which will be the bottom-right corner of the
+  // flipped icon
+  // 2. Draw pixels going backwards
+
+  for (int py = 0; py < height; py++) {
+    for (int px = 0; px < width; px++) {
+      // Calculate byte and bit position in the bitmap data
+      int byte_idx = py * bytes_per_row + px / 8;
+      int bit_idx = px % 8;
+
+      // Check if the bit is set in the bitmap
+      int bit_set = (bitmap->data[byte_idx] & (1 << bit_idx)) != 0;
+
+      if (bit_set) {
+        // Draw with flipped coordinates
+        u8g2.drawPixel(x - px, y - py);
+      }
+    }
+  }
+}
+#else
+static void drawBitmap(int x, int y, const Bitmap *bitmap) {
+  if (!bitmap || !bitmap->data)
+    return;
+
+  // Draw bitmap using U8G2's XBM drawing function
+  u8g2.drawXBM(x, y, bitmap->width, bitmap->height, bitmap->data);
+}
+#endif
 
 void printText(uint8_t bufid, const char *text) {
   dirty = true;
-  strlcpy(bufid == 1 ? DEBUG_BUFFER : DEBUG_BUFFER2, text, 100);
+  strlcpy(DEBUG_BUFFER, text, 100);
 }
 
 void u8g2_prepare(void) {
@@ -42,7 +92,6 @@ void u8g2_prepare(void) {
 
 void graphicsSetup(void) {
   DEBUG_BUFFER[0] = 0;
-  DEBUG_BUFFER2[0] = 0;
   u8g2.begin();
   u8g2.setContrast(255); // set contrast to maximum
 }
@@ -73,13 +122,24 @@ if (n > WIDTH && int(n / WIDTH) % 2) {
 */
 #if FLIP_SCREEN
   u8g2.drawStr(WIDTH + BUGGY_OFFSET_X, HEIGHT + BUGGY_OFFSET_Y, DEBUG_BUFFER);
-  u8g2.drawStr(WIDTH + BUGGY_OFFSET_X, (HEIGHT / 2) + BUGGY_OFFSET_Y,
-               DEBUG_BUFFER2);
+  // u8g2.drawStr(WIDTH + BUGGY_OFFSET_X, (HEIGHT / 2) + BUGGY_OFFSET_Y,
+  //              DEBUG_BUFFER2);
 #else
   u8g2.drawStr(0, 0, DEBUG_BUFFER);
-  u8g2.drawStr(5, 20, DEBUG_BUFFER2);
+  // u8g2.drawStr(5, 20, DEBUG_BUFFER2);
 #endif
-  //  u8g2.drawStr(0, 3, "12345678910ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+  if (icon_statuses[ICON_BLUETOOTH])
+    drawBitmap(20 + BUGGY_OFFSET_X, BUGGY_OFFSET_Y + 16, &icon_bluetooth);
+
+  if (icon_statuses[ICON_WIFI])
+    drawBitmap(20 + BUGGY_OFFSET_X + 16, BUGGY_OFFSET_Y + 16, &icon_wifi);
+
+  if (icon_statuses[ICON_UP])
+    drawBitmap(20 + BUGGY_OFFSET_X + (16 * 2), BUGGY_OFFSET_Y + 16, &icon_up);
+
+  if (icon_statuses[ICON_DOWN])
+    drawBitmap(20 + BUGGY_OFFSET_X + (16 * 3), BUGGY_OFFSET_Y + 16, &icon_down);
+
   u8g2.sendBuffer();
 }
 
