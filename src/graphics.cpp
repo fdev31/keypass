@@ -12,6 +12,8 @@
 #define SDA_PIN 5
 #define SCL_PIN 6
 
+#define HEIGHT 40
+#define WIDTH 72
 #if BUGGY_DISPLAY
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 6, 5);
 #else
@@ -21,6 +23,8 @@ U8G2_SSD1306_72X40_ER_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
 #endif
 
 bool dirty = true;
+bool inverted = false;
+bool currently_inverted = false;
 char DEBUG_BUFFER[100];
 // char DEBUG_BUFFER2[100];
 
@@ -79,9 +83,18 @@ void printText(uint8_t bufid, const char *text) {
 }
 
 void u8g2_prepare(void) {
+  u8g2.clearBuffer();
+  if (inverted) {
+    // fill the screen white
+    u8g2.setDrawColor(1);
+    u8g2.drawBox(BUGGY_OFFSET_X, BUGGY_OFFSET_Y, WIDTH + BUGGY_OFFSET_X,
+                 HEIGHT + BUGGY_OFFSET_Y);
+    u8g2.setDrawColor(0);
+  } else {
+    u8g2.setDrawColor(1);
+  }
   u8g2.setFont(u8g2_font_crox4tb_tf);
   u8g2.setFontRefHeightExtendedText();
-  u8g2.setDrawColor(1);
   u8g2.setFontPosTop();
 #if FLIP_SCREEN
   u8g2.setFontDirection(2);
@@ -96,30 +109,19 @@ void graphicsSetup(void) {
   u8g2.setContrast(255); // set contrast to maximum
 }
 
-#define HEIGHT 40
-#define WIDTH 72
-
 void graphicsLoop(void) {
-  if (!dirty)
+  // invert every 10s
+  inverted = ((millis() / 1000) % 2) == 0;
+  if (inverted != currently_inverted) {
+    currently_inverted = inverted;
+  } else if (!dirty) {
     return;
+  }
+
   dirty = false;
   // picture loop
-  u8g2.clearBuffer();
   u8g2_prepare();
-  /**
-int n = millis() / 10;
-if (n > WIDTH && int(n / WIDTH) % 2) {
-  n = n % WIDTH;
-  u8g2.drawLine(n, 0, n, HEIGHT);
-} else {
-  n = n % WIDTH;
-  u8g2.drawLine(WIDTH - n, 0, WIDTH - n, HEIGHT);
-}
 
-  // draw a black background in the center
-  u8g2.drawBox(0, 20, 72, 10);
-  u8g2.setDrawColor(0);
-*/
 #if FLIP_SCREEN
   u8g2.drawStr(WIDTH + BUGGY_OFFSET_X, HEIGHT + BUGGY_OFFSET_Y, DEBUG_BUFFER);
   // u8g2.drawStr(WIDTH + BUGGY_OFFSET_X, (HEIGHT / 2) + BUGGY_OFFSET_Y,
@@ -129,9 +131,14 @@ if (n > WIDTH && int(n / WIDTH) % 2) {
   // u8g2.drawStr(5, 20, DEBUG_BUFFER2);
 #endif
   int icon_width = icon_bluetooth.width;
+  // draw icons inverted, first draw a box behind them
+  u8g2.setDrawColor(inverted ? 0 : 1);
+  u8g2.drawBox(BUGGY_OFFSET_X, BUGGY_OFFSET_Y, BUGGY_OFFSET_X + WIDTH,
+               icon_bluetooth.height + 1);
+  u8g2.setDrawColor(inverted ? 1 : 0);
 
   int x_pos = BUGGY_OFFSET_X + icon_bluetooth.width - 4;
-  int y_pos = icon_bluetooth.height + BUGGY_OFFSET_Y;
+  int y_pos = icon_bluetooth.height + BUGGY_OFFSET_Y - 2;
 
   if (icon_statuses[ICON_BLUETOOTH])
     drawBitmap(x_pos, y_pos, &icon_bluetooth);

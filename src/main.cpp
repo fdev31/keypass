@@ -82,7 +82,7 @@ void loop() {
 #endif
 #ifdef ENABLE_GRAPHICS
   if (version_displayed && (millis() - boot_time > 2000)) {
-    printText(1, "_(^-^)_");
+    printText(1, "  _(^-^)_");
     version_displayed = false;
   }
   // if (!sleeping) {
