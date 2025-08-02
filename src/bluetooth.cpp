@@ -548,18 +548,6 @@ bool handlePassDumpCommand(JsonDocument &doc, uint8_t *responseBuffer,
   sendChunkedResponse(stream.c_str(), stream.length(), responseBuffer,
                       responseSize);
   return true;
-
-  // Create a JSON object to wrap the plain text dump
-  StaticJsonDocument<20480> jsonDoc; // Adjust size as needed
-  jsonDoc["dump"] = stream.toString();
-
-  String jsonString;
-  serializeJson(jsonDoc, jsonString);
-
-  // Start the chunked transfer
-  sendChunkedResponse(jsonString.c_str(), jsonString.length(), responseBuffer,
-                      responseSize);
-  return true;
 }
 
 bool handleRestoreCommand(JsonDocument &doc, uint8_t *responseBuffer,
