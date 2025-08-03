@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import sys
 from PIL import Image
 import os
@@ -6,26 +6,28 @@ import argparse
 import glob
 
 
-def process_images(input_files, output_file=None, threshold=128, prefix=None):
-    all_c_code = []
+def generate_header_content(input_files, threshold=128, prefix=None, output=None):
+    header_lines = []
     all_bitmaps = []
 
+    pfx = output.upper()
+
     # Header and includes
-    all_c_code.append("// Generated bitmap icons")
-    all_c_code.append("#include <stdint.h>")
-    all_c_code.append("")
+    header_lines.append("// Generated bitmap header")
+    header_lines.append(f"#ifndef {pfx}_H")
+    header_lines.append(f"#define {pfx}_H")
+    header_lines.append("#include <stdint.h>")
+    header_lines.append("")
 
     # Define the bitmap struct
-    all_c_code.append("#ifndef BITMAP_H")
-    all_c_code.append("#define BITMAP_H")
-    all_c_code.append("typedef struct {")
-    all_c_code.append("    const uint8_t *data;")
-    all_c_code.append("    int width;")
-    all_c_code.append("    int height;")
-    all_c_code.append("} Bitmap;")
-    all_c_code.append("")
+    header_lines.append("typedef struct {")
+    header_lines.append("    const uint8_t *data;")
+    header_lines.append("    int width;")
+    header_lines.append("    int height;")
+    header_lines.append("} Bitmap;")
+    header_lines.append("")
 
-    # Process each image
+    # Process each image to generate declarations
     for input_file in input_files:
         try:
             img = Image.open(input_file)
@@ -36,7 +38,62 @@ def process_images(input_files, output_file=None, threshold=128, prefix=None):
         # Convert to grayscale if it isn't already
         if img.mode != "L":
             img = img.convert("L")
+        width, height = img.size
 
+        # Determine variable name from filename
+        var_name = os.path.splitext(os.path.basename(input_file))[0]
+        var_name = "".join(c if c.isalnum() else "_" for c in var_name)
+        if var_name[0].isdigit():
+            var_name = "icon_" + var_name
+
+        # Apply prefix if provided
+        if prefix:
+            var_name = f"{prefix}_{var_name}"
+
+        # Add declarations for this bitmap
+        header_lines.append(
+            f"// Bitmap for {os.path.basename(input_file)} ({width}x{height})"
+        )
+        header_lines.append(f"extern const uint8_t {var_name}_data[];")
+        header_lines.append(f"extern const Bitmap {var_name};")
+        header_lines.append("")
+
+        # Track bitmap names for the collection array
+        all_bitmaps.append(var_name)
+
+    # Create declarations for the collection array
+    if all_bitmaps:
+        collection_name = prefix if prefix else "icons"
+        header_lines.append("// Collection of all bitmap icons")
+        header_lines.append(f"extern const Bitmap* {collection_name}[];")
+        header_lines.append(f"const int {collection_name}_count = {len(all_bitmaps)};")
+        header_lines.append("")
+
+    header_lines.append(f"#endif // {pfx}_H")
+    return "\n".join(header_lines), all_bitmaps
+
+
+def generate_cpp_content(
+    input_files, all_bitmaps, threshold=128, prefix=None, output=None
+):
+    cpp_lines = []
+
+    # Header and includes
+    cpp_lines.append("// Generated bitmap icons implementation")
+    cpp_lines.append(f'#include "{output}.h"')
+    cpp_lines.append("")
+
+    # Process each image to generate definitions
+    for i, input_file in enumerate(input_files):
+        try:
+            img = Image.open(input_file)
+        except Exception as e:
+            print(f"Error opening image {input_file}: {e}")
+            continue
+
+        # Convert to grayscale if it isn't already
+        if img.mode != "L":
+            img = img.convert("L")
         width, height = img.size
 
         # Determine variable name from filename
@@ -56,7 +113,6 @@ def process_images(input_files, output_file=None, threshold=128, prefix=None):
         # Process the pixel data
         pixels = list(img.getdata())
         bitmap_data = []
-
         for y in range(height):
             for byte_idx in range(bytes_per_row):
                 byte_val = 0
@@ -70,64 +126,78 @@ def process_images(input_files, output_file=None, threshold=128, prefix=None):
                 bitmap_data.append(byte_val)
 
         # Add this bitmap to the output
-        all_c_code.append(
+        cpp_lines.append(
             f"// Bitmap data for {os.path.basename(input_file)} ({width}x{height})"
         )
-        all_c_code.append(f"static const uint8_t {var_name}_data[] = {{")
-
+        cpp_lines.append(f"const uint8_t {var_name}_data[] = {{")
         # Format the bitmap data in rows of 12 bytes
         for i in range(0, len(bitmap_data), 12):
             row_data = bitmap_data[i : i + 12]
             hex_values = ", ".join(f"0x{b:02X}" for b in row_data)
-            all_c_code.append(f"    {hex_values},")
-
-        all_c_code.append("};")
+            cpp_lines.append(f"    {hex_values},")
+        cpp_lines.append("};")
 
         # Add the bitmap struct
-        all_c_code.append(f"static const Bitmap {var_name} = {{")
-        all_c_code.append(f"    .data = {var_name}_data,")
-        all_c_code.append(f"    .width = {width},")
-        all_c_code.append(f"    .height = {height}")
-        all_c_code.append("};")
-        all_c_code.append("")
+        cpp_lines.append(f"const Bitmap {var_name} = {{")
+        cpp_lines.append(f"    .data = {var_name}_data,")
+        cpp_lines.append(f"    .width = {width},")
+        cpp_lines.append(f"    .height = {height}")
+        cpp_lines.append("};")
+        cpp_lines.append("")
 
-        # Track bitmap names for the collection array
-        all_bitmaps.append(var_name)
-
-    # Create an array of all bitmaps
+    # Create definitions for the collection array
     if all_bitmaps:
-        collection_name = prefix + "_icons" if prefix else "icons"
-        all_c_code.append("// Collection of all bitmap icons")
-        all_c_code.append(f"static const Bitmap* {collection_name}[] = {{")
+        collection_name = prefix if prefix else "icons"
+        cpp_lines.append("// Collection of all bitmap icons")
+        cpp_lines.append(f"const Bitmap* {collection_name}[] = {{")
         for bitmap in all_bitmaps:
-            all_c_code.append(f"    &{bitmap},")
-        all_c_code.append("};")
-        all_c_code.append("")
-        all_c_code.append(
-            f"static const int {collection_name}_count = {len(all_bitmaps)};"
-        )
-        all_c_code.append("#endif")
-    all_c_code.append("")
+            cpp_lines.append(f"    &{bitmap},")
+        cpp_lines.append("};")
+        cpp_lines.append("")
 
-    # Join all lines with newlines
-    full_code = "\n".join(all_c_code)
+    return "\n".join(cpp_lines)
 
-    # Write to output file or print to stdout
-    if output_file:
-        with open(output_file, "w") as f:
-            f.write(full_code)
+
+def process_images(
+    input_files, output_base=None, threshold=128, prefix=None, output=None
+):
+    # Generate header content
+    header_content, all_bitmaps = generate_header_content(
+        input_files, threshold, prefix, output
+    )
+
+    # Generate C++ content
+    cpp_content = generate_cpp_content(
+        input_files, all_bitmaps, threshold, prefix, output
+    )
+
+    # Write to output files or print to stdout
+    if output_base:
+        header_file = output_base + ".h"
+        cpp_file = output_base + ".cpp"
+
+        with open(header_file, "w") as f:
+            f.write(header_content)
+
+        with open(cpp_file, "w") as f:
+            f.write(cpp_content)
+
         print(
-            f"Generated bitmap data for {len(all_bitmaps)} icons, written to {output_file}"
+            f"Generated bitmap data for {len(all_bitmaps)} icons, written to {header_file} and {cpp_file}"
         )
     else:
-        print(full_code)
+        # If no output base is specified, print both to stdout with separators
+        print("// ===== HEADER FILE =====")
+        print(header_content)
+        print("\n// ===== IMPLEMENTATION FILE =====")
+        print(cpp_content)
 
-    return full_code
+    return header_content, cpp_content
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Convert multiple PNG images to 1-bit C bitmaps in a single file"
+        description="Convert multiple PNG images to 1-bit C bitmaps in separate .h and .cpp files"
     )
     parser.add_argument(
         "input_files", nargs="+", help="Input PNG files or wildcard patterns"
@@ -138,9 +208,10 @@ def main():
         default=128,
         help="Threshold value for converting to 1-bit (0-255)",
     )
-    parser.add_argument("--output", help="Output C file (defaults to stdout)")
+    parser.add_argument(
+        "-o", "--output", help="Output base filename (without extension)"
+    )
     parser.add_argument("--prefix", help="Prefix for all variable names")
-
     args = parser.parse_args()
 
     # Expand any wildcards in the input files
@@ -156,7 +227,16 @@ def main():
         print("Error: No input files to process")
         sys.exit(1)
 
-    process_images(expanded_files, args.output, args.threshold, args.prefix)
+    # if args.prefix is None:
+    #     args.prefix = args.output.split("/")[-1]
+
+    process_images(
+        expanded_files,
+        args.output,
+        args.threshold,
+        args.prefix,
+        args.output.split("/")[-1],
+    )
 
 
 if __name__ == "__main__":

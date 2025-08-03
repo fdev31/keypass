@@ -49,4 +49,6 @@ gen-keymap:
 
 gen-icons:
     #!/usr/bin/env sh
-    ./scripts/png2icon.py images/icon_bluetooth.png images/icon_wifi.png images/icon_up.png images/icon_down.png > src/icons.h
+    pushd src
+    ../scripts/png2icon.py -o icons ../images/icon_{bluetooth,wifi,up,down}.png
+    popd

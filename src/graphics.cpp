@@ -143,17 +143,17 @@ void graphicsLoop(void) {
   if (icon_statuses[ICON_BLUETOOTH])
     drawBitmap(x_pos, y_pos, &icon_bluetooth);
 
-  x_pos += icon_bluetooth.width - 2;
+  x_pos += icon_width - 2;
 
   if (icon_statuses[ICON_WIFI])
     drawBitmap(x_pos, y_pos, &icon_wifi);
 
-  x_pos += icon_bluetooth.width - 2;
+  x_pos += icon_width - 2;
 
   if (icon_statuses[ICON_UP])
     drawBitmap(x_pos, y_pos, &icon_up);
 
-  x_pos += icon_bluetooth.width - 2;
+  x_pos += icon_width - 2;
 
   if (icon_statuses[ICON_DOWN])
     drawBitmap(x_pos, y_pos, &icon_down);
