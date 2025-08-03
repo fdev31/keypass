@@ -7,22 +7,29 @@
 static Preferences preferences;
 
 void settingsSetup() {
-    preferences.begin(F_NAMESPACE, false);
+  // No longer needed as each function handles begin/end.
 }
 
 String getWifiPassword() {
-    return preferences.getString("wifi_password", DEFAULT_WIFI_PASSWORD);
+    preferences.begin(F_NAMESPACE, true);
+    String password = preferences.getString(WIFI_PASSWORD_KEY, DEFAULT_WIFI_PASSWORD);
+    preferences.end();
+    return password;
 }
 
 bool setWifiPassword(const char* password) {
     if (password == nullptr) {
         return false;
     }
-    return preferences.putString("wifi_password", password);
+    preferences.begin(F_NAMESPACE, false);
+    bool success = preferences.putString(WIFI_PASSWORD_KEY, password);
+    preferences.end();
+    return success;
 }
 
 String getMagicKey() {
-    String magicKey = preferences.getString("magic_key", "");
+    preferences.begin(F_NAMESPACE, false);
+    String magicKey = preferences.getString(MAGIC_KEY_KEY, "");
     if (magicKey.length() == 0) {
         // If a passphrase is set, we can generate a magic key
         // but there is no direct way to check if a passphrase is set from here.
@@ -31,11 +38,14 @@ String getMagicKey() {
         uint8_t random_bytes[16];
         randomizeBuffer(random_bytes, sizeof(random_bytes));
         magicKey = String((char*)random_bytes, sizeof(random_bytes));
-        preferences.putString("magic_key", magicKey);
+        preferences.putString(MAGIC_KEY_KEY, magicKey);
     }
+    preferences.end();
     return magicKey;
 }
 
 void factoryResetSettings() {
-    preferences.clear();
+  preferences.begin(F_NAMESPACE, false);
+  preferences.clear();
+  preferences.end();
 }

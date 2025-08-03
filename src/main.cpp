@@ -44,7 +44,6 @@ void setup() {
   sendHIDInit();
   bootloader_random_enable();
   srand(millis());
-  settingsSetup();
 #ifdef ENABLE_GRAPHICS
   graphicsSetup();
   char version_string[50];
