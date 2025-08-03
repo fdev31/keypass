@@ -121,5 +121,6 @@ void loop() {
     graphics_initialized = 0;
     sleeping = 1;
   }
-  delay(50);
+  yield();
+  delay(5); // Required for bluetooth to function properly
 }
