@@ -115,6 +115,7 @@ static void handleFetchPass(AsyncWebServerRequest *request) {
 
     if (password) {
       request->send(200, "text/plain", password);
+      clearFetchedPassword();
     } else {
       request->send(400, "text/plain", "Invalid password ID");
     }

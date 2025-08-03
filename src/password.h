@@ -19,6 +19,7 @@ extern void dumpPasswords(StringStreamAdapter *stream);
 extern bool typeRawText(const char *text, int layout, bool sendNewline);
 extern bool typePassword(int id, int layout = -1, bool sendNewline = true);
 extern const char *fetchPassword(int id);
+extern void clearFetchedPassword();
 extern bool editPassword(int id, const char *name = nullptr,
                          const char *password = nullptr, int layout = -2);
 extern String listPasswords();

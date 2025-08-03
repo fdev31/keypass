@@ -69,6 +69,7 @@ static Password readPassword(int id) {
                   MAX_PASS_LEN, nonce);
     break;
   }
+  memset(passBuffer, 0, MAX_PASS_LEN);
   return password;
 #endif
 }
@@ -102,6 +103,7 @@ static void writePassword(int id, const Password &password) {
   preferences.putInt(F_FORMAT, FORMAT_VERSION);
   preferences.putInt(F_LAYOUT, password.layout);
   preferences.end();
+  memset(encrypted_password, 0, MAX_PASS_LEN);
 #endif
 }
 
@@ -147,6 +149,7 @@ bool typePassword(int id, int layout, bool sendNewline) {
   int effectiveLayout = (layout != -1) ? layout : password.layout;
 
   sendAnyKeymap(text, effectiveLayout, sendNewline);
+  memset(password.password, 0, MAX_PASS_LEN);
   // #ifdef ENABLE_GRAPHICS
   //   printText(1, "Typed");
   // #endif
@@ -161,6 +164,8 @@ const char *fetchPassword(int id) {
   password = readPassword(id);
   return (char *)password.password;
 }
+
+void clearFetchedPassword() { memset(password.password, 0, MAX_PASS_LEN); }
 
 bool editPassword(int id, const char *name, const char *clear_pass,
                   int layout) {
@@ -186,11 +191,11 @@ bool editPassword(int id, const char *name, const char *clear_pass,
 
   // Save the updated password
   writePassword(id, password);
+  memset(password.password, 0, MAX_PASS_LEN);
   return true;
 }
 
 String listPasswords() {
-  Password pwd;
   ping();
 
   // Create a dynamic JSON string to hold the list of passwords
@@ -199,18 +204,20 @@ String listPasswords() {
   // Loop through password ids and add existing passwords to the JSON
   bool firstItem = true;
   for (int id = 0; id < MAX_PASSWORDS; id++) {
-    pwd = readPassword(id);
-    if (pwd.name[0] == '\0')
+    password = readPassword(id);
+    if (password.name[0] == '\0')
       break;
 
     if (!firstItem) {
       json += ",";
     }
-    json += "{\"name\":\"" + String(pwd.name) + "\",\"uid\":" + String(id) +
-            ",\"layout\":" + String(pwd.layout) +
-            ",\"len\":" + strlen((char *)pwd.password) + "}";
+    json += "{\"name\":\"" + String(password.name) +
+            "\",\"uid\":" + String(id) +
+            ",\"layout\":" + String(password.layout) +
+            ",\"len\":" + strlen((char *)password.password) + "}";
     firstItem = false;
   }
+  clearFetchedPassword();
 
   Preferences prefs;
   size_t entries_left = prefs.freeEntries();
@@ -266,6 +273,7 @@ bool dumpOnePassword(int id, StringStreamAdapter &pString) {
 
   dumpSinglePassword(pString, password.name, (const char *)password.password,
                      password.layout, getNonce());
+  memset(password.password, 0, MAX_PASS_LEN);
   return true;
 }
 

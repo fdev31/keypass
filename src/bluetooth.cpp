@@ -415,6 +415,7 @@ bool handleFetchPassCommand(JsonDocument &doc, uint8_t *responseBuffer,
 
   if (password) {
     sendResponse(200, password, responseBuffer, responseSize);
+    clearFetchedPassword();
   } else {
     sendResponse(400, "Invalid password ID", responseBuffer, responseSize);
   }
