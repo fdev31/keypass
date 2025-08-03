@@ -7,7 +7,6 @@
 #include "graphics.h"
 #include "hid.h"
 #include "importexport.h"
-#include "indexPage.h"
 #include "main.h"
 #include "restore.h"
 #include "streamadapter.h"
