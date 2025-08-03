@@ -28,4 +28,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: KeyPass-ESP32-C3-HW${{ matrix.hw_type }}
-          path: .pio/build/esp32-c3v${{ maxtrix.hw_type }}/*.bin
+          path: .pio/build/esp32-c3v${{ matrix.hw_type }}/*.bin
