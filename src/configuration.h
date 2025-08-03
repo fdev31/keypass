@@ -26,6 +26,11 @@ const unsigned long SLEEP_TIME = 500; // sleep period in sleep mode
 #define HW_TYPE 1
 #endif
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
+#pragma message("*** HW_TYPE is set to " TOSTRING(HW_TYPE))
+
 #if HW_TYPE == 0 // standard device
 #define BUGGY_OFFSET_X 0
 #define BUGGY_OFFSET_Y 0
