@@ -1,4 +1,4 @@
-#include "configuration.h"
+#include "settings.h"
 #include "constants.h"
 #include "crypto.h"
 #include "graphics.h"

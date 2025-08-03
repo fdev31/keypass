@@ -9,6 +9,7 @@
 #include "importexport.h"
 #include "main.h"
 #include "restore.h"
+#include "settings.h"
 #include "streamadapter.h"
 #include "utils.h"
 #include <Arduino.h>
@@ -237,24 +238,10 @@ void factoryReset() {
   }
 
 #if not USE_EEPROM_API
-  preferences.begin(F_NAMESPACE, false);
-  preferences.clear(); // Clear all preferences
-  preferences.end();
+  factoryResetSettings();
 #elif
 #pragma message "EEPROM API is used, factory reset not implemented for settings"
 #endif
-}
-
-bool setWifiPassword(const char *pass) {
-  if (pass == nullptr)
-    return false;
-
-  ping();
-  Preferences preferences;
-  preferences.begin(F_NAMESPACE, false);
-  preferences.putString("wifi_password", pass);
-  preferences.end();
-  return true;
 }
 
 bool setupPassphrase(const char *phrase) {

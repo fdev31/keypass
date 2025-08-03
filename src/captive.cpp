@@ -1,5 +1,5 @@
+#include "settings.h"
 #include "configuration.h"
-#include <Preferences.h>
 #include <WiFi.h>
 #include <string.h>
 
@@ -138,11 +138,7 @@ static void handleWifiEvent(void *arg, esp_event_base_t event_base,
 }
 
 void captiveSetup() {
-  Preferences preferences;
-  preferences.begin("KeyPass", true);
-  String password =
-      preferences.getString("wifi_password", DEFAULT_WIFI_PASSWORD);
-  preferences.end();
+  String password = getWifiPassword();
   startSoftAccessPoint(DEFAULT_WIFI_SSID, password.c_str(), localIP, gatewayIP);
   setUpDNSServer(DEFAULT_WIFI_SSID, password.c_str(), dnsServer, localIP);
   setUpWebserver(server, localIP);

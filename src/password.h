@@ -24,7 +24,6 @@ extern bool editPassword(int id, const char *name = nullptr,
                          const char *password = nullptr, int layout = -2);
 extern String listPasswords();
 extern void factoryReset();
-extern bool setWifiPassword(const char *pass);
 extern bool setupPassphrase(const char *phrase);
 extern String restoreMCUPasswords(const String &data);
 
