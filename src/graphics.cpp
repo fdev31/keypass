@@ -111,7 +111,7 @@ void graphicsSetup(void) {
 
 void graphicsLoop(void) {
   // invert every 10s
-  inverted = ((millis() / 1000) % 2) == 0;
+  inverted = ((millis() / 3000) % 2) == 0;
   if (inverted != currently_inverted) {
     currently_inverted = inverted;
   } else if (!dirty) {

@@ -3,6 +3,9 @@
 #ifndef _CONFIGURATION_H_
 #define _CONFIGURATION_H_
 
+#define SDA_PIN 5
+#define SCL_PIN 6
+
 const unsigned long AUTOSLEEP_TIMEOUT = 100 * 1000; // auto-sleep delay
 const unsigned long SLEEP_WAKE_TIME = 10 * 1000;    // busy period in sleep mode
 const unsigned long SLEEP_TIME = 500; // sleep period in sleep mode

@@ -13,17 +13,12 @@
 #include "esp_bt.h"
 #include "esp_sleep.h"
 #include "esp_wifi.h"
+#include "graphics.h"
 #include "password.h"
 #include <Arduino.h>
 #include <Wire.h>
 #include <esp_sleep.h> // Add this for sleep functions
 #include <esp_wifi.h>  // Add this for esp_wifi_set_ps
-
-#ifdef ENABLE_GRAPHICS
-#include "graphics.h"
-#endif
-#define SDA_PIN 5
-#define SCL_PIN 6
 
 unsigned long lastClientTime;
 
@@ -117,16 +112,14 @@ void loop() {
     yield();
   }
 
-#if !DEBUG
-  if (should_sleep || sleeping) {
-    esp_deep_sleep_start();
-  }
-#endif
-
   // Wake-up: reset states
   if (should_sleep || sleeping) {
+#if !DEBUG
+    esp_deep_sleep_start();
+#endif
     lastClientTime = millis();
     graphics_initialized = 0;
     sleeping = 1;
   }
+  delay(50);
 }
