@@ -22,7 +22,9 @@ const unsigned long SLEEP_TIME = 500; // sleep period in sleep mode
 #define ENABLE_HTTP true
 #define ENABLE_GRAPHICS true
 
+#ifndef HW_TYPE
 #define HW_TYPE 1
+#endif
 
 #if HW_TYPE == 0 // standard device
 #define BUGGY_OFFSET_X 0

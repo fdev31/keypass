@@ -59,3 +59,4 @@ Optionally:
 # Special thanks
 
 - [Captive portal](https://github.com/CDFER/Captive-Portal-ESP32/) for showing all the tricks for Captive portals and giving a good code base
+- [ESP Flasher](https://espressif.github.io/esptool-js/) (0x10000)

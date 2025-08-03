@@ -106,7 +106,7 @@ void u8g2_prepare(void) {
 void graphicsSetup(void) {
   DEBUG_BUFFER[0] = 0;
   u8g2.begin();
-  u8g2.setContrast(255); // set contrast to maximum
+  // u8g2.setContrast(100); // NO effect ?
 }
 
 void graphicsLoop(void) {
