@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-
+#!/bin/env python
+import argparse
 import os
 import sys
 import glob
@@ -7,9 +7,7 @@ from pathlib import Path
 
 
 def parse_keymap_file(filename):
-    layout_name = Path(
-        filename
-    ).stem.upper()  # Get filename without extension, uppercase
+    layout_name = Path(filename).stem.upper()
     results: list[dict[str, tuple[int, int]]] = []
     current_file = None
 
@@ -47,15 +45,13 @@ def parse_keymap_file(filename):
     results.append(collected)
 
     def convert_res(key_mapping):
-        # convert mappings "char: (code, modifier)" into ""(char, code, modifier)""
         return [(k, v[0], v[1]) for k, v in key_mapping.items()]
 
     return layout_name, convert_res(results[0])
 
 
-def generate_keymap_header(layout_data):
-    """Generate the C header file from the parsed layout data"""
-
+def generate_keymap_files(layout_data, prefix):
+    """Generate the .h and .cpp files from the parsed layout data"""
     header = """#ifndef __CUSTOM_KEYMAP
 #define __CUSTOM_KEYMAP
 #include <stdint.h>
@@ -70,60 +66,59 @@ typedef struct {
 // Enum for supported layouts
 typedef enum {
 """
-
-    # Generate the enum values
     enum_values = []
     for i, (layout_name, _) in enumerate(layout_data):
         enum_values.append(f"    KBLAYOUT_{layout_name} = {i}")
 
     header += ",\n".join(enum_values) + "\n} KeyboardLayout;\n\n"
 
-    # Generate each layout array
+    header += "\nextern const KeyMapping* KEYBOARD_LAYOUTS[];\n"
+
+    header += "#endif // __CUSTOM_KEYMAP\n"
+
+    implementation = f'#include "{prefix}.h"'
     for layout_name, mappings in layout_data:
-        header += f"// {layout_name} keyboard layout\n"
-        header += f"static const KeyMapping LAYOUT_{layout_name}[] = {{\n"
+        implementation += f"// {layout_name} keyboard layout\n"
+        implementation += f"static const KeyMapping LAYOUT_{layout_name}[] = {{\n"
 
-        # Add special characters
-        header += "    {'\\t', 43, 0},  // Tab\n"
-        header += "    {'\\n', 40, 0},  // Enter\n"
-        header += "    {' ', 44, 0},    // Space\n"
+        implementation += "    {'\\t', 43, 0},  // Tab\n"
+        implementation += "    {'\\n', 40, 0},  // Enter\n"
+        implementation += "    {' ', 44, 0},    // Space\n"
 
-        # Add all mappings
         for char, keycode, modifier in mappings:
             if char not in " \t\n\\":
-                header += f"    {{{ord(char)}, {keycode}, {modifier}}}, // {char}\n"
+                implementation += (
+                    f"    {{{ord(char)}, {keycode}, {modifier}}}, // {char}\n"
+                )
             else:
-                header += f"    {{{ord(char)}, {keycode}, {modifier}}},"
+                implementation += f"    {{{ord(char)}, {keycode}, {modifier}}},"
 
-        # Add sentinel value
-        header += "    {0, 0, 0}  // End marker\n};\n\n"
+        implementation += "    {0, 0, 0}  // End marker\n};\n\n"
 
-    # Generate the layouts array
-    header += "// Array of pointers to keyboard layouts for easy access\n"
-    header += "static const KeyMapping* KEYBOARD_LAYOUTS[] = {\n"
+    implementation += "// Array of pointers to keyboard layouts for easy access\n"
+    implementation += "const KeyMapping* KEYBOARD_LAYOUTS[] = {\n"
     layout_pointers = []
     for layout_name, _ in layout_data:
         layout_pointers.append(f"    LAYOUT_{layout_name}")
-    header += ",\n".join(layout_pointers) + "\n};\n\n"
+    implementation += ",\n".join(layout_pointers) + "\n};\n\n"
 
-    header += "\n#endif // __CUSTOM_KEYMAP\n"
-    return header
+    return header, implementation
 
 
 def main():
-    """Main function to process command line arguments and generate the header file"""
-    if len(sys.argv) < 2:
-        print("Usage: python generate_keymap.py <keymap_dir_or_files>")
-        print("Example: python generate_keymap.py keymaps/")
-        print("         python generate_keymap.py keymaps/fr keymaps/us")
-        return 1
+    parser = argparse.ArgumentParser(
+        description="Generate keymap header and implementation files."
+    )
+    parser.add_argument("inputs", nargs="+", help="Keymap directory or files")
+    parser.add_argument(
+        "-o", "--output", required=True, help="Output file prefix (e.g., ./src/icons)"
+    )
+    args = parser.parse_args()
 
     layout_data = []
 
-    # Process each input argument (directory or file)
-    for path_arg in sys.argv[1:]:
+    for path_arg in args.inputs:
         if os.path.isdir(path_arg):
-            # If directory, process all text files in it
             files = glob.glob(os.path.join(path_arg, "*"))
             for file in files:
                 if os.path.isfile(file):
@@ -137,7 +132,6 @@ def main():
                     except Exception as e:
                         print(f"Error processing {file}: {str(e)}", file=sys.stderr)
         elif os.path.isfile(path_arg):
-            # Process single file
             try:
                 layout_name, mappings = parse_keymap_file(path_arg)
                 layout_data.append((layout_name, mappings))
@@ -156,12 +150,20 @@ def main():
         print("Error: No valid keymap files found", file=sys.stderr)
         return 1
 
-    # Generate the header file and print to stdout
-    header = generate_keymap_header(layout_data)
-    print(header)
+    header, implementation = generate_keymap_files(layout_data, args.output)
 
+    header_file = f"{args.output}.h"
+    implementation_file = f"{args.output}.cpp"
+
+    with open(header_file, "w") as h_file:
+        h_file.write(header)
+
+    with open(implementation_file, "w") as cpp_file:
+        cpp_file.write(implementation)
+
+    print(f"Generated {header_file} and {implementation_file}")
     return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

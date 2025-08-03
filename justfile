@@ -43,8 +43,8 @@ gen-version:
 # re-generate the keymaps definition
 gen-keymap:
     #!/usr/bin/env sh
-    pushd scripts
-    ./genkeymaps.py ./keymaps/{fr,us}  > ../src/keymap.h
+    pushd src
+    ../scripts/genkeymaps.py -o keymap ../scripts/keymaps/{fr,us}
     popd
 
 gen-icons:
