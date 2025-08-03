@@ -192,6 +192,9 @@ void bluetoothLoop() {
         chunkState.offset += chunkSize;
         chunkState.chunksSent++;
 
+        yield();
+        delay(5);
+
         if (chunkState.chunksSent >= chunkState.totalChunks) {
           chunkState.inProgress = false;
           setIconStatus(ICON_UP, false);
