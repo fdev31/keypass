@@ -4,6 +4,10 @@ build: gen-index gen-version gen-keymap gen-icons
     pio run -t compiledb
     pio run
 
+esp32-c3-nographics:
+    pio run -e esp32-c3v0
+
+
 esp32-c3v0:
     pio run -e esp32-c3v0
 
@@ -20,7 +24,6 @@ upload: build
 # Remove all build files
 clean:
     rm -fr .pio
-    cd android && ./gradlew clean
 
 # Full build and install (default)
 default: build

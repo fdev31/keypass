@@ -1,6 +1,6 @@
 #ifndef _GRAPHICS_H
 #define _GRAPHICS_H
-#include "icons.h"
+// #include "icons.h"
 #include <stdint.h>
 
 #define ICON_BLUETOOTH 0

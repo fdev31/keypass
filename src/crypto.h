@@ -9,5 +9,6 @@ extern void encryptBuffer(const char *, uint8_t *result, int size,
 extern void decryptBuffer(const uint8_t *, char *result, int size,
                           uint8_t *nonce);
 extern bool setPassPhrase(const char *passphrase);
+extern bool isPassphraseValid();
 extern void randomizeBuffer(uint8_t *, int);
 #endif

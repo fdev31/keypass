@@ -1,5 +1,5 @@
-#include "settings.h"
 #include "configuration.h"
+#include "settings.h"
 #if ENABLE_BLUETOOTH
 #include "bluetooth.h"
 #endif
@@ -26,10 +26,8 @@ unsigned long lastClientTime;
 int sleeping = 0;
 int graphics_initialized = 1;
 
-#ifdef ENABLE_GRAPHICS
 unsigned long boot_time = 0;
 bool version_displayed = false;
-#endif
 
 void ping() {
   lastClientTime = millis();
@@ -44,7 +42,7 @@ void setup() {
   sendHIDInit();
   bootloader_random_enable();
   srand(millis());
-#ifdef ENABLE_GRAPHICS
+#if ENABLE_GRAPHICS
   graphicsSetup();
   char version_string[50];
   snprintf(version_string, sizeof(version_string), "%d@%s", HW_TYPE, VERSION);
@@ -82,7 +80,7 @@ void loop() {
     bluetoothLoop();
     yield();
 #endif
-#ifdef ENABLE_GRAPHICS
+#if ENABLE_GRAPHICS
     if (version_displayed && (millis() - boot_time > 2000)) {
       printText(1, "  _(^-^)_");
       version_displayed = false;
@@ -107,9 +105,7 @@ void loop() {
     yield();
     delay(100); // Give WiFi time to enter power save
 
-#ifdef ENABLE_GRAPHICS
     shutdownGraphics();
-#endif
     yield();
   }
 

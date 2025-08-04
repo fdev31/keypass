@@ -1,7 +1,7 @@
-#include "graphics.h"
 #include "configuration.h"
-#include "icons.h"
 #if ENABLE_GRAPHICS
+#include "graphics.h"
+#include "icons.h"
 
 #include <Arduino.h>
 #include <U8g2lib.h>
