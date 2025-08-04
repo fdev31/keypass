@@ -170,4 +170,5 @@ void printText(uint8_t, const char *) {}
 void graphicsSetup() {};
 void graphicsLoop() {};
 void shutdownGraphics() {};
+void setIconStatus(int, bool) {};
 #endif
