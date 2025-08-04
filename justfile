@@ -4,6 +4,15 @@ build: gen-index gen-version gen-keymap gen-icons
     pio run -t compiledb
     pio run
 
+esp32-c3v0:
+    pio run -e esp32-c3v0
+
+esp32-c3v1:
+    pio run -e esp32-c3v1
+
+esp32-c3v2:
+    pio run -e esp32-c3v2
+
 # Upload to the MCU
 upload: build
     pio run -t upload
