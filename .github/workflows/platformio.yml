@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        hw_type: [0, 1, 2]
+        hw_type: [c3, v3v0, c3v1, c3v2]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -21,11 +21,11 @@ jobs:
       - name: Install PlatformIO
         run: pip install platformio
 
-      - name: Build HW_TYPE=${{ matrix.hw_type }}
-        run: pio run -e esp32-c3v${{ matrix.hw_type }}
+      - name: Build ${{ matrix.hw_type }}
+        run: pio run -e esp32-${{ matrix.hw_type }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: KeyPass-ESP32-C3-HW${{ matrix.hw_type }}
-          path: .pio/build/esp32-c3v${{ matrix.hw_type }}/*.bin
+          name: KeyPass-ESP32-${{ matrix.hw_type }}
+          path: .pio/build/esp32-${{ matrix.hw_type }}/*.bin
