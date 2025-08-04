@@ -4,9 +4,11 @@ build: gen-index gen-version gen-keymap gen-icons
     pio run -t compiledb
     pio run
 
-esp32-c3-nographics:
-    pio run -e esp32-c3v0
+size: esp32-c3-nographics
+    bloaty .pio/build/esp32-c3/firmware.elf -d symbols -n 100
 
+esp32-c3-nographics:
+    pio run -e esp32-c3
 
 esp32-c3v0:
     pio run -e esp32-c3v0

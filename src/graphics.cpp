@@ -1,4 +1,5 @@
 #include "configuration.h"
+#include <stdint.h>
 #if ENABLE_GRAPHICS
 #include "graphics.h"
 #include "icons.h"
