@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        hw_type: [c3, v3v0, c3v1, c3v2]
+        hw_type: [c3, c3v0, c3v1, c3v2]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
