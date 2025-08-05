@@ -7,17 +7,21 @@ build: gen-index gen-version gen-keymap gen-icons
 size: esp32-c3-nographics
     bloaty .pio/build/esp32-c3/firmware.elf -d symbols -n 100
 
-esp32-c3-nographics:
-    pio run -e esp32-c3
+# build screen-less (basic) version
+esp32-c3-nographics *ARGS:
+    pio run -e esp32-c3 {{ARGS}}
 
-esp32-c3v0:
-    pio run -e esp32-c3v0
+# build version with no screen hacks
+esp32-c3v0 *ARGS:
+    pio run -e esp32-c3v0 {{ARGS}}
 
-esp32-c3v1:
-    pio run -e esp32-c3v1
+# build "cheap" LCD version 1
+esp32-c3v1 *ARGS:
+    pio run -e esp32-c3v1 {{ARGS}}
 
-esp32-c3v2:
-    pio run -e esp32-c3v2
+# build "cheap" LCD version 2
+esp32-c3v2 *ARGS:
+    pio run -e esp32-c3v2 {{ARGS}}
 
 # Upload to the MCU
 upload: build
