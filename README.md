@@ -1,6 +1,6 @@
 A password manager in your keychain
 
-# Goals
+# Features
 
 - Manages your passwords **up to 31 characters**
 - Simple: minimal user interface, polished UX
@@ -17,7 +17,7 @@ A password manager in your keychain
 - Improved UX using the (phone app)[https://github.com/fdev31/KeyPassBLE/]
 - Simple design, easy to make
 
-# Unmet goals
+# To be improved
 
 - More keyboard layouts
 - iPhone/iOS app (Technically available, just needs to be built.)
