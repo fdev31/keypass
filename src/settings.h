@@ -5,7 +5,9 @@
 
 void settingsSetup();
 String getWifiPassword();
-bool setWifiPassword(const char* password);
+bool setWifiPassword(const char *password);
+String getWifiSSID();
+bool setWifiSSID(const char *ssid);
 String getMagicKey();
 void factoryResetSettings();
 

@@ -29,6 +29,7 @@ static_assert(DUMP_LENGTH % STO_BLOCK_SIZE == 0,
 
 // Preferences fields
 #define F_NAMESPACE "KeyPass" // used for global settings
+#define DEVICE_NAME_KEY "device_name"
 #define WIFI_PASSWORD_KEY "wifi_password"
 #define MAGIC_KEY_KEY "magic_key"
 // password entry properties

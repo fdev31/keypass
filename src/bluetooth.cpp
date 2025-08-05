@@ -1,4 +1,3 @@
-#include "settings.h"
 #include "NimBLEDevice.h"
 #include "NuPacket.hpp"
 #include "WiFi.h"
@@ -10,10 +9,9 @@
 #include "main.h"
 #include "password.h"
 #include "restore.h"
+#include "settings.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
-
-#define DEVICE_NAME DEFAULT_WIFI_SSID
 
 // JSON response buffer size
 #define JSON_BUFFER_SIZE 2048
@@ -119,8 +117,10 @@ class MySecurityCallbacks : public NimBLESecurityCallbacks {
 }
 #endif
 void bluetoothSetup() {
+  String device_name = getWifiSSID();
+  const char *name_str = device_name.c_str();
   // Initialize BLE stack
-  NimBLEDevice::init(DEVICE_NAME);
+  NimBLEDevice::init(name_str);
 
   NimBLEServer *pServer = NimBLEDevice::createServer();
   // pServer->setSecurityCallbacks(new MySecurityCallbacks());
@@ -141,7 +141,7 @@ void bluetoothSetup() {
 
   // Configure advertising
   NimBLEAdvertising *pAdvertising = pServer->getAdvertising();
-  pAdvertising->setName(DEVICE_NAME);
+  pAdvertising->setName(name_str);
   pAdvertising->addServiceUUID(NORDIC_UART_SERVICE_UUID);
 
   // Set scan response data
