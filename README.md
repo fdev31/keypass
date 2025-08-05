@@ -2,27 +2,25 @@ A password manager in your keychain
 
 # Goals
 
-- Manages your passwords up to 32 characters
+- Manages your passwords **up to 31 characters**
 - Simple: minimal user interface, polished UX
-- Offline: Can work 100% without internet/cloud
-- Secure: all you need is to remember a passphrase
-- Safe: backup your passwords and restore them at any time
+- **Offline**: Can work 100% without internet/cloud
+- Secure: all you need is to remember a passphrase, no data is saved as clear text
+- Safe: **backup** your passwords and **restore** them at any time
 - Zero requirement: no application needed
-    - Detected as a USB keyboard
+    - **Detected as a USB keyboard**
     - Controlled by your phone
-    - Shows the UI via WiFi with minimal user interaction
-- Works in any situation
+    - Shows the UI via **WiFi** with minimal user interaction
+- Just works (no software or specific hardware support required)
     - Boot / Logon / BitLocker support
-- Android app (contributions are very welcome)
-- Nice shell / casing for easy to get electronics
-- Easy to build
+- **BLE** control
+- Improved UX using the (phone app)[https://github.com/fdev31/KeyPassBLE/]
+- Simple design, easy to make
 
 # Unmet goals
 
-- BLE control
 - More keyboard layouts
-- iPhone/iOS app (works fine using but an app could improve the UX)
-- Showing the UI with even less steps / Improving the UX...
+- iPhone/iOS app (Technically available, just needs to be built.)
 
 # Requirements
 
