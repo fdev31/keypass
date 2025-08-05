@@ -14,7 +14,7 @@ A password manager in your keychain
 - Just works (no software or specific hardware support required)
     - Boot / Logon / BitLocker support
 - **BLE** control
-- Improved UX using the (phone app)[https://github.com/fdev31/KeyPassBLE/]
+- Improved UX using the [phone app](https://github.com/fdev31/KeyPassBLE/)
 - Simple design, easy to make
 
 # To be improved
