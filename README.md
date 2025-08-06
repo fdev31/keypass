@@ -1,4 +1,4 @@
-A password manager in your keychain
+KeyPass helps you keep secure passwords
 
 # Features
 
