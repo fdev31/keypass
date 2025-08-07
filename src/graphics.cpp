@@ -139,7 +139,7 @@ void graphicsLoop(void) {
   u8g2.setDrawColor(inverted ? 1 : 0);
 
   int x_pos = BUGGY_OFFSET_X + icon_bluetooth.width - 4;
-  int y_pos = icon_bluetooth.height + BUGGY_OFFSET_Y - 2;
+  int y_pos = icon_bluetooth.height + BUGGY_OFFSET_Y;
 
   if (icon_statuses[ICON_BLUETOOTH])
     drawBitmap(x_pos, y_pos, &icon_bluetooth);
