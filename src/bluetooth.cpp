@@ -73,6 +73,8 @@ bool handleRestoreCommand(JsonDocument &doc, uint8_t *responseBuffer,
                           size_t &responseSize);
 bool handleRestoreOneCommand(JsonDocument &doc, uint8_t *responseBuffer,
                              size_t &responseSize);
+bool handleSetDeviceName(JsonDocument &doc, uint8_t *responseBuffer,
+                         size_t &responseSize);
 
 #if 0
 class MySecurityCallbacks : public NimBLESecurityCallbacks {
@@ -271,6 +273,8 @@ void processCommand(const char *command, uint8_t *responseBuffer,
     handled = handleFactoryResetCommand(doc, responseBuffer, responseSize);
   } else if (strcmp(cmd, "updateWifiPass") == 0) {
     handled = handleWifiPassCommand(doc, responseBuffer, responseSize);
+  } else if (strcmp(cmd, "setDeviceName") == 0) {
+    handled = handleSetDeviceName(doc, responseBuffer, responseSize);
   } else if (strcmp(cmd, "passphrase") == 0) {
     handled = handlePassPhraseCommand(doc, responseBuffer, responseSize);
   } else if (strcmp(cmd, "dump") == 0) {
@@ -460,6 +464,17 @@ bool handleFactoryResetCommand(JsonDocument &doc, uint8_t *responseBuffer,
                                size_t &responseSize) {
   factoryReset();
   sendResponse(200, "Factory reset completed", responseBuffer, responseSize);
+  return true;
+}
+
+bool handleSetDeviceName(JsonDocument &doc, uint8_t *responseBuffer,
+                         size_t &responseSize) {
+  if (!doc.containsKey("name")) {
+    sendResponse(400, "Missing 'name' parameter", responseBuffer, responseSize);
+  } else {
+    setWifiSSID(doc["name"]);
+    sendResponse(200, "Device name set", responseBuffer, responseSize);
+  }
   return true;
 }
 
