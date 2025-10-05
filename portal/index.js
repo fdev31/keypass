@@ -68,9 +68,9 @@ function generatePassword(length) {
   return password;
 }
 
-function generatePass() {
+function generatePass(buttonElement) {
   const uid = ~~document.getElementById("positionSelect").value;
-  const length =
+  let length =
     document.getElementById("passwordInput").value.length ||
     ui_data.passwords[uid]?.len ||
     prompt("How many characters ?", 18);
@@ -78,9 +78,9 @@ function generatePass() {
   if (!length || isNaN(length) || length < 2) {
     return;
   }
-  if (length > MAX_PASSWORD_LENGTH) length = MAX_PASSWORD_LENGTH; // Limit to 31 characters for compatibility
+  if (length > MAX_PASSWORD_LENGTH) length = MAX_PASSWORD_LENGTH;
 
-  shake("diceIcon");
+  shake(buttonElement);
   const password = generatePassword(length);
   document.getElementById("passwordInput").value = password;
   document.getElementById("typeNewPassBtn").classList.remove("hidden");
@@ -259,9 +259,14 @@ async function checkPassphrase(opts) {
 }
 
 async function setPassPhrase(phrase) {
-  return fetch(`/passphrase?p=${phrase}`).catch(errorHandler);
+  return fetch("/passphrase", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ p: phrase }),
+  }).catch(errorHandler);
 }
-
 function typeOldPass() {
   const uid = positionSelect.value;
   fetch(`/typePass?id=${uid}`).catch(errorHandler);
@@ -273,39 +278,30 @@ function typeNewPass() {
   fetch(`/typeRaw?text=${escaped}&layout=${layout}`).catch(errorHandler);
 }
 function passwordClick(event, uid) {
-  // If uid is not provided, try to get it from the event target
-  if (uid === undefined && event) {
-    const card = event.target.closest(".password-card");
-    if (card) {
-      uid = parseInt(card.dataset.passwordId);
-    }
-  }
+  const card = event.target.closest(".password-card");
+  if (!card) return;
 
-  switch (ui_data.mode) {
-    case "edit":
-      fillForm({
-        uid: uid,
-        name: ui_data.passwords[uid].name,
-        layout: ui_data.passwords[uid].layout,
-      });
-      showEditForm(uid);
-      break;
-    default: // "type"
-      // Add visual feedback for typing action
-      const card = event
-        ? event.target.closest(".password-card")
-        : document.querySelector(`[data-password-id="${uid}"]`);
-      if (card) {
-        card.style.transform = "scale(0.95)";
-        setTimeout(() => {
-          card.style.transform = "";
-        }, 150);
-      }
-      const layout = layoutOverrideSelect.selectedIndex;
-      const press_enter = UserPreferences.get("press_enter");
-      const prefix = `/typePass?id=${uid}&ret=${press_enter}`;
-      const url = layout > 0 ? `${prefix}&layout=${layout - 1}` : prefix;
-      fetch(url).catch(errorHandler);
+  uid = parseInt(card.dataset.passwordId);
+
+  if (event.target.closest(".edit-btn")) {
+    if (ui_data.mode !== "edit") {
+      setMode("edit");
+    }
+    fillForm({
+      uid: uid,
+      name: ui_data.passwords[uid].name,
+      layout: ui_data.passwords[uid].layout,
+    });
+    showEditForm(uid);
+  } else {
+    card.style.transform = "scale(0.98)";
+    setTimeout(() => { card.style.transform = ""; }, 150);
+
+    const layout = layoutOverrideSelect.selectedIndex;
+    const press_enter = UserPreferences.get("press_enter");
+    const prefix = `/typePass?id=${uid}&ret=${press_enter}`;
+    const url = layout > 0 ? `${prefix}&layout=${layout - 1}` : prefix;
+    fetch(url).catch(errorHandler);
   }
 }
 
@@ -368,27 +364,35 @@ async function getPasswords() {
   try {
     const req = await fetch("/list");
     const passwords = await req.json();
+
+    passwords.passwords.sort((a, b) => a.name.localeCompare(b.name));
+
     ui_data.passwords = passwords.passwords;
     const count = passwords.passwords.length;
     const total = passwords.free + count;
-    subtitle.innerText = `Stored ${count} over ${total}`;
+    subtitle.innerText = `[${count}/${total}] PASSWORDS LOADED`;
 
     if (passwords.passwords.length === 0) {
       return setMode("add");
     }
 
     const passList = document.querySelector("#passList .password-grid");
-    const domData = [];
 
-    for (const pass of passwords.passwords) {
-      domData.push(`
-    <div class="password-card" role="button" data-password-id="${pass.uid}">
+    const domData = passwords.passwords
+      .map(
+        (pass) => `
+  <div class="password-card" data-password-id="${pass.uid}">
+      <div class="password-details" role="button">
+        <span class="password-prompt">&gt;</span>
         <div class="password-name">${pass.name}</div>
-    </div>
-    `);
-    }
+      </div>
+      <button class="edit-btn" role="button">&#9998;</button>
+  </div>
+`
+      )
+      .join("");
 
-    passList.innerHTML = domData.join("");
+    passList.innerHTML = domData;
   } catch (error) {
     alert("Error: Unable to fetch passwords. Please try again later." + error);
   }

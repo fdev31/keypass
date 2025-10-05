@@ -2,522 +2,315 @@
 <html>
   <head>
     <title>KeyPass</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap"
+    />
     <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    summary {
-      cursor: pointer;
-      color: white;
-      font-weight: 600;
-      font-size: 16px;
-      padding: 10px;
-      transition: background 0.3s ease;
-    }
+      @keyframes flicker {
+        0%,
+        19%,
+        21%,
+        23%,
+        25%,
+        54%,
+        56%,
+        100% {
+          text-shadow: 0 0 5px #00ff00, 0 0 10px #00ff00, 0 0 20px #00ff00,
+            0 0 40px #00c800, 0 0 80px #00c800;
+          opacity: 1;
+        }
+        20%,
+        24%,
+        55% {
+          text-shadow: none;
+          opacity: 0.6;
+        }
+      }
 
-    body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      position: relative;
-      overflow-x: hidden;
-    }
-    .column {
-      flex-direction: column !important;
-    }
-    #wifiPassForm {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease-out, opacity 0.3s ease-out, margin 0.3s ease-out;
-      opacity: 0;
-      margin: 0;
-    }
+      @keyframes glitch {
+        0% {
+          transform: translate(0);
+        }
+        20% {
+          transform: translate(-3px, 3px);
+        }
+        40% {
+          transform: translate(-3px, -3px);
+        }
+        60% {
+          transform: translate(3px, 3px);
+        }
+        80% {
+          transform: translate(3px, -3px);
+        }
+        100% {
+          transform: translate(0);
+        }
+      }
 
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background:
-        radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255, 118, 117, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 40% 80%, rgba(255, 177, 153, 0.3) 0%, transparent 50%);
-      animation: float 20s ease-in-out infinite;
-      z-index: -1;
-    }
+      @keyframes scanline {
+        0% {
+          background-position: 0 0;
+        }
+        100% {
+          background-position: 0 100%;
+        }
+      }
 
-    @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    33% { transform: translateY(-20px) rotate(1deg); }
-    66% { transform: translateY(10px) rotate(-1deg); }
-    }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-    .container {
-      width: 100%;
-      max-width: 600px;
-      animation: fadeInUp 0.8s ease-out;
-    }
+      body {
+        background-color: #050a05;
+        color: #c0fcc0;
+        font-family: "Roboto Mono", monospace;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+      }
 
-    @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    }
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: linear-gradient(
+          0deg,
+          rgba(0, 255, 0, 0.1) 1px,
+          transparent 1px
+        );
+        background-size: 100% 3px;
+        animation: scanline 10s linear infinite;
+        pointer-events: none;
+        z-index: -1;
+      }
 
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-      animation: slideDown 0.6s ease-out;
-    }
-
-    @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    }
-
-    h1 {
-      color: white;
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 10px;
-      text-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-      background: linear-gradient(135deg, #fff, #f0f8ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .subtitle {
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 1.1rem;
-      font-weight: 300;
-    }
-
-    .button-column {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      margin-bottom: 30px;
-      animation: slideUp 0.8s ease-out 0.2s both;
-    }
-    .button-row {
-      display: flex;
-      flex-direction: row;
-      gap: 15px;
-      margin-bottom: 30px;
-      animation: slideUp 0.8s ease-out 0.2s both;
-    }
-
-    @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    }
-    .menu-btn {
-      background-color: rgba(0, 0, 0, 0.1) !important;
-    }
-
-    .modern-btn {
-      flex: 1;
-      padding: 15px 25px;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 15px;
-      color: white;
-      font-weight: 600;
-      font-size: 16px;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    }
-
-    .modern-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-      transition: left 0.5s;
-    }
-
-    .modern-btn:hover::before {
-      left: 100%;
-    }
-
-    .modern-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.2);
-      background: rgba(255, 255, 255, 0.15);
-      border-color: rgba(255, 255, 255, 0.3);
-    }
-
-    .modern-btn:active {
-      transform: translateY(0);
-      transition: transform 0.1s;
-    }
-
-    .modern-btn.active {
-      background: linear-gradient(135deg, #ff6b6b, #ff8e53);
-      border-color: rgba(255, 255, 255, 0.4);
-      box-shadow: 0 0 30px rgba(255, 107, 107, 0.4);
-    }
-
-    .modern-btn.active::before {
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    }
-
-    .glass-panel {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 20px;
-      padding: 30px;
-      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
-      animation: scaleIn 0.5s ease-out;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .glass-panel::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
-    }
-
-    @keyframes scaleIn {
-    from {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-      animation: fadeInLeft 0.6s ease-out;
-    }
-
-    @keyframes fadeInLeft {
-    from {
-      opacity: 0;
-      transform: translateX(-20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-    }
-    @keyframes fadeInRight {
-    from {
-      opacity: 0;
-      transform: translateX(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-    }
-
-    label {
-      display: block;
-      color: rgba(255, 255, 255, 0.9);
-      font-weight: 500;
-      margin-bottom: 8px;
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 15px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 10px;
-      color: white;
-      font-size: 16px;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(10px);
-    }
-
-    input::placeholder {
-      color: rgba(255, 255, 255, 0.5);
-    }
-
-    input:focus, select:focus {
-      outline: none;
-      border-color: #ff6b6b;
-      box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
-      background: rgba(255, 255, 255, 0.15);
-    }
-
-    select option {
-      background: #764ba2;
-      color: white;
-    }
-
-    .submit-btn {
-      width: 100%;
-      padding: 15px;
-      background: linear-gradient(135deg, #ff6b6b, #ff8e53);
-      border: none;
-      border-radius: 10px;
-      color: white;
-      font-weight: 600;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .submit-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-      transition: left 0.5s;
-    }
-
-    .submit-btn:hover::before {
-      left: 100%;
-    }
-
-    .submit-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 15px 40px rgba(255, 107, 107, 0.4);
-    }
-
-    .password-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 15px;
-      animation: slideUp 0.6s ease-out;
-    }
-
-    .password-card {
-      user-select: none;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 15px;
-      padding: 20px;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
-
-    }
-    .password-card button {
-      user-select: none;
-    }
-    .password-card:nth-child(odd) { animation: fadeInLeft 0.5s ease-out; }
-    .password-card:nth-child(even) { animation: fadeInRight 0.5s ease-out; }
-
-    @keyframes fadeInScale {
-    from {
-      opacity: 0;
-      transform: scale(0.8);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-    }
-
-    .password-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-      transition: left 0.5s;
-    }
-
-    .password-card:hover::before {
-      left: 100%;
-    }
-
-    .password-card:hover {
-      transform: translateY(-5px) scale(1.02);
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
-      background: rgba(255, 255, 255, 0.15);
-      border-color: rgba(255, 255, 255, 0.3);
-    }
-
-    .password-name {
-      color: white;
-      font-weight: 600;
-      font-size: 18px;
-      margin-bottom: 5px;
-      text-align: center;
-    }
-    #passwordInput, #newWifiPass, #confirmWifiPass {
-      /* use a monospace font */
-      font-family: 'Courier New', Courier, monospace;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .fade-out {
-      animation: fadeOut 0.3s ease-out forwards;
-    }
-
-    .fade-in {
-      animation: fadeIn 0.3s ease-out forwards;
-    }
-
-    @keyframes fadeOut {
-    to {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    }
-
-    @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    }
-
-    /* Mobile responsiveness */
-    @media (max-width: 768px) {
       .container {
-        padding: 0 10px;
+        width: 100%;
+        max-width: 600px;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
       }
 
       h1 {
-        font-size: 2rem;
+        font-size: 2.8rem;
+        font-weight: 700;
+        color: #00ff00;
+        text-transform: uppercase;
+        animation: flicker 4s linear infinite;
       }
 
-      .button-row {
-        flex-direction: row;
-        gap: 10px;
+      .subtitle {
+        color: #8a9a8a;
+        font-size: 1.1rem;
       }
 
-      .button-column {
-        flex-direction: column;
-        gap: 10px;
+      .glass-panel,
+      .modern-btn,
+      .password-card {
+        background: rgba(0, 20, 0, 0.5);
+        border: 1px solid rgba(0, 255, 0, 0.4);
+        border-radius: 0;
+        backdrop-filter: blur(5px);
+        transition: all 0.2s ease;
+      }
+
+      .modern-btn:hover,
+      .password-card:hover {
+        background: rgba(0, 50, 0, 0.7);
+        color: #fff;
+        animation: glitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+      }
+
+      .modern-btn {
+        padding: 12px 20px;
+        color: #00ff00;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+        text-transform: uppercase;
+      }
+
+      .menu-btn {
+        border-color: rgba(0, 255, 0, 0.7) !important;
+      }
+
+      .glass-panel {
+        padding: 30px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        color: #00ff00;
+        font-weight: 700;
+        margin-bottom: 8px;
+        font-size: 14px;
+        text-transform: uppercase;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 15px;
+        background: #050a05;
+        border: 1px solid rgba(0, 255, 0, 0.4);
+        border-radius: 0;
+        color: #c0fcc0;
+        font-size: 16px;
+        font-family: "Roboto Mono", monospace;
+      }
+
+      input:focus,
+      select:focus {
+        outline: 1px solid #00ff00;
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+      }
+
+      select option {
+        background: #050a05;
+        color: #c0fcc0;
+      }
+
+      .submit-btn {
+        width: 100%;
+        padding: 15px;
+        background: #00ff00;
+        border: none;
+        color: #050a05;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+        text-transform: uppercase;
       }
 
       .password-grid {
+        display: grid;
         grid-template-columns: 1fr;
+        gap: 10px;
       }
-    }
 
-    /* Loading animation */
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      border-top-color: white;
-      animation: spin 1s ease-in-out infinite;
-    }
+      .password-card {
+        padding: 20px;
+        cursor: pointer;
+        user-select: none;
+        text-align: center;
+      }
 
-    @keyframes spin {
-    to { transform: rotate(360deg); }
-    }
+      .password-name {
+        color: #c0fcc0;
+        font-weight: 700;
+        font-size: 18px;
+        text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
+      }
+      .password-card:hover .password-name {
+        color: #fff;
+      }
 
-    @keyframes wiggle {
-      0% { transform: rotate(0deg); }
-      20% { transform: rotate(-10deg); }
-      40% { transform: rotate(10deg); }
-      60% { transform: rotate(-7deg); }
-      80% { transform: rotate(7deg); }
-      100% { transform: rotate(0deg); }
-    }
+      .hidden {
+        display: none !important;
+      }
 
-    .wiggle {
-      animation: wiggle 0.5s ease-in-out;
-    }
-    .icon {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 100%;
-      height: 100%;
-      margin: 0;
-    }
-    .icon-die {
-      background-color: #fff;
-      border-radius: 3px;
-      width: 24px;
-      height: 24px;
-      position: relative;
-      margin: auto;
-    }
-    .icon-die:before{
-      background-color: #000;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      position: absolute;
-      top: 4px;
-      left: 4px;
-      content: "";
-    }
-    .icon-die:after {
-      background-color: #000;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      position: absolute;
-      top: 13px;
-      left: 13px;
-      content: "";
-    }
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(0, 255, 0, 0.3);
+        border-radius: 50%;
+        border-top-color: #00ff00;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      summary {
+        cursor: pointer;
+        color: #00ff00;
+        font-weight: 700;
+        padding: 10px;
+        border: 1px solid rgba(0, 255, 0, 0.4);
+        margin-top: 20px;
+      }
+
+      .password-grid {
+        counter-reset: password-counter;
+      }
+
+      .password-card {
+        display: flex;
+        align-items: baseline;
+        padding: 15px 20px;
+        text-align: left;
+      }
+
+      .password-card::before {
+        counter-increment: password-counter;
+        content: counter(password-counter, decimal-leading-zero);
+        color: #8a9a8a;
+        font-weight: 700;
+        margin-right: 15px;
+        min-width: 25px;
+      }
+
+      .password-prompt {
+        color: #00ff00;
+        font-weight: 700;
+        margin-right: 15px;
+      }
+
+      .password-name {
+        flex-grow: 1;
+      }
+
+      .password-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .password-details {
+        display: flex;
+        align-items: baseline;
+        flex-grow: 1;
+        cursor: pointer;
+      }
+
+      .edit-btn {
+        background: none;
+        border: 1px solid rgba(0, 255, 0, 0.4);
+        color: #00ff00;
+        font-size: 120%;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        margin-left: 15px;
+        transition: all 0.2s ease;
+      }
+
+      .edit-btn:hover {
+        background: rgba(0, 50, 0, 0.7);
+        color: #fff;
+      }
     </style>
   </head>
   <body>
@@ -526,65 +319,238 @@
         <h1>KeyPass</h1>
         <p id="subtitle" class="subtitle">Password Management System</p>
 
-        <button id="add-button" onclick="shake('add-button'); toggleCreatePassForm()" class="modern-btn menu-btn" role="button" style="position: absolute; top: 20px; left: 20px; padding: 0; font-size: 200%; width: 50px; height: 50px; z-index: 10;">+</button>
-        <button id="settings-button" onclick="shake('settings-button'); toggleSettings()" class="modern-btn menu-btn" role="button" style="position: absolute; top: 20px; right: 20px; padding: 0; font-size: 200%; width: 50px; height: 50px; z-index: 10;">
-          &#x1F4AB;
+        <button
+          id="add-button"
+          onclick="shake('add-button'); toggleCreatePassForm()"
+          class="modern-btn menu-btn"
+          role="button"
+          style="
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 0;
+            font-size: 200%;
+            width: 50px;
+            height: 50px;
+            z-index: 10;
+          "
+        >
+          +
+        </button>
+        <button
+          id="settings-button"
+          onclick="shake('settings-button'); toggleSettings()"
+          class="modern-btn menu-btn"
+          role="button"
+          style="
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 0;
+            font-size: 200%;
+            width: 50px;
+            height: 50px;
+            z-index: 10;
+          "
+        >
+          &#9881;
         </button>
       </div>
       <div class="mainScreen hidden" id="settingsForm">
         <div class="glass-panel button-column">
-          <button class="modern-btn column togglableButton" role="button" data-setting="confirm_actions" data-enabled-text="Confirm actions" data-disabled-text="Just run actions">Ask for confirmations</button>
-          <button class="modern-btn column togglableButton" role="button" data-setting="password_visibility" data-enabled-text="Show passwords" data-disabled-text="Hide passwords">Ask for confirmations</button>
-          <button class="modern-btn column" role="button" onclick="window.location.pathname = '/dump'" style="background: rgba(107, 255, 107, 0.2);">Backup passwords blob</button>
-          <button class="modern-btn column" role="button" onclick="toggleWifiPassForm()">Change Wi-Fi password</button>
-          <div id="wifiPassForm" class="hidden" style="overflow: hidden; transition: all 0.3s ease-out;">
-            <div class="glass-panel" style="margin-top: 10px;">
+          <button
+            class="modern-btn column togglableButton"
+            role="button"
+            data-setting="confirm_actions"
+            data-enabled-text="Confirm actions"
+            data-disabled-text="Just run actions"
+          >
+            Ask for confirmations
+          </button>
+          <button
+            class="modern-btn column togglableButton"
+            role="button"
+            data-setting="password_visibility"
+            data-enabled-text="Show passwords"
+            data-disabled-text="Hide passwords"
+          >
+            Ask for confirmations
+          </button>
+          <button
+            class="modern-btn column"
+            role="button"
+            onclick="window.location.pathname = '/dump'"
+            style="background: rgba(107, 255, 107, 0.2)"
+          >
+            Backup passwords blob
+          </button>
+          <button
+            class="modern-btn column"
+            role="button"
+            onclick="toggleWifiPassForm()"
+          >
+            Change Wi-Fi password
+          </button>
+          <div
+            id="wifiPassForm"
+            class="hidden"
+            style="overflow: hidden; transition: all 0.3s ease-out"
+          >
+            <div class="glass-panel" style="margin-top: 10px">
               <div class="form-group">
-                <input class="passwordLength" type="password" id="newWifiPass" placeholder="New Wi-Fi password" minlength="8" maxlength="31" required>
-                <input class="passwordLength" type="password" id="confirmWifiPass" placeholder="Confirm password" minlength="8" maxlength="31" required>
-              <button type="button" onclick="updateWifiPass()" class="submit-btn">
-                <span class="btn-text">Update Password</span>
-                <span class="loading hidden"></span>
-              </button>
+                <input
+                  class="passwordLength"
+                  type="password"
+                  id="newWifiPass"
+                  placeholder="New Wi-Fi password"
+                  minlength="8"
+                  maxlength="31"
+                  required
+                />
+                <input
+                  class="passwordLength"
+                  type="password"
+                  id="confirmWifiPass"
+                  placeholder="Confirm password"
+                  minlength="8"
+                  maxlength="31"
+                  required
+                />
+                <button
+                  type="button"
+                  onclick="updateWifiPass()"
+                  class="submit-btn"
+                >
+                  <span class="btn-text">Update Password</span>
+                  <span class="loading hidden"></span>
+                </button>
               </div>
             </div>
           </div>
-          <button class="modern-btn column" role="button" onclick="checkPassphrase({force:true})" style="background: rgba(255, 107, 107, 0.2);">Reset passphrase</button>
-          <button class="modern-btn column" role="button" onclick="confirmFactoryReset()" style="background: rgba(255, 107, 107, 0.2);">Factory Reset</button>
+          <button
+            class="modern-btn column"
+            role="button"
+            onclick="checkPassphrase({force:true})"
+            style="background: rgba(255, 107, 107, 0.2)"
+          >
+            Reset passphrase
+          </button>
+          <button
+            class="modern-btn column"
+            role="button"
+            onclick="confirmFactoryReset()"
+            style="background: rgba(255, 107, 107, 0.2)"
+          >
+            Factory Reset
+          </button>
           <div id="passwdRecoveryInputs">
             <input type="file" id="blobFileInput" />
-            <textarea id="blobTextInput" placeholder="Paste blob file content here..." rows="4" style="width: 100%; display: none;"></textarea>
+            <textarea
+              id="blobTextInput"
+              placeholder="Paste blob file content here..."
+              rows="4"
+              style="width: 100%; display: none"
+            ></textarea>
           </div>
-          <button class="modern-btn column" role="button" onclick="uploadBlobFile()">Recover passwords from blob</button>
-          <button class="modern-btn column" role="button" onclick="alert(localStorage.getItem('keypass_passphrase'))">Show passphrase</button>
+          <button
+            class="modern-btn column"
+            role="button"
+            onclick="uploadBlobFile()"
+          >
+            Recover passwords from blob
+          </button>
+          <button
+            class="modern-btn column"
+            role="button"
+            onclick="alert(localStorage.getItem('keypass_passphrase'))"
+          >
+            Show passphrase
+          </button>
         </div>
       </div>
 
       <div class="mainScreen hidden" id="editForm">
         <div class="glass-panel">
           <form id="editFormContent" method="get" action="/editPass">
-              <input type="hidden" name="id" id="positionSelect" disabled>
+            <input type="hidden" name="id" id="positionSelect" disabled />
 
             <div class="form-group">
               <label for="passLabel">Name</label>
-              <input class="passwordLength" id="passLabel" name="name" type="text" required placeholder="Enter password name" maxlength="29">
+              <input
+                class="passwordLength"
+                id="passLabel"
+                name="name"
+                type="text"
+                required
+                placeholder="Enter password name"
+                maxlength="29"
+              />
 
               <label for="passwordInput">Password</label>
-              <div style="display: flex; gap: 10px;">
-                <input class="passwordLength" id="passwordInput" type="password" name="password" placeholder="Enter password..." maxlength="31">
+              <div style="display: flex; gap: 10px">
+                <input
+                  class="passwordLength"
+                  id="passwordInput"
+                  type="password"
+                  name="password"
+                  placeholder="Enter password..."
+                  maxlength="31"
+                />
 
-                <button id="toggleVisibilityIcon" type="button" class="modern-btn togglableButton"
+                <button
+                  id="toggleVisibilityIcon"
+                  type="button"
+                  class="modern-btn togglableButton"
                   data-setting="password_visibility"
-                  data-enabled-text="&#x1F640;" data-disabled-text="&#x1f648;"
+                  data-enabled-text="&#x1F640;"
+                  data-disabled-text="&#x1f648;"
                   data-changed="togglePasswordVisibility"
-
-                  style="width: 50px; flex: 0 0 auto; padding: 0; font-size: 200%;">&#x1f648;</button>
-                <button type="button" onclick="generatePass()" class="modern-btn" style="width: 50px; flex: 0 0 auto; padding: 0;"><div class="icon"><div id="diceIcon" class="icon-die"></div></div></button>
-
+                  style="
+                    width: 50px;
+                    flex: 0 0 auto;
+                    padding: 0;
+                    font-size: 200%;
+                  "
+                >
+                  &#x1f648;
+                </button>
+                <button
+                  type="button"
+                  onclick="generatePass(this)"
+                  class="modern-btn"
+                  style="
+                    width: 60px;
+                    flex: 0 0 auto;
+                    padding: 0;
+                    font-size: 180%;
+                  "
+                >
+                  &#127922;
+                </button>
               </div>
-              <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button id="typeNewPassBtn" type="button" onclick="typeNewPass()" class="modern-btn hidden" style="width: auto; flex: auto;"><span style="vertical-align: -15% ; font-size: 200%"> &#x2328;</span>&nbsp;&nbsp;Type</button>
-                <button id="typeOldPassBtn" type="button" onclick="typeOldPass()" class="modern-btn hidden" style="width: auto; flex: auto;"><span style="vertical-align: -15% ; font-size: 200%">&#x2328;</span>&nbsp;&nbsp;Type current (already registered)</button>
+              <div style="display: flex; gap: 10px; margin-top: 10px">
+                <button
+                  id="typeNewPassBtn"
+                  type="button"
+                  onclick="typeNewPass()"
+                  class="modern-btn hidden"
+                  style="width: auto; flex: auto"
+                >
+                  <span style="vertical-align: -15%; font-size: 200%">
+                    &#x2328;</span
+                  >&nbsp;&nbsp;Type
+                </button>
+                <button
+                  id="typeOldPassBtn"
+                  type="button"
+                  onclick="typeOldPass()"
+                  class="modern-btn hidden"
+                  style="width: auto; flex: auto"
+                >
+                  <span style="vertical-align: -15%; font-size: 200%"
+                    >&#x2328;</span
+                  >&nbsp;&nbsp;Type current (already registered)
+                </button>
               </div>
               <label for="layoutSelect">Keyboard layout</label>
               <select name="lang" id="layoutSelect" required>
@@ -592,7 +558,7 @@
                 <option value="fr">French</option>
                 <option value="us">US</option>
               </select>
-              <input type="hidden" name="layout" id="layoutIndex">
+              <input type="hidden" name="layout" id="layoutIndex" />
             </div>
             <button type="submit" class="submit-btn">
               <span class="btn-text">Save Password</span>
@@ -607,14 +573,26 @@
           <!-- Passwords will be loaded here -->
         </div>
         <details id="advancedTypingOptions" style="padding: 1ex">
-          <summary>Advanced options</label></summary>
+          <summary>Advanced options</summary>
           <div class="form-group">
-          <p style="padding: 1ex">
-          <div>
-            <label for="typePasswordPressEnter">After typing a password:</label>
-            <button id="typePasswordPressEnter" class="modern-btn column togglableButton" role="button" data-setting="press_enter" data-enabled-text="Press &crarr;" data-disabled-text="Do not press &crarr;"></button></div>
+            <p style="padding: 1ex"></p>
+            <div>
+              <label for="typePasswordPressEnter"
+                >After typing a password:</label
+              >
+              <button
+                id="typePasswordPressEnter"
+                class="modern-btn column togglableButton"
+                role="button"
+                data-setting="press_enter"
+                data-enabled-text="Press &crarr;"
+                data-disabled-text="Do not press &crarr;"
+              ></button>
+            </div>
             <p style="padding: 1ex">
-              <label for="layoutOverrideSelect">Keyboard layout override:</label>
+              <label for="layoutOverrideSelect"
+                >Keyboard layout override:</label
+              >
               <select name="lang" id="layoutOverrideSelect" required>
                 <option value="">Password specific</option>
                 <option value="fr">French</option>
@@ -627,8 +605,8 @@
       </div>
     </div>
     <script>
-    <!-- WARN: The following line must not be changed and is replaced with index.js content automatically -->
-    <!-- CODE HERE -->
+      <!-- WARN: The following line must not be changed and is replaced with index.js content automatically -->
+      <!-- CODE HERE -->
     </script>
   </body>
 </html>

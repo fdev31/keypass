@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <ArduinoJson.h>
 
 // HTTP handler wrappers (dependent on AsyncWebServerRequest)
 //
@@ -177,18 +178,26 @@ static void handleWifiPass(AsyncWebServerRequest *request) {
   }
 }
 
-static void handlePassPhrase(AsyncWebServerRequest *request) {
-  if (request->hasParam("p")) {
-    const char *phrase = request->getParam("p")->value().c_str();
+void handlePassphrase(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+    StaticJsonDocument<100> doc;
 
-    if (setupPassphrase(phrase)) {
-      request->send(200, "text/plain", "Passphrase set successfully");
-    } else {
-      request->send(500, "text/plain", "Passphrase couldn't be set");
+    DeserializationError error = deserializeJson(doc, (const char*)data);
+
+    if (error) {
+        request->send(400, "text/plain", "Invalid JSON");
+        return;
     }
-  } else {
-    request->send(400, "text/plain", "Missing parameter");
-  }
+
+    if (doc.containsKey("p")) {
+        const char* phrase = doc["p"];
+        if (setupPassphrase(phrase)) {
+            request->send(200, "text/plain", "Passphrase set successfully");
+        } else {
+            request->send(500, "text/plain", "Passphrase couldn't be set");
+        }
+    } else {
+        request->send(400, "text/plain", "Missing parameter");
+    }
 }
 
 static void handlePassDump(AsyncWebServerRequest *request) {
@@ -210,7 +219,7 @@ void setupHttp(AsyncWebServer &server) {
   server.on("/editPass", HTTP_GET, handleEditPass);
   server.on("/fetchPass", HTTP_GET, handleFetchPass);
   server.on("/list", HTTP_GET, handleList);
-  server.on("/passphrase", HTTP_GET, handlePassPhrase);
+  server.on("/passphrase", HTTP_POST, [](AsyncWebServerRequest * request){}, NULL, handlePassphrase);
   server.on("/reset", HTTP_GET, handleFactoryReset);
   server.on("/updateWifiPass", HTTP_GET, handleWifiPass);
   server.on("/dump", HTTP_GET, handlePassDump);
