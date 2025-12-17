@@ -241,7 +241,7 @@ void bluetoothLoop() {
 void processCommand(const char *command, uint8_t *responseBuffer,
                     size_t &responseSize) {
   // Parse JSON command
-  StaticJsonDocument<1024> doc;
+  DynamicJsonDocument doc(12288); // 12KB
   DeserializationError error = deserializeJson(doc, command);
 
   if (error) {
