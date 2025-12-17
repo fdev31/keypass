@@ -9,7 +9,8 @@ void restoreSinglePassword(const String &passBlock, PasswordCallback callback,
 
   uint8_t *nonce;
   char name[MAX_NAME_LEN];
-  char *passwordData[MAX_PASS_LEN];
+  char passwordData[MAX_PASS_LEN + 1];
+  memset(passwordData, 0, MAX_PASS_LEN + 1);
   int layout;
   const char *rawBlock = passBlock.c_str();
   nonce = ((uint8_t *)rawBlock) + 1;

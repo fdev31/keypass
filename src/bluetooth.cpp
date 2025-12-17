@@ -241,7 +241,7 @@ void bluetoothLoop() {
 void processCommand(const char *command, uint8_t *responseBuffer,
                     size_t &responseSize) {
   // Parse JSON command
-  StaticJsonDocument<2048> doc;
+  StaticJsonDocument<1024> doc;
   DeserializationError error = deserializeJson(doc, command);
 
   if (error) {
@@ -336,8 +336,14 @@ void sendResponse(int status, const char *message, uint8_t *responseBuffer,
   doc["s"] = status;
   doc["m"] = message;
 
-  // Create a temporary buffer for serialization
-  char jsonBuffer[JSON_BUFFER_SIZE];
+  // Use a heap-allocated buffer for serialization to save stack space
+  char *jsonBuffer = (char *)malloc(JSON_BUFFER_SIZE);
+  if (!jsonBuffer) {
+      // Fallback or error handling if allocation fails
+      responseSize = 0;
+      return; 
+  }
+
   size_t jsonSize = serializeJson(doc, jsonBuffer, JSON_BUFFER_SIZE);
 
   // If the response is small enough, send it directly
@@ -349,6 +355,8 @@ void sendResponse(int status, const char *message, uint8_t *responseBuffer,
     // For larger responses, use chunking
     sendChunkedResponse(jsonBuffer, jsonSize, responseBuffer, responseSize);
   }
+  
+  free(jsonBuffer);
 }
 bool handleTypeRawCommand(JsonDocument &doc, uint8_t *responseBuffer,
                           size_t &responseSize) {
